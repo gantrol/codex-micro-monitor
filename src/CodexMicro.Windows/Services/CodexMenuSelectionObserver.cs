@@ -1,0 +1,531 @@
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+using System.Windows.Automation;
+
+namespace CodexMicro.Desktop.Services;
+
+internal enum CodexSelectionSurface
+{
+    Menu,
+    Approval,
+    Dialog,
+}
+
+internal readonly record struct CodexMenuSelection(
+    string MenuName,
+    string ItemName,
+    int Position,
+    int Count,
+    CodexSelectionSurface Surface = CodexSelectionSurface.Menu)
+{
+    public string DisplayText => CodexMenuSelectionObserver.Format(this);
+}
+
+/// <summary>
+/// Reads Codex's accessibility tree only to mirror the selection made by the
+/// official Micro bridge. Input continues to travel exclusively through VHF.
+/// </summary>
+internal sealed class CodexMenuSelectionObserver
+{
+    private static readonly TimeSpan[] RetryDelays =
+    [
+        TimeSpan.FromMilliseconds(35),
+        TimeSpan.FromMilliseconds(70),
+        TimeSpan.FromMilliseconds(120),
+    ];
+
+    public async Task<CodexMenuSelection?> ObserveAsync(
+        string? packageRoot,
+        CancellationToken cancellationToken = default)
+    {
+        CodexMenuSelection? lastResult = null;
+        foreach (var delay in RetryDelays)
+        {
+            await Task.Delay(delay, cancellationToken);
+            lastResult = await Task.Run(
+                () => TryObserve(packageRoot),
+                cancellationToken);
+            if (lastResult is { Position: > 0 })
+            {
+                return lastResult;
+            }
+        }
+
+        return lastResult;
+    }
+
+    internal static string Format(CodexMenuSelection selection)
+    {
+        if (selection.Surface == CodexSelectionSurface.Dialog)
+        {
+            return "确认框暂不支持旋钮 · 请在 Codex 操作";
+        }
+
+        var item = NormalizeLabel(selection.ItemName);
+        if (selection.Position > 0 && selection.Count > 0)
+        {
+            return $"{selection.Position} / {selection.Count}  ·  {item}";
+        }
+
+        var menu = NormalizeLabel(selection.MenuName);
+        if (selection.Surface == CodexSelectionSurface.Approval)
+        {
+            return "权限模式  ·  转动选择";
+        }
+
+        return string.IsNullOrWhiteSpace(menu)
+            ? "转动旋钮选择"
+            : $"转动选择  ·  {menu}";
+    }
+
+    internal static string? MatchApprovalOption(string value)
+    {
+        var normalized = NormalizeLabel(value);
+        foreach (var option in new[]
+                 {
+                     "Ask for approval",
+                     "Approve for me",
+                     "Full access",
+                 })
+        {
+            if (normalized.StartsWith(
+                option,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return option;
+            }
+        }
+
+        return null;
+    }
+
+    private static CodexMenuSelection? TryObserve(string? packageRoot)
+    {
+        try
+        {
+            var desktop = AutomationElement.RootElement;
+            var windows = desktop.FindAll(
+                TreeScope.Children,
+                Condition.TrueCondition);
+            var processCache = new Dictionary<int, bool>();
+            var candidates = new List<MenuCandidate>();
+
+            for (var windowIndex = 0; windowIndex < windows.Count; windowIndex++)
+            {
+                var window = windows[windowIndex];
+                var processId = SafeRead(() => window.Current.ProcessId, 0);
+                if (processId == 0 ||
+                    !IsCodexProcess(processId, packageRoot, processCache))
+                {
+                    continue;
+                }
+
+                var menuCondition = new PropertyCondition(
+                    AutomationElement.ControlTypeProperty,
+                    ControlType.Menu);
+                var menus = window.FindAll(
+                    TreeScope.Descendants,
+                    menuCondition);
+                var windowHasVisibleMenu = false;
+                for (var menuIndex = 0; menuIndex < menus.Count; menuIndex++)
+                {
+                    if (TryReadMenu(menus[menuIndex]) is { } candidate)
+                    {
+                        candidates.Add(candidate);
+                        windowHasVisibleMenu = true;
+                    }
+                }
+
+                if (TryReadDialog(window) is { } dialog)
+                {
+                    candidates.Add(dialog);
+                }
+
+                if (!windowHasVisibleMenu &&
+                    TryReadApprovalSurface(window) is { } approval)
+                {
+                    candidates.Add(approval);
+                }
+            }
+
+            var dialogCandidate = candidates
+                .Where(candidate =>
+                    candidate.Selection.Surface == CodexSelectionSurface.Dialog)
+                .OrderByDescending(candidate => candidate.Selection.Position > 0)
+                .ThenBy(candidate => candidate.Area)
+                .FirstOrDefault();
+            if (dialogCandidate is not null)
+            {
+                return dialogCandidate.Selection;
+            }
+
+            var approvalCandidate = candidates
+                .Where(candidate =>
+                    candidate.Selection.Surface == CodexSelectionSurface.Approval)
+                .OrderByDescending(candidate => candidate.Selection.Position > 0)
+                .ThenBy(candidate => candidate.Area)
+                .FirstOrDefault();
+            if (approvalCandidate is not null)
+            {
+                return approvalCandidate.Selection;
+            }
+
+            var focused = candidates
+                .Where(candidate => candidate.Selection.Position > 0)
+                .OrderBy(candidate => candidate.Area)
+                .FirstOrDefault();
+            if (focused is not null)
+            {
+                return focused.Selection;
+            }
+
+            return candidates
+                .OrderByDescending(candidate => candidate.Top)
+                .ThenBy(candidate => candidate.Area)
+                .Select(candidate => (CodexMenuSelection?)candidate.Selection)
+                .FirstOrDefault();
+        }
+        catch (Exception exception) when (
+            exception is ElementNotAvailableException or
+                InvalidOperationException or
+                COMException or
+                Win32Exception)
+        {
+            return null;
+        }
+    }
+
+    private static MenuCandidate? TryReadMenu(AutomationElement menu)
+    {
+        var rectangle = SafeRead(
+            () => menu.Current.BoundingRectangle,
+            System.Windows.Rect.Empty);
+        if (rectangle.IsEmpty ||
+            rectangle.Width <= 0 ||
+            rectangle.Height <= 0 ||
+            SafeRead(() => menu.Current.IsOffscreen, true))
+        {
+            return null;
+        }
+
+        var menuItemCondition = new PropertyCondition(
+            AutomationElement.ControlTypeProperty,
+            ControlType.MenuItem);
+        var descendants = menu.FindAll(
+            TreeScope.Descendants,
+            menuItemCondition);
+        var items = new List<MenuItemCandidate>(descendants.Count);
+        for (var itemIndex = 0; itemIndex < descendants.Count; itemIndex++)
+        {
+            var item = descendants[itemIndex];
+            var itemRectangle = SafeRead(
+                () => item.Current.BoundingRectangle,
+                System.Windows.Rect.Empty);
+            var name = SafeRead(() => item.Current.Name, string.Empty);
+            if (itemRectangle.IsEmpty ||
+                itemRectangle.Width <= 0 ||
+                itemRectangle.Height <= 0 ||
+                string.IsNullOrWhiteSpace(name) ||
+                SafeRead(() => item.Current.IsOffscreen, true))
+            {
+                continue;
+            }
+
+            items.Add(new MenuItemCandidate(
+                name,
+                SafeRead(() => item.Current.HasKeyboardFocus, false),
+                itemRectangle.Top,
+                itemRectangle.Left));
+        }
+
+        items.Sort(static (left, right) =>
+        {
+            var top = left.Top.CompareTo(right.Top);
+            return top != 0 ? top : left.Left.CompareTo(right.Left);
+        });
+
+        var focusedIndex = items.FindIndex(item => item.HasKeyboardFocus);
+        var menuName = SafeRead(() => menu.Current.Name, string.Empty);
+        var selection = focusedIndex >= 0
+            ? new CodexMenuSelection(
+                menuName,
+                items[focusedIndex].Name,
+                focusedIndex + 1,
+                items.Count)
+            : new CodexMenuSelection(
+                menuName,
+                string.Empty,
+                0,
+                items.Count);
+        return new MenuCandidate(
+            selection,
+            rectangle.Top,
+            rectangle.Width * rectangle.Height);
+    }
+
+    private static MenuCandidate? TryReadDialog(AutomationElement window)
+    {
+        var items = new List<MenuItemCandidate>(3);
+        foreach (var name in new[] { "Learn more", "Cancel", "Confirm" })
+        {
+            var condition = new AndCondition(
+                new PropertyCondition(
+                    AutomationElement.ControlTypeProperty,
+                    ControlType.Button),
+                new PropertyCondition(
+                    AutomationElement.NameProperty,
+                    name));
+            var button = window.FindFirst(TreeScope.Descendants, condition);
+            if (button is null)
+            {
+                continue;
+            }
+
+            var rectangle = SafeRead(
+                () => button.Current.BoundingRectangle,
+                System.Windows.Rect.Empty);
+            if (rectangle.IsEmpty ||
+                rectangle.Width <= 0 ||
+                rectangle.Height <= 0 ||
+                SafeRead(() => button.Current.IsOffscreen, true))
+            {
+                continue;
+            }
+
+            items.Add(new MenuItemCandidate(
+                name,
+                SafeRead(() => button.Current.HasKeyboardFocus, false),
+                rectangle.Top,
+                rectangle.Left));
+        }
+
+        if (!items.Any(item => item.Name == "Cancel") ||
+            !items.Any(item => item.Name == "Confirm"))
+        {
+            return null;
+        }
+
+        items.Sort(static (left, right) =>
+        {
+            var top = left.Top.CompareTo(right.Top);
+            return top != 0 ? top : left.Left.CompareTo(right.Left);
+        });
+        var focusedIndex = items.FindIndex(item => item.HasKeyboardFocus);
+        var selection = focusedIndex >= 0
+            ? new CodexMenuSelection(
+                "Full access confirmation",
+                items[focusedIndex].Name,
+                focusedIndex + 1,
+                items.Count,
+                CodexSelectionSurface.Dialog)
+            : new CodexMenuSelection(
+                "Full access confirmation",
+                string.Empty,
+                0,
+                items.Count,
+                CodexSelectionSurface.Dialog);
+        var top = items.Min(item => item.Top);
+        var left = items.Min(item => item.Left);
+        var right = items.Max(item => item.Left);
+        return new MenuCandidate(
+            selection,
+            top,
+            Math.Max(1, right - left));
+    }
+
+    private static MenuCandidate? TryReadApprovalSurface(
+        AutomationElement window)
+    {
+        var header = window.FindFirst(
+            TreeScope.Descendants,
+            new PropertyCondition(
+                AutomationElement.NameProperty,
+                "How should ChatGPT actions be approved?"));
+        if (header is null ||
+            SafeRead(() => header.Current.IsOffscreen, true))
+        {
+            return null;
+        }
+
+        var actionableControls = new OrCondition(
+            new PropertyCondition(
+                AutomationElement.ControlTypeProperty,
+                ControlType.Button),
+            new PropertyCondition(
+                AutomationElement.ControlTypeProperty,
+                ControlType.MenuItem),
+            new PropertyCondition(
+                AutomationElement.ControlTypeProperty,
+                ControlType.RadioButton),
+            new PropertyCondition(
+                AutomationElement.ControlTypeProperty,
+                ControlType.ListItem));
+        var descendants = window.FindAll(
+            TreeScope.Descendants,
+            actionableControls);
+        var controls = new List<ApprovalControlCandidate>(descendants.Count);
+        for (var index = 0; index < descendants.Count; index++)
+        {
+            var element = descendants[index];
+            var name = MatchApprovalOption(
+                SafeRead(() => element.Current.Name, string.Empty));
+            if (name is null)
+            {
+                continue;
+            }
+
+            var rectangle = SafeRead(
+                () => element.Current.BoundingRectangle,
+                System.Windows.Rect.Empty);
+            if (rectangle.IsEmpty ||
+                rectangle.Width <= 0 ||
+                rectangle.Height <= 0 ||
+                SafeRead(() => element.Current.IsOffscreen, true))
+            {
+                continue;
+            }
+
+            controls.Add(new ApprovalControlCandidate(
+                name,
+                SafeRead(() => element.Current.HasKeyboardFocus, false),
+                rectangle.Top,
+                rectangle.Left,
+                rectangle.Right,
+                rectangle.Bottom));
+        }
+
+        return TryCreateApprovalCandidate(controls);
+    }
+
+    private static MenuCandidate? TryCreateApprovalCandidate(
+        IReadOnlyList<ApprovalControlCandidate> controls)
+    {
+        var ask = controls
+            .Where(control => control.Name == "Ask for approval")
+            .OrderBy(control => control.Top)
+            .FirstOrDefault();
+        if (ask is null)
+        {
+            return null;
+        }
+
+        var approve = controls
+            .Where(control =>
+                control.Name == "Approve for me" &&
+                control.Top > ask.Top)
+            .OrderBy(control => control.Top)
+            .FirstOrDefault();
+        if (approve is null)
+        {
+            return null;
+        }
+
+        // There can be a second "Full access" element for the composer
+        // trigger below the popup. The first one following "Approve for me"
+        // is the actual option in the approval surface.
+        var fullAccess = controls
+            .Where(control =>
+                control.Name == "Full access" &&
+                control.Top > approve.Top)
+            .OrderBy(control => control.Top)
+            .FirstOrDefault();
+        if (fullAccess is null)
+        {
+            return null;
+        }
+
+        var items = new[] { ask, approve, fullAccess };
+        var focusedIndex = Array.FindIndex(
+            items,
+            static item => item.HasKeyboardFocus);
+        var selection = focusedIndex >= 0
+            ? new CodexMenuSelection(
+                "Approval mode",
+                items[focusedIndex].Name,
+                focusedIndex + 1,
+                items.Length,
+                CodexSelectionSurface.Approval)
+            : new CodexMenuSelection(
+                "Approval mode",
+                string.Empty,
+                0,
+                items.Length,
+                CodexSelectionSurface.Approval);
+        var left = items.Min(item => item.Left);
+        var top = items.Min(item => item.Top);
+        var right = items.Max(item => item.Right);
+        var bottom = items.Max(item => item.Bottom);
+        return new MenuCandidate(
+            selection,
+            top,
+            Math.Max(1, (right - left) * (bottom - top)));
+    }
+
+    private static bool IsCodexProcess(
+        int processId,
+        string? packageRoot,
+        IDictionary<int, bool> cache)
+    {
+        if (cache.TryGetValue(processId, out var cached))
+        {
+            return cached;
+        }
+
+        var isCodex = WindowsProcessImage.TryGetPath(
+                checked((uint)processId),
+                out var path) &&
+            ((!string.IsNullOrWhiteSpace(packageRoot) &&
+                path.StartsWith(
+                    packageRoot,
+                    StringComparison.OrdinalIgnoreCase)) ||
+             path.Contains(
+                 @"\WindowsApps\OpenAI.Codex_",
+                 StringComparison.OrdinalIgnoreCase));
+
+        cache[processId] = isCodex;
+        return isCodex;
+    }
+
+    private static string NormalizeLabel(string value)
+    {
+        var normalized = Regex.Replace(value ?? string.Empty, @"\s+", " ").Trim();
+        return normalized.Length <= 52
+            ? normalized
+            : $"{normalized[..49]}…";
+    }
+
+    private static T SafeRead<T>(Func<T> read, T fallback)
+    {
+        try
+        {
+            return read();
+        }
+        catch (Exception exception) when (
+            exception is ElementNotAvailableException or
+                InvalidOperationException or
+                COMException)
+        {
+            return fallback;
+        }
+    }
+
+    private sealed record MenuCandidate(
+        CodexMenuSelection Selection,
+        double Top,
+        double Area);
+
+    private sealed record MenuItemCandidate(
+        string Name,
+        bool HasKeyboardFocus,
+        double Top,
+        double Left);
+
+    private sealed record ApprovalControlCandidate(
+        string Name,
+        bool HasKeyboardFocus,
+        double Top,
+        double Left,
+        double Right,
+        double Bottom);
+}

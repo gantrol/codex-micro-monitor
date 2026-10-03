@@ -1,0 +1,687 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        <SolidColorBrush x:Key="InkBrush" Color="#2F3438" />
+        <SolidColorBrush x:Key="MutedInkBrush" Color="#737C82" />
+        <SolidColorBrush x:Key="KeyEdgeBrush" Color="#F7FFFFFF" />
+        <SolidColorBrush x:Key="CrystalShadowBrush" Color="#44343B40" />
+        <LinearGradientBrush x:Key="CrystalKeySideBrush"
+                             StartPoint="0,0"
+                             EndPoint="0,1">
+            <GradientStop Color="#E8FFFFFF" Offset="0" />
+            <GradientStop Color="#CDE8F0EF" Offset="0.48" />
+            <GradientStop Color="#9DAAB8BA" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="CrystalKeyTopBrush"
+                             StartPoint="0,0"
+                             EndPoint="0,1">
+            <GradientStop Color="#FFFFFFFF" Offset="0" />
+            <GradientStop Color="#FFF9F8F4" Offset="0.52" />
+            <GradientStop Color="#F3E8EEEE" Offset="1" />
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="PaperAgentKeyBaseBrush" Color="#FFF7F8F6" />
+        <SolidColorBrush x:Key="PaperCommandKeyBaseBrush" Color="#FFF7F8F6" />
+        <!-- Paper expresses the recessed well with two opposing inset shadows:
+             a cool grey lobe on the upper-left and a white return light on the
+             lower-right. WPF has no native inset shadow, so the rim carries the
+             same directional lighting while the well itself stays a flat fill. -->
+        <LinearGradientBrush x:Key="PaperRecessRingBrush"
+                             StartPoint="0,0"
+                             EndPoint="1,1">
+            <GradientStop Color="#28747B77" Offset="0" />
+            <GradientStop Color="#14747B77" Offset="0.42" />
+            <GradientStop Color="#8CFFFFFF" Offset="0.58" />
+            <GradientStop Color="#CCFFFFFF" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="PaperWhiteLightRecessRingBrush"
+                             StartPoint="0,0"
+                             EndPoint="1,1">
+            <GradientStop Color="#0A747B77" Offset="0" />
+            <GradientStop Color="#05747B77" Offset="0.42" />
+            <GradientStop Color="#8CFFFFFF" Offset="0.58" />
+            <GradientStop Color="#CCFFFFFF" Offset="1" />
+        </LinearGradientBrush>
+        <Geometry x:Key="JoystickChevronGeometry">M 1,7 L 6,2 L 11,7</Geometry>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable Text" />
+        </Style>
+
+        <Style TargetType="{x:Type ToolTip}">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Placement" Value="MousePoint" />
+            <Setter Property="HorizontalOffset" Value="14" />
+            <Setter Property="VerticalOffset" Value="14" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ToolTip}">
+                        <Border Padding="11,9"
+                                MaxWidth="330"
+                                Background="#F7F7F5F1"
+                                BorderBrush="#E8FFFFFF"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12"
+                                                  Direction="270"
+                                                  ShadowDepth="3"
+                                                  Opacity="0.26"
+                                                  Color="#4A5358" />
+                            </Border.Effect>
+                            <ContentPresenter />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CommandKey" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PaperCommandKeyBaseBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource KeyEdgeBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Margin="0.5">
+                            <Border x:Name="FarShadow"
+                                    Margin="2,4,2,0"
+                                    Background="#33363C39"
+                                    CornerRadius="14"
+                                    Opacity="1">
+                                <Border.Effect>
+                                    <BlurEffect Radius="8" />
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="SwitchShadow"
+                                    Margin="0,1.5,0,0"
+                                    Background="#B8ADB4B0"
+                                    CornerRadius="14"
+                                    Opacity="1" />
+                            <Border x:Name="Cap"
+                                    Margin="0,0,0,1.5"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="#F2FFFFFF"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="14">
+                                <Border.RenderTransform>
+                                    <TranslateTransform />
+                                </Border.RenderTransform>
+                                <Grid>
+                                    <!-- Paper inset dark: #5F666229 -1px -1px 2px inset -->
+                                    <Border Margin="1,1,0,0"
+                                            BorderBrush="#295F6662"
+                                            BorderThickness="0,0,1.5,1.5"
+                                            CornerRadius="13" />
+                                    <!-- Paper inset white: #FFFFFFF2 1px 1px 2px inset -->
+                                    <Border Margin="0,0,1,1"
+                                            BorderBrush="#F2FFFFFF"
+                                            BorderThickness="1.5,1.5,0,0"
+                                            CornerRadius="13" />
+                                    <Border x:Name="KeyWell"
+                                            Width="76"
+                                            Height="76"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{StaticResource PaperRecessRingBrush}"
+                                            BorderThickness="1.6"
+                                            CornerRadius="38" />
+                                    <ContentPresenter HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center" />
+                                </Grid>
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="2"
+                                                      Direction="270"
+                                                      ShadowDepth="1"
+                                                      Opacity="0.12"
+                                                      Color="#5F6662" />
+                                </Border.Effect>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Tag" Value="ACT10_ACT11">
+                                <Setter TargetName="KeyWell" Property="Width" Value="160" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Cap" Property="BorderBrush" Value="#FFFFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Cap"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                             To="1"
+                                                             Duration="0:0:0.08" />
+                                            <DoubleAnimation Storyboard.TargetName="SwitchShadow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0.35"
+                                                             Duration="0:0:0.08" />
+                                            <DoubleAnimation Storyboard.TargetName="FarShadow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0.45"
+                                                             Duration="0:0:0.08" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Cap"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                             To="0"
+                                                             Duration="0:0:0.11">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="SwitchShadow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1"
+                                                             Duration="0:0:0.11" />
+                                            <DoubleAnimation Storyboard.TargetName="FarShadow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1"
+                                                             Duration="0:0:0.11" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="AgentWideHalo" TargetType="Border">
+            <Setter Property="Width" Value="106" />
+            <Setter Property="Height" Value="106" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="CornerRadius" Value="21" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <BlurEffect Radius="28"
+                                RenderingBias="Quality" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="AgentNearHalo" TargetType="Border">
+            <Setter Property="Width" Value="100" />
+            <Setter Property="Height" Value="100" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="IsHitTestVisible" Value="False" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <BlurEffect Radius="16"
+                                RenderingBias="Quality" />
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DropShadowEffect x:Key="AgentKeyShadow"
+                          BlurRadius="3"
+                          Direction="270"
+                          ShadowDepth="2"
+                          Opacity="0.20"
+                          Color="#3A403D" />
+        <DropShadowEffect x:Key="AgentWhiteLightKeyShadow"
+                          BlurRadius="3"
+                          Direction="270"
+                          ShadowDepth="2"
+                          Opacity="0.05"
+                          Color="#3A403D" />
+        <SolidColorBrush x:Key="AgentFarShadowBrush" Color="#243A403D" />
+        <SolidColorBrush x:Key="AgentWhiteLightFarShadowBrush" Color="#093A403D" />
+        <Style x:Key="AgentKey" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PaperAgentKeyBaseBrush}" />
+            <Setter Property="BorderBrush" Value="#008DB5FF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Margin="0.5">
+                            <Border x:Name="FarShadow"
+                                    Width="92"
+                                    Height="92"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="{StaticResource AgentFarShadowBrush}"
+                                    CornerRadius="14"
+                                    Opacity="1">
+                                <Border.RenderTransform>
+                                    <TranslateTransform Y="3" />
+                                </Border.RenderTransform>
+                                <Border.Effect>
+                                    <BlurEffect Radius="8" />
+                                </Border.Effect>
+                            </Border>
+                            <!-- Self-contained bloom for isolated/reused key
+                                 rendering. MainWindow moves the same two kernels
+                                 into a shared layer below all physical keycaps. -->
+                            <Border x:Name="GlowWide"
+                                    Style="{StaticResource AgentWideHalo}"
+                                    Background="{TemplateBinding BorderBrush}"
+                                    Opacity="0" />
+                            <Border x:Name="Glow"
+                                    Style="{StaticResource AgentNearHalo}"
+                                    Background="{TemplateBinding BorderBrush}"
+                                    Opacity="0" />
+                            <Border x:Name="MintSeamLight"
+                                    Width="98"
+                                    Height="98"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    CornerRadius="15"
+                                    BorderBrush="#756EF0B0"
+                                    BorderThickness="1.6"
+                                    Opacity="0"
+                                    IsHitTestVisible="False">
+                                <Border.Effect>
+                                    <BlurEffect Radius="5" RenderingBias="Quality" />
+                                </Border.Effect>
+                            </Border>
+                            <Border x:Name="Cap"
+                                    Width="96"
+                                    Height="96"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Margin="0"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="#99FFFFFF"
+                                    BorderThickness="1"
+                                    CornerRadius="14">
+                                <Border.RenderTransform>
+                                    <TranslateTransform />
+                                </Border.RenderTransform>
+                                 <Grid>
+                                    <!-- Non-selected sessions tint the circular
+                                         well most strongly. The current session
+                                         raises this full-cap wash so its light
+                                         reaches the entire key, as in Paper. -->
+                                    <Border x:Name="StatusCapWash"
+                                            Margin="4"
+                                            Background="{TemplateBinding BorderBrush}"
+                                            CornerRadius="10"
+                                            Opacity="0.07">
+                                        <Border.Effect>
+                                            <BlurEffect Radius="6.5" />
+                                        </Border.Effect>
+                                    </Border>
+                                    <Border x:Name="MintCapReturn"
+                                            Margin="2"
+                                            CornerRadius="11"
+                                            BorderThickness="1.5"
+                                            Opacity="0"
+                                            IsHitTestVisible="False">
+                                        <Border.BorderBrush>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#008CECB4" Offset="0" />
+                                                <GradientStop Color="#128CECB4" Offset="0.42" />
+                                                <GradientStop Color="#668CECB4" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Border.BorderBrush>
+                                        <Border.Effect>
+                                            <BlurEffect Radius="1.8" RenderingBias="Quality" />
+                                        </Border.Effect>
+                                    </Border>
+                                    <!-- Paper inset dark: #4E545133 -2px -2px 3px inset -->
+                                    <Border x:Name="CapInsetShadow"
+                                            Margin="1,1,0,0"
+                                            BorderBrush="#334E5451"
+                                            BorderThickness="0,0,2,2"
+                                            CornerRadius="13" />
+                                    <!-- Paper inset white: #FFFFFFB8 2px 2px 3px inset -->
+                                    <Border Margin="0,0,1,1"
+                                            BorderBrush="#B8FFFFFF"
+                                            BorderThickness="2,2,0,0"
+                                            CornerRadius="13" />
+                                    <!-- Paper inner circular light field (export line 37):
+                                         rounded-full, inset ~8%, blur(1px), box-shadow
+                                         color6E inset. It sits just OUTSIDE the neutral
+                                         well so the state color reads as a soft halo, and
+                                         also bleeds up through the translucent well. This
+                                         circular field — not a stroked ring — is Paper's
+                                         only inner carrier of state color. -->
+                                    <Ellipse x:Name="StatusLightField"
+                                             Width="82"
+                                             Height="82"
+                                             Fill="{TemplateBinding BorderBrush}"
+                                             Opacity="0.36">
+                                        <Ellipse.Effect>
+                                            <BlurEffect Radius="5.5" />
+                                        </Ellipse.Effect>
+                                    </Ellipse>
+                                    <Ellipse x:Name="MintWellLight"
+                                             Width="81"
+                                             Height="81"
+                                             Stroke="#6874E7AD"
+                                             StrokeThickness="3"
+                                             Opacity="0"
+                                             IsHitTestVisible="False">
+                                        <Ellipse.Effect>
+                                            <BlurEffect Radius="3.2" RenderingBias="Quality" />
+                                        </Ellipse.Effect>
+                                    </Ellipse>
+                                    <Grid x:Name="AgentWellDetail">
+                                        <Ellipse x:Name="AgentWell"
+                                                 Width="76"
+                                                 Height="76"
+                                                 Fill="{TemplateBinding Background}" />
+                                        <Ellipse x:Name="MintWellReturn"
+                                                 Width="76"
+                                                 Height="76"
+                                                 Opacity="0"
+                                                 IsHitTestVisible="False">
+                                            <Ellipse.Fill>
+                                                <RadialGradientBrush Center="0.46,0.4"
+                                                                     GradientOrigin="0.46,0.4"
+                                                                     RadiusX="0.54"
+                                                                     RadiusY="0.57">
+                                                    <GradientStop Color="#00FAFFFC" Offset="0" />
+                                                    <GradientStop Color="#08C8FBDD" Offset="0.4" />
+                                                    <GradientStop Color="#2698EDC1" Offset="0.74" />
+                                                    <GradientStop Color="#4481E9B2" Offset="1" />
+                                                </RadialGradientBrush>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                        <Ellipse x:Name="StatusWellWash"
+                                                 Width="76"
+                                                 Height="76"
+                                                 Fill="{TemplateBinding BorderBrush}"
+                                                 Opacity="0.42" />
+                                        <Ellipse x:Name="AgentWellHighlight"
+                                                 Width="76"
+                                                 Height="76"
+                                                 Fill="Transparent"
+                                                 Stroke="{StaticResource PaperRecessRingBrush}"
+                                                 StrokeThickness="1.6" />
+                                        <Ellipse x:Name="CurrentSessionRing"
+                                                 Width="82"
+                                                 Height="82"
+                                                 Stroke="#AA8F86B8"
+                                                 StrokeThickness="1.25"
+                                                 Opacity="0"
+                                                 IsHitTestVisible="False" />
+                                        <Grid x:Name="AgentGlyph"
+                                              Width="18"
+                                              Height="18"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Opacity="0.6">
+                                            <Grid.Effect>
+                                                <DropShadowEffect BlurRadius="4"
+                                                                  ShadowDepth="0"
+                                                                  Opacity="0.38"
+                                                                  Color="#685FAE" />
+                                            </Grid.Effect>
+                                            <Ellipse Width="18"
+                                                     Height="18"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center"
+                                                     Fill="#FF685FAE" />
+                                        </Grid>
+                                        <Ellipse x:Name="WhiteAgentGlyph"
+                                                 Width="18"
+                                                 Height="18"
+                                                 Fill="White"
+                                                 Stroke="#28939A96"
+                                                 StrokeThickness="0.8"
+                                                 Opacity="0"
+                                                 IsHitTestVisible="False">
+                                            <Ellipse.Effect>
+                                                <DropShadowEffect Color="White"
+                                                                  BlurRadius="4"
+                                                                  ShadowDepth="0"
+                                                                  Opacity="0.38" />
+                                            </Ellipse.Effect>
+                                        </Ellipse>
+                                        <Ellipse x:Name="MintAgentGlyph"
+                                                 Width="18"
+                                                 Height="18"
+                                                 Fill="#B9EFD2"
+                                                 Stroke="#28939A96"
+                                                 StrokeThickness="0.8"
+                                                 Opacity="0"
+                                                 IsHitTestVisible="False">
+                                            <Ellipse.Effect>
+                                                <DropShadowEffect Color="#B9EFD2"
+                                                                  BlurRadius="4"
+                                                                  ShadowDepth="0"
+                                                                  Opacity="0.38" />
+                                            </Ellipse.Effect>
+                                        </Ellipse>
+                                    </Grid>
+                                </Grid>
+                                <Border.Effect>
+                                    <StaticResource ResourceKey="AgentKeyShadow" />
+                                </Border.Effect>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Cap" Property="BorderBrush" Value="#F7FFFFFF" />
+                                <Setter TargetName="AgentWellHighlight" Property="Opacity" Value="0.86" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Cap"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                             To="1.5"
+                                                             Duration="0:0:0.08" />
+                                            <DoubleAnimation Storyboard.TargetName="FarShadow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0.45"
+                                                             Duration="0:0:0.08" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Cap"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                             To="0"
+                                                             Duration="0:0:0.11">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut" />
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetName="FarShadow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1"
+                                                             Duration="0:0:0.11" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DialButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse Margin="3,9,3,0" Fill="#8B8E9DA3" />
+                            <Ellipse Margin="5,4,5,4"
+                                     Stroke="#8AFFFFFF"
+                                     StrokeThickness="1"
+                                     Fill="#55DDE9EC" />
+                            <Ellipse x:Name="DialFace" Margin="3,0,3,7">
+                                <Ellipse.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#FFFFFFFF" Offset="0" />
+                                        <GradientStop Color="#FFF4F9F9" Offset="0.38" />
+                                        <GradientStop Color="#FFE3EDF0" Offset="0.7" />
+                                        <GradientStop Color="#FFB4C2C8" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Ellipse.Fill>
+                                <Ellipse.Effect>
+                                    <DropShadowEffect BlurRadius="8" Direction="285" ShadowDepth="3" Opacity="0.3" />
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <Border x:Name="DialIndicator"
+                                    Width="6"
+                                    Height="30"
+                                    Margin="0,9,0,0"
+                                    Background="#FF6A7379"
+                                    CornerRadius="3"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Top"
+                                    RenderTransformOrigin="0.5,1">
+                                <Border.RenderTransform>
+                                    <RotateTransform Angle="42" />
+                                </Border.RenderTransform>
+                            </Border>
+                            <ContentPresenter />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="DialFace" Property="Stroke" Value="#99BDEFF2" />
+                                <Setter TargetName="DialFace" Property="StrokeThickness" Value="2" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="DialFace" Property="Margin" Value="3,4,3,3" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DarkKnobButton" TargetType="Button">
+            <Setter Property="Background" Value="#FF2D2925" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Ellipse Width="64"
+                                     Height="64"
+                                     Margin="0,4,1,0"
+                                     HorizontalAlignment="Right"
+                                     VerticalAlignment="Center"
+                                     Fill="#4AFFFFFF"
+                                     Stroke="#72C9D8DC"
+                                     StrokeThickness="1" />
+                            <Ellipse x:Name="KnobFace"
+                                     Width="58"
+                                     Height="58"
+                                     Margin="0,0,5,0"
+                                     HorizontalAlignment="Right"
+                                     VerticalAlignment="Center"
+                                     Fill="{TemplateBinding Background}">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect BlurRadius="4"
+                                                      Direction="270"
+                                                      ShadowDepth="1"
+                                                      Opacity="0.24"
+                                                      Color="#4F483F" />
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <Grid x:Name="KnobContent"
+                                  Width="58"
+                                  Height="58"
+                                  Margin="0,0,5,0"
+                                  HorizontalAlignment="Right"
+                                  VerticalAlignment="Center">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                            </Grid>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="KnobFace" Property="Opacity" Value="0.9" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="KnobFace" Property="Margin" Value="0,2,5,-2" />
+                                <Setter TargetName="KnobContent" Property="Margin" Value="0,2,5,-2" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="JoystickDirectionButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Grid x:Name="DirectionGlyph"
+                                  Width="14"
+                                  Height="10"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  IsHitTestVisible="False"
+                                  Opacity="0.88">
+                                <Path Data="{StaticResource JoystickChevronGeometry}"
+                                      Stretch="Uniform"
+                                      Stroke="#D8FFFFFF"
+                                      StrokeThickness="1.8"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round">
+                                    <Path.RenderTransform>
+                                        <TranslateTransform Y="1" />
+                                    </Path.RenderTransform>
+                                </Path>
+                                <Path Data="{StaticResource JoystickChevronGeometry}"
+                                      Stretch="Uniform"
+                                      Stroke="#B347403B"
+                                      StrokeThickness="1.65"
+                                      StrokeStartLineCap="Round"
+                                      StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round" />
+                            </Grid>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="DirectionGlyph"
+                                        Property="Opacity"
+                                        Value="0.94" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="DirectionGlyph"
+                                        Property="Margin"
+                                        Value="0,1,0,-1" />
+                                <Setter TargetName="DirectionGlyph"
+                                        Property="Opacity"
+                                        Value="1" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+</ResourceDictionary>
