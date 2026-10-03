@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "codex-micro-keypad",
+  "version": "0.3.14-local.1",
+  "description": "Codex Micro Monitor: a driverless Windows keypad and chat monitor. Some composer controls are still unavailable.",
+  "author": {
+    "name": "gantrol"
+  },
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Codex Micro Monitor",
+        "shortDescription": "原生控制 · 独立小键盘",
+        "developerName": "gantrol",
+        "category": "Productivity",
+        "capabilities": [
+          "Interactive"
+        ],
+        "defaultPrompt": "打开 Codex Micro 小键盘，并列出可用操作",
+        "brandColor": "#9BBFB3"
+      }
+    }
+  }
+}
