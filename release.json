@@ -1,0 +1,13 @@
+{
+  "product": "Codex Micro Monitor",
+  "version": "0.3.15",
+  "assemblyVersion": "0.3.15.0",
+  "architecture": "x64",
+  "runtime": "Microsoft.WindowsDesktop.App 10.0.x x64",
+  "runtimeIncluded": false,
+  "minimumWindowsVersion": "10.0.19041.0",
+  "asset": "codex-micro-monitor-0.3.15-win-x64-compact.zip",
+  "size": 7294495,
+  "sha256": "08c315d805d52dccf7a7b2d6129401b80bf9135d47e13934c87b731622785654",
+  "license": "PolyForm-Noncommercial-1.0.0"
+}
