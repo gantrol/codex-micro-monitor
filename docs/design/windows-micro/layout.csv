@@ -1,0 +1,79 @@
+id,x,y,width,height,center_x,center_y,radius,source,line,note
+DesignSurface,0,0,590.0,610.0,295.0,305.0,,src/CodexMicro.Windows/MainWindow.xaml,74,
+DeviceFrame,23.0,23.0,544.0,564.0,295.0,305.0,66.0,src/CodexMicro.Windows/MainWindow.xaml,81,
+CrystalLightClip,25.0,25.0,540.0,560.0,295.0,305.0,,src/CodexMicro.Windows/MainWindow.xaml,134,DeviceFrame BorderThickness is part of layout.
+CrystalPrismRim,29.0,29.0,532.0,551.0,295.0,304.5,61.0,src/CodexMicro.Windows/MainWindow.xaml,136,
+CrystalDepthPlate,35.0,35.0,520.0,540.0,295.0,305.0,56.0,src/CodexMicro.Windows/MainWindow.xaml,152,
+PearlLightGuide,43.0,43.0,504.0,524.0,295.0,305.0,50.0,src/CodexMicro.Windows/MainWindow.xaml,166,
+ControlGrid,83.0,93.0,424.0,424.0,295.0,305.0,,src/CodexMicro.Windows/MainWindow.xaml,296,
+DialButton,92.0,102.0,88.0,88.0,136.0,146.0,,src/CodexMicro.Windows/MainWindow.xaml,331,
+AgentKey0,194.0,98.0,96.0,96.0,242.0,146.0,14,src/CodexMicro.Windows/MainWindow.xaml,404,
+AgentKey0.Cap,194.0,98.0,96.0,96.0,242.0,146.0,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,199,Explicit 96×96 Cap; differs from the command-key template.
+AgentKey0.Well,204.0,108.0,76,76,242.0,146.0,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,356,
+AgentKey1,300.0,98.0,96.0,96.0,348.0,146.0,14,src/CodexMicro.Windows/MainWindow.xaml,438,
+AgentKey1.Cap,300.0,98.0,96.0,96.0,348.0,146.0,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,199,Explicit 96×96 Cap; differs from the command-key template.
+AgentKey1.Well,310.0,108.0,76,76,348.0,146.0,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,356,
+JoystickSurface,406.0,98.0,96.0,96.0,454.0,146.0,,src/CodexMicro.Windows/MainWindow.xaml,440,
+AgentKey2,88.0,204.0,96.0,96.0,136.0,252.0,14,src/CodexMicro.Windows/MainWindow.xaml,560,
+AgentKey2.Cap,88.0,204.0,96.0,96.0,136.0,252.0,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,199,Explicit 96×96 Cap; differs from the command-key template.
+AgentKey2.Well,98.0,214.0,76,76,136.0,252.0,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,356,
+AgentKey3,194.0,204.0,96.0,96.0,242.0,252.0,14,src/CodexMicro.Windows/MainWindow.xaml,561,
+AgentKey3.Cap,194.0,204.0,96.0,96.0,242.0,252.0,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,199,Explicit 96×96 Cap; differs from the command-key template.
+AgentKey3.Well,204.0,214.0,76,76,242.0,252.0,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,356,
+AgentKey4,300.0,204.0,96.0,96.0,348.0,252.0,14,src/CodexMicro.Windows/MainWindow.xaml,562,
+AgentKey4.Cap,300.0,204.0,96.0,96.0,348.0,252.0,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,199,Explicit 96×96 Cap; differs from the command-key template.
+AgentKey4.Well,310.0,214.0,76,76,348.0,252.0,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,356,
+AgentKey5,406.0,204.0,96.0,96.0,454.0,252.0,14,src/CodexMicro.Windows/MainWindow.xaml,563,
+AgentKey5.Cap,406.0,204.0,96.0,96.0,454.0,252.0,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,199,Explicit 96×96 Cap; differs from the command-key template.
+AgentKey5.Well,416.0,214.0,76,76,454.0,252.0,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,356,
+ActionKey06,88.0,310.0,96.0,96.0,136.0,358.0,14,src/CodexMicro.Windows/MainWindow.xaml,565,
+ActionKey06.Cap,88.5,310.5,95.0,93.5,136.0,357.25,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,71,"CommandKey: Grid margin 0.5, Cap bottom margin 1.5."
+ActionKey06.Well,98.0,319.25,76,76,136.0,357.25,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,91,
+ActionKey07,194.0,310.0,96.0,96.0,242.0,358.0,14,src/CodexMicro.Windows/MainWindow.xaml,568,
+ActionKey07.Cap,194.5,310.5,95.0,93.5,242.0,357.25,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,71,"CommandKey: Grid margin 0.5, Cap bottom margin 1.5."
+ActionKey07.Well,204.0,319.25,76,76,242.0,357.25,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,91,
+ActionKey08,300.0,310.0,96.0,96.0,348.0,358.0,14,src/CodexMicro.Windows/MainWindow.xaml,571,
+ActionKey08.Cap,300.5,310.5,95.0,93.5,348.0,357.25,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,71,"CommandKey: Grid margin 0.5, Cap bottom margin 1.5."
+ActionKey08.Well,310.0,319.25,76,76,348.0,357.25,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,91,
+ActionKey09,406.0,310.0,96.0,96.0,454.0,358.0,14,src/CodexMicro.Windows/MainWindow.xaml,574,
+ActionKey09.Cap,406.5,310.5,95.0,93.5,454.0,357.25,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,71,"CommandKey: Grid margin 0.5, Cap bottom margin 1.5."
+ActionKey09.Well,416.0,319.25,76,76,454.0,357.25,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,91,
+ModelKnob,88.0,416.0,96.0,96.0,136.0,464.0,,src/CodexMicro.Windows/MainWindow.xaml,578,
+ActionKey10,194.0,416.0,202.0,96.0,295.0,464.0,14,src/CodexMicro.Windows/MainWindow.xaml,674,
+ActionKey10.Cap,194.5,416.5,201.0,93.5,295.0,463.25,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,71,"CommandKey: Grid margin 0.5, Cap bottom margin 1.5."
+ActionKey10.Well,215.0,425.25,160,76,295.0,463.25,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,91,
+ActionKey12,406.0,416.0,96.0,96.0,454.0,464.0,14,src/CodexMicro.Windows/MainWindow.xaml,737,
+ActionKey12.Cap,406.5,416.5,95.0,93.5,454.0,463.25,14,src/CodexMicro.Windows/MicroSurfaceResources.xaml,71,"CommandKey: Grid margin 0.5, Cap bottom margin 1.5."
+ActionKey12.Well,416.0,425.25,76,76,454.0,463.25,38,src/CodexMicro.Windows/MicroSurfaceResources.xaml,91,
+DialSide,95.0,111.0,82.0,79.0,136.0,150.5,,src/CodexMicro.Windows/MicroSurfaceResources.xaml,495,
+DialReturn,97.0,106.0,78.0,80.0,136.0,146.0,,src/CodexMicro.Windows/MicroSurfaceResources.xaml,495,
+DialFace,95.0,102.0,82.0,81.0,136.0,142.5,,src/CodexMicro.Windows/MicroSurfaceResources.xaml,495,
+DialIndicator.unrotated,133.0,111.0,6,30,136.0,126.0,3,src/CodexMicro.Windows/MicroSurfaceResources.xaml,522,"Rotate 42° around its bottom center (136,141), not around its center."
+JoystickCap,420.5,112.5,67,67,454.0,146.0,33.5,src/CodexMicro.Windows/MainWindow.xaml,454,
+JoystickUp,442.0,92.0,24,24,454.0,104.0,,src/CodexMicro.Windows/MainWindow.xaml,503,"24×24 hit area; glyph container 14×10, base path M1,7 L6,2 L11,7."
+JoystickLeft,400.0,134.0,24,24,412.0,146.0,,src/CodexMicro.Windows/MainWindow.xaml,513,"24×24 hit area; glyph container 14×10, base path M1,7 L6,2 L11,7."
+JoystickRight,484.0,134.0,24,24,496.0,146.0,,src/CodexMicro.Windows/MainWindow.xaml,528,"24×24 hit area; glyph container 14×10, base path M1,7 L6,2 L11,7."
+JoystickDown,442.0,176.0,24,24,454.0,188.0,,src/CodexMicro.Windows/MainWindow.xaml,543,"24×24 hit area; glyph container 14×10, base path M1,7 L6,2 L11,7."
+QuotaKnob.Face,121.0,435.0,58,58,150.0,464.0,29,src/CodexMicro.Windows/MicroSurfaceResources.xaml,568,
+QuotaKnob.Seat,119.0,434.0,64,64,151.0,466.0,32,src/CodexMicro.Windows/MicroSurfaceResources.xaml,560,
+RuntimeLed,98.0,449.5,7,7,101.5,453.0,3.5,src/CodexMicro.Windows/MainWindow.xaml,589,
+DriverLed,98.0,460.5,7,7,101.5,464.0,3.5,src/CodexMicro.Windows/MainWindow.xaml,590,
+ActivityLed,98.0,471.5,7,7,101.5,475.0,3.5,src/CodexMicro.Windows/MainWindow.xaml,591,
+ControlPageButton,259.0,53.0,36.0,28.0,277.0,67.0,,src/CodexMicro.Windows/MainWindow.xaml,286,
+ControlPageButton.Dot,267.0,63.5,20,7,277.0,67.0,4,src/CodexMicro.Windows/MainWindow.xaml,40,
+MonitorPageButton,295.0,53.0,36.0,28.0,313.0,67.0,,src/CodexMicro.Windows/MainWindow.xaml,289,
+MonitorPageButton.Dot,309.5,63.5,7,7,313.0,67.0,4,src/CodexMicro.Windows/MainWindow.xaml,40,
+MonitorTask00,88.0,98.0,96,96,136.0,146.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 0; quota at 12, Codex at 15."
+MonitorTask01,194.0,98.0,96,96,242.0,146.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 1; quota at 12, Codex at 15."
+MonitorTask02,300.0,98.0,96,96,348.0,146.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 2; quota at 12, Codex at 15."
+MonitorTask03,406.0,98.0,96,96,454.0,146.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 3; quota at 12, Codex at 15."
+MonitorTask04,88.0,204.0,96,96,136.0,252.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 4; quota at 12, Codex at 15."
+MonitorTask05,194.0,204.0,96,96,242.0,252.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 5; quota at 12, Codex at 15."
+MonitorTask06,300.0,204.0,96,96,348.0,252.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 6; quota at 12, Codex at 15."
+MonitorTask07,406.0,204.0,96,96,454.0,252.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 7; quota at 12, Codex at 15."
+MonitorTask08,88.0,310.0,96,96,136.0,358.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 8; quota at 12, Codex at 15."
+MonitorTask09,194.0,310.0,96,96,242.0,358.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 9; quota at 12, Codex at 15."
+MonitorTask10,300.0,310.0,96,96,348.0,358.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 10; quota at 12, Codex at 15."
+MonitorTask11,406.0,310.0,96,96,454.0,358.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 11; quota at 12, Codex at 15."
+MonitorTask12,194.0,416.0,96,96,242.0,464.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 13; quota at 12, Codex at 15."
+MonitorTask13,300.0,416.0,96,96,348.0,464.0,14,src/CodexMicro.Windows/MainWindow.Monitor.cs,60,"Monitor page; cell 14; quota at 12, Codex at 15."

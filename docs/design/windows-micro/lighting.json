@@ -1,0 +1,1009 @@
+{
+  "basis": {
+    "repositoryCommit": "58b024408ec05189769a5b28959acd311bc9543f",
+    "scope": "Current repository Windows default Codex control-page design. Excludes unpublished updates, saved user mappings and live Windows runtime measurements.",
+    "units": "design DIP; top-left origin; rectangles are x,y,width,height",
+    "certainty": "XML numbers are exact source values. Layout is derived before WPF rounding. Raster samples are evidence only.",
+    "sources": [
+      {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "sha256": "f97514b37c8b8171b42a105344e957d4b7ada498ae40a9d0f661a942508f4b87"
+      },
+      {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "sha256": "b33e64adeb8a84e3e15a802d6c77a4728a6b1e2a548c6024572335f68e0c4635"
+      },
+      {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml.cs",
+        "sha256": "96a2ea6b352ee5a04284a431dcc252dd9193403aa70f00e53399dffbc16b329b"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Services/MicroWindowLayout.cs",
+        "sha256": "2c4c2cf58628fad1c2cdada08c7fdd16ffdc72e0f9a10eaeb239edf5b8158e2d"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Services/AgentLightingAppearance.cs",
+        "sha256": "4a5678cd0647c20a1288e57baf1f9c22c8d6837e81f4bbff9dd98b0ea77bc00a"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Controls/KeycapIcon.cs",
+        "sha256": "a800a57b0c4fecb2224f38f4ddd5efbd672dada310b825295323f310252b0e20"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.cs",
+        "sha256": "ec66a35a9d64a96479b72ab0967d06eda8618af79cb8ceea5eeb00fbfb5eb48a"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.g.cs",
+        "sha256": "82a76681b285333ad1fe76bcae4f8badb51e4fd4b0a8bf184ab0d09d89aaacab"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Controls/QuotaKnob.cs",
+        "sha256": "231e2fd247331d4866ea7e56644b5a989205613aba20363ffb11eeb5d9c20a37"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Controls/SevenSegmentReadout.cs",
+        "sha256": "1b7b45289e54b6136f97aa7571caee337272132a7cb543d6882c21cef64bacbd"
+      },
+      {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "sha256": "dd4f00eb80c315dffc73bb92a5d8072f734e0b598518c4a72b2975947a7b7add"
+      }
+    ]
+  },
+  "source": {
+    "path": "src/CodexMicro.Windows/Services/AgentLightingAppearance.cs",
+    "line": 43
+  },
+  "columns": [
+    "display",
+    "wideHalo",
+    "nearHalo",
+    "capWash",
+    "lightField",
+    "wellWash"
+  ],
+  "softwareBackgroundActive": [
+    0.94,
+    0.42,
+    0.22,
+    0.12,
+    0.43,
+    0.4
+  ],
+  "softwareSelectedActive": [
+    1,
+    0.82,
+    0.48,
+    0.28,
+    0.52,
+    0.48
+  ],
+  "softwareSelectedIdleAfterForDisplay": [
+    1,
+    0.96,
+    0.68,
+    0.18,
+    0.52,
+    0.38
+  ],
+  "idleUnselected": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "monitorWholeKeyOpacity": {
+    "empty": 0.42,
+    "stale": 0.58,
+    "fresh": 1
+  },
+  "monitorOpacitySource": {
+    "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+    "line": 441
+  },
+  "dot": {
+    "diameter": 18,
+    "purple": "#685FAE",
+    "purpleOpacity": 0.6,
+    "mintSelectedIdle": "#B9EFD2",
+    "mintStroke": "#28939A96",
+    "mintStrokeThickness": 0.8,
+    "glowBlurRadius": 4,
+    "glowDepth": 0,
+    "glowOpacity": 0.38
+  },
+  "colors": {
+    "running": "#304FFE",
+    "waiting": "#FF6D00",
+    "question": "#FFD54F",
+    "unread": "#00FF4C",
+    "error": "#FF0033"
+  },
+  "composition": "All shared halos are below every physical cap. Colored carriers multiply DisplayOpacity; neutral shared halos use a white brush without that multiplier. Mint layers use their own ARGB/gradient alpha.",
+  "details": {
+    "carriers": [
+      {
+        "id": "AgentWideHalo",
+        "label": "共享宽光晕",
+        "rectRelativeToCap": [
+          -5.0,
+          -5.0,
+          106,
+          106
+        ],
+        "behavior": "动态纯色；Z=-10；中性选中用纯白画刷",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 167
+        },
+        "node": {
+          "type": "Style",
+          "attributes": {
+            "Key": "AgentWideHalo",
+            "TargetType": "Border"
+          },
+          "children": [
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "Width",
+                "Value": "106"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "Height",
+                "Value": "106"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "HorizontalAlignment",
+                "Value": "Center"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "VerticalAlignment",
+                "Value": "Center"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "CornerRadius",
+                "Value": "21"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "IsHitTestVisible",
+                "Value": "False"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "Opacity",
+                "Value": "0"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "Effect"
+              },
+              "children": [
+                {
+                  "type": "Setter.Value",
+                  "attributes": {},
+                  "children": [
+                    {
+                      "type": "BlurEffect",
+                      "attributes": {
+                        "Radius": "28",
+                        "RenderingBias": "Quality"
+                      },
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "AgentNearHalo",
+        "label": "共享近光晕",
+        "rectRelativeToCap": [
+          -2.0,
+          -2.0,
+          100,
+          100
+        ],
+        "behavior": "动态纯色；Z=-9；位于所有实体键帽下方",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 183
+        },
+        "node": {
+          "type": "Style",
+          "attributes": {
+            "Key": "AgentNearHalo",
+            "TargetType": "Border"
+          },
+          "children": [
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "Width",
+                "Value": "100"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "Height",
+                "Value": "100"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "HorizontalAlignment",
+                "Value": "Center"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "VerticalAlignment",
+                "Value": "Center"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "CornerRadius",
+                "Value": "18"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "IsHitTestVisible",
+                "Value": "False"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "Opacity",
+                "Value": "0"
+              },
+              "children": []
+            },
+            {
+              "type": "Setter",
+              "attributes": {
+                "Property": "Effect"
+              },
+              "children": [
+                {
+                  "type": "Setter.Value",
+                  "attributes": {},
+                  "children": [
+                    {
+                      "type": "BlurEffect",
+                      "attributes": {
+                        "Radius": "16",
+                        "RenderingBias": "Quality"
+                      },
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "MintSeamLight",
+        "label": "薄荷接缝",
+        "rectRelativeToCap": [
+          -1.0,
+          -1.0,
+          98,
+          98
+        ],
+        "behavior": "仅薄荷选中态；位于 Cap 后面，独立于 Cap 的按压位移",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 259
+        },
+        "node": {
+          "type": "Border",
+          "attributes": {
+            "Name": "MintSeamLight",
+            "Width": "98",
+            "Height": "98",
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "CornerRadius": "15",
+            "BorderBrush": "#756EF0B0",
+            "BorderThickness": "1.6",
+            "Opacity": "0",
+            "IsHitTestVisible": "False"
+          },
+          "children": [
+            {
+              "type": "Border.Effect",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "BlurEffect",
+                  "attributes": {
+                    "Radius": "5",
+                    "RenderingBias": "Quality"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "StatusCapWash",
+        "label": "键帽染光",
+        "rectRelativeToCap": [
+          5.0,
+          5.0,
+          86.0,
+          86.0
+        ],
+        "behavior": "动态纯色，使用 CapWashOpacity",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 291
+        },
+        "node": {
+          "type": "Border",
+          "attributes": {
+            "Name": "StatusCapWash",
+            "Margin": "4",
+            "Background": "{TemplateBinding BorderBrush}",
+            "CornerRadius": "10",
+            "Opacity": "0.07"
+          },
+          "children": [
+            {
+              "type": "Border.Effect",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "BlurEffect",
+                  "attributes": {
+                    "Radius": "6.5"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "MintCapReturn",
+        "label": "键帽回光",
+        "rectRelativeToCap": [
+          3.0,
+          3.0,
+          90.0,
+          90.0
+        ],
+        "behavior": "仅薄荷选中态；左上透明，右下渐强",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 300
+        },
+        "node": {
+          "type": "Border",
+          "attributes": {
+            "Name": "MintCapReturn",
+            "Margin": "2",
+            "CornerRadius": "11",
+            "BorderThickness": "1.5",
+            "Opacity": "0",
+            "IsHitTestVisible": "False"
+          },
+          "children": [
+            {
+              "type": "Border.BorderBrush",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "LinearGradientBrush",
+                  "attributes": {
+                    "StartPoint": "0,0",
+                    "EndPoint": "1,1"
+                  },
+                  "children": [
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#008CECB4",
+                        "Offset": "0"
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#128CECB4",
+                        "Offset": "0.42"
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#668CECB4",
+                        "Offset": "1"
+                      },
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Border.Effect",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "BlurEffect",
+                  "attributes": {
+                    "Radius": "1.8",
+                    "RenderingBias": "Quality"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "StatusLightField",
+        "label": "井外圆形光场",
+        "rectRelativeToCap": [
+          7.0,
+          7.0,
+          82,
+          82
+        ],
+        "behavior": "动态纯色圆面；Blur5.5；在实体圆井后面",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 335
+        },
+        "node": {
+          "type": "Ellipse",
+          "attributes": {
+            "Name": "StatusLightField",
+            "Width": "82",
+            "Height": "82",
+            "Fill": "{TemplateBinding BorderBrush}",
+            "Opacity": "0.36"
+          },
+          "children": [
+            {
+              "type": "Ellipse.Effect",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "BlurEffect",
+                  "attributes": {
+                    "Radius": "5.5"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "MintWellLight",
+        "label": "井边薄荷光",
+        "rectRelativeToCap": [
+          7.5,
+          7.5,
+          81,
+          81
+        ],
+        "behavior": "仅薄荷选中态；3 DIP 描边，Blur3.2",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 344
+        },
+        "node": {
+          "type": "Ellipse",
+          "attributes": {
+            "Name": "MintWellLight",
+            "Width": "81",
+            "Height": "81",
+            "Stroke": "#6874E7AD",
+            "StrokeThickness": "3",
+            "Opacity": "0",
+            "IsHitTestVisible": "False"
+          },
+          "children": [
+            {
+              "type": "Ellipse.Effect",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "BlurEffect",
+                  "attributes": {
+                    "Radius": "3.2",
+                    "RenderingBias": "Quality"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "MintWellReturn",
+        "label": "井内回光",
+        "rectRelativeToCap": [
+          10.0,
+          10.0,
+          76,
+          76
+        ],
+        "behavior": "仅薄荷选中态；偏心径向渐变，无额外 Blur",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 360
+        },
+        "node": {
+          "type": "Ellipse",
+          "attributes": {
+            "Name": "MintWellReturn",
+            "Width": "76",
+            "Height": "76",
+            "Opacity": "0",
+            "IsHitTestVisible": "False"
+          },
+          "children": [
+            {
+              "type": "Ellipse.Fill",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "RadialGradientBrush",
+                  "attributes": {
+                    "Center": "0.46,0.4",
+                    "GradientOrigin": "0.46,0.4",
+                    "RadiusX": "0.54",
+                    "RadiusY": "0.57"
+                  },
+                  "children": [
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#00FAFFFC",
+                        "Offset": "0"
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#08C8FBDD",
+                        "Offset": "0.4"
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#2698EDC1",
+                        "Offset": "0.74"
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#4481E9B2",
+                        "Offset": "1"
+                      },
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "StatusWellWash",
+        "label": "井内染光",
+        "rectRelativeToCap": [
+          10.0,
+          10.0,
+          76,
+          76
+        ],
+        "behavior": "动态纯色圆面；位于实体圆井上面，无额外 Blur",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 377
+        },
+        "node": {
+          "type": "Ellipse",
+          "attributes": {
+            "Name": "StatusWellWash",
+            "Width": "76",
+            "Height": "76",
+            "Fill": "{TemplateBinding BorderBrush}",
+            "Opacity": "0.42"
+          },
+          "children": []
+        }
+      },
+      {
+        "id": "AgentWellHighlight",
+        "label": "凹槽明暗沿",
+        "rectRelativeToCap": [
+          10.0,
+          10.0,
+          76,
+          76
+        ],
+        "behavior": "1.6 DIP 对角渐变描边；白光时减弱暗端",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 382
+        },
+        "node": {
+          "type": "Ellipse",
+          "attributes": {
+            "Name": "AgentWellHighlight",
+            "Width": "76",
+            "Height": "76",
+            "Fill": "Transparent",
+            "Stroke": "{StaticResource PaperRecessRingBrush}",
+            "StrokeThickness": "1.6"
+          },
+          "children": []
+        }
+      },
+      {
+        "id": "AgentGlyph",
+        "label": "紫色中心点",
+        "rectRelativeToCap": [
+          39.0,
+          39.0,
+          18,
+          18
+        ],
+        "behavior": "普通态 Opacity=.6；白光或薄荷态隐藏",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 395
+        },
+        "node": {
+          "type": "Grid",
+          "attributes": {
+            "Name": "AgentGlyph",
+            "Width": "18",
+            "Height": "18",
+            "HorizontalAlignment": "Center",
+            "VerticalAlignment": "Center",
+            "Opacity": "0.6"
+          },
+          "children": [
+            {
+              "type": "Grid.Effect",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "DropShadowEffect",
+                  "attributes": {
+                    "BlurRadius": "4",
+                    "ShadowDepth": "0",
+                    "Opacity": "0.38",
+                    "Color": "#685FAE"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "type": "Ellipse",
+              "attributes": {
+                "Width": "18",
+                "Height": "18",
+                "HorizontalAlignment": "Center",
+                "VerticalAlignment": "Center",
+                "Fill": "#FF685FAE"
+              },
+              "children": []
+            }
+          ]
+        }
+      },
+      {
+        "id": "WhiteAgentGlyph",
+        "label": "白色中心点",
+        "rectRelativeToCap": [
+          39.0,
+          39.0,
+          18,
+          18
+        ],
+        "behavior": "白光且非薄荷态显示",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 413
+        },
+        "node": {
+          "type": "Ellipse",
+          "attributes": {
+            "Name": "WhiteAgentGlyph",
+            "Width": "18",
+            "Height": "18",
+            "Fill": "White",
+            "Stroke": "#28939A96",
+            "StrokeThickness": "0.8",
+            "Opacity": "0",
+            "IsHitTestVisible": "False"
+          },
+          "children": [
+            {
+              "type": "Ellipse.Effect",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "DropShadowEffect",
+                  "attributes": {
+                    "Color": "White",
+                    "BlurRadius": "4",
+                    "ShadowDepth": "0",
+                    "Opacity": "0.38"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": "MintAgentGlyph",
+        "label": "薄荷中心点",
+        "rectRelativeToCap": [
+          39.0,
+          39.0,
+          18,
+          18
+        ],
+        "behavior": "薄荷选中态显示",
+        "source": {
+          "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+          "line": 428
+        },
+        "node": {
+          "type": "Ellipse",
+          "attributes": {
+            "Name": "MintAgentGlyph",
+            "Width": "18",
+            "Height": "18",
+            "Fill": "#B9EFD2",
+            "Stroke": "#28939A96",
+            "StrokeThickness": "0.8",
+            "Opacity": "0",
+            "IsHitTestVisible": "False"
+          },
+          "children": [
+            {
+              "type": "Ellipse.Effect",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "DropShadowEffect",
+                  "attributes": {
+                    "Color": "#B9EFD2",
+                    "BlurRadius": "4",
+                    "ShadowDepth": "0",
+                    "Opacity": "0.38"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "runtimeSource": {
+      "path": "src/CodexMicro.Windows/MainWindow.xaml.cs",
+      "line": 3383
+    },
+    "compositionSource": {
+      "path": "src/CodexMicro.Windows/MainWindow.xaml.cs",
+      "line": 3460
+    },
+    "order": [
+      "shared wide halos (Z=-10)",
+      "shared near halos (Z=-9)",
+      "per-key FarShadow",
+      "MintSeamLight",
+      "Cap base and border",
+      "StatusCapWash",
+      "MintCapReturn",
+      "CapInsetShadow",
+      "white inset edge",
+      "StatusLightField",
+      "MintWellLight",
+      "AgentWell opaque base",
+      "MintWellReturn",
+      "StatusWellWash",
+      "AgentWellHighlight",
+      "active center glyph"
+    ],
+    "orderNote": "Cap shadow is an effect on the composed Cap subtree. Template GlowWide/Glow are disabled in MainWindow. CurrentSessionRing is always set to zero.",
+    "alphaRules": {
+      "coloredCarrier": "colorAlpha × DisplayOpacity × carrierOpacity, before blur and overlapping layers",
+      "neutralSharedHalo": "white brush alpha 1 × carrierOpacity; DisplayOpacity is bypassed",
+      "mintCarrier": "its own ARGB/gradient alpha × enabled opacity (0 or 1); independent of DisplayOpacity",
+      "monitor": "whole-key opacity applies to the key subtree, not the sibling shared halos; stale/unavailable appearance is cleared separately",
+      "notPixelBrightness": "These are source alpha coefficients, not final pixel luminance. Blur, occlusion and layer compositing still apply."
+    },
+    "selectionRules": {
+      "neutral": "current && (!active || whiteFallback || color == White)",
+      "mint": "current && (!active || whiteFallback)",
+      "whiteDot": "renderedColor == White && DisplayOpacity > 0 && !mint",
+      "purpleDot": "!whiteLight && !mint",
+      "ring": "CurrentSessionRing remains opacity 0"
+    },
+    "whiteLightShadowChanges": [
+      [
+        "Cap near shadow",
+        "Opacity .20 → .05; Blur3, depth2, color#3A403D unchanged"
+      ],
+      [
+        "FarShadow",
+        "#243A403D → #093A403D; Blur8 unchanged"
+      ],
+      [
+        "CapInsetShadow",
+        "Opacity 1 → .25"
+      ],
+      [
+        "Well rim dark stops",
+        "#28747B77 → #0A747B77 at0; #14747B77 → #05747B77 at.42; white stops unchanged"
+      ]
+    ],
+    "motion": {
+      "status": "The inspected renderer directly assigns light color/opacity; EffectName breath is a protocol label, not a local breathing storyboard. Upstream snapshots may change values over time.",
+      "hover": "Cap border #99FFFFFF → #F7FFFFFF; AgentWellHighlight opacity 1 → .86",
+      "press": "80ms: Cap translates down1.5; FarShadow opacity→.45. Release110ms: Cap returns with CubicEase EaseOut; FarShadow opacity→1. Shared halos and MintSeamLight do not move with Cap."
+    },
+    "lowerRefraction": {
+      "rect": [
+        113,
+        562,
+        364,
+        5
+      ],
+      "node": {
+        "type": "Border",
+        "attributes": {
+          "Name": "CrystalLowerRefraction",
+          "Height": "5",
+          "Margin": "88,0,88,18",
+          "HorizontalAlignment": "Stretch",
+          "VerticalAlignment": "Bottom",
+          "CornerRadius": "3",
+          "Opacity": "0.15",
+          "IsHitTestVisible": "False"
+        },
+        "children": [
+          {
+            "type": "Border.Background",
+            "attributes": {},
+            "children": [
+              {
+                "type": "LinearGradientBrush",
+                "attributes": {
+                  "StartPoint": "0,0",
+                  "EndPoint": "1,0"
+                },
+                "children": [
+                  {
+                    "type": "GradientStop",
+                    "attributes": {
+                      "Color": "#0098E8D5",
+                      "Offset": "0"
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "GradientStop",
+                    "attributes": {
+                      "Color": "#A598E8D5",
+                      "Offset": "0.48"
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "GradientStop",
+                    "attributes": {
+                      "Color": "#0098E8D5",
+                      "Offset": "1"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 198
+      },
+      "peakUnblurredAlpha": 0.09705882352941177
+    },
+    "statusLED": {
+      "diameter": 7,
+      "glowBlurRadius": 8,
+      "glowDepth": 0,
+      "glowOpacity": 0.78,
+      "colors": {
+        "neutralNoGlow": "#B8B98B",
+        "healthy": "#78A6FF",
+        "active": "#304FFE",
+        "waiting": "#FFC85A",
+        "error": "#FF7994"
+      },
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml.cs",
+        "line": 50
+      }
+    },
+    "precision": "Source values and nominal geometry only; WPF blur kernel/antialiasing and physical brightness have not been measured."
+  }
+}

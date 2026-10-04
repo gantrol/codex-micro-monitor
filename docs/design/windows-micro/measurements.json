@@ -1,0 +1,5797 @@
+{
+  "basis": {
+    "repositoryCommit": "58b024408ec05189769a5b28959acd311bc9543f",
+    "scope": "Current repository Windows default Codex control-page design. Excludes unpublished updates, saved user mappings and live Windows runtime measurements.",
+    "units": "design DIP; top-left origin; rectangles are x,y,width,height",
+    "certainty": "XML numbers are exact source values. Layout is derived before WPF rounding. Raster samples are evidence only.",
+    "sources": [
+      {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "sha256": "f97514b37c8b8171b42a105344e957d4b7ada498ae40a9d0f661a942508f4b87"
+      },
+      {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "sha256": "b33e64adeb8a84e3e15a802d6c77a4728a6b1e2a548c6024572335f68e0c4635"
+      },
+      {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml.cs",
+        "sha256": "96a2ea6b352ee5a04284a431dcc252dd9193403aa70f00e53399dffbc16b329b"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Services/MicroWindowLayout.cs",
+        "sha256": "2c4c2cf58628fad1c2cdada08c7fdd16ffdc72e0f9a10eaeb239edf5b8158e2d"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Services/AgentLightingAppearance.cs",
+        "sha256": "4a5678cd0647c20a1288e57baf1f9c22c8d6837e81f4bbff9dd98b0ea77bc00a"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Controls/KeycapIcon.cs",
+        "sha256": "a800a57b0c4fecb2224f38f4ddd5efbd672dada310b825295323f310252b0e20"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.cs",
+        "sha256": "ec66a35a9d64a96479b72ab0967d06eda8618af79cb8ceea5eeb00fbfb5eb48a"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.g.cs",
+        "sha256": "82a76681b285333ad1fe76bcae4f8badb51e4fd4b0a8bf184ab0d09d89aaacab"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Controls/QuotaKnob.cs",
+        "sha256": "231e2fd247331d4866ea7e56644b5a989205613aba20363ffb11eeb5d9c20a37"
+      },
+      {
+        "path": "src/CodexMicro.Windows/Controls/SevenSegmentReadout.cs",
+        "sha256": "1b7b45289e54b6136f97aa7571caee337272132a7cb543d6882c21cef64bacbd"
+      },
+      {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "sha256": "dd4f00eb80c315dffc73bb92a5d8072f734e0b598518c4a72b2975947a7b7add"
+      }
+    ]
+  },
+  "window": {
+    "designSize": [
+      590.0,
+      610.0
+    ],
+    "defaultSize": [
+      442.5,
+      457.5
+    ],
+    "defaultDesignScale": 0.75,
+    "userScaleRange": [
+      0.8,
+      1.4
+    ],
+    "effectiveDesignScaleRange": [
+      0.6,
+      1.05
+    ],
+    "pixelFormula": "designDIP × (windowWidth / 590) × (WindowsDPI / 96), then WPF layout/snapping",
+    "source": {
+      "path": "src/CodexMicro.Windows/Services/MicroWindowLayout.cs",
+      "line": 13
+    }
+  },
+  "layout": [
+    {
+      "id": "DesignSurface",
+      "rect": [
+        0,
+        0,
+        590.0,
+        610.0
+      ],
+      "center": [
+        295.0,
+        305.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 74
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "DeviceFrame",
+      "rect": [
+        23.0,
+        23.0,
+        544.0,
+        564.0
+      ],
+      "center": [
+        295.0,
+        305.0
+      ],
+      "radius": 66.0,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 81
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "CrystalLightClip",
+      "rect": [
+        25.0,
+        25.0,
+        540.0,
+        560.0
+      ],
+      "center": [
+        295.0,
+        305.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 134
+      },
+      "note": "DeviceFrame BorderThickness is part of layout.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "CrystalPrismRim",
+      "rect": [
+        29.0,
+        29.0,
+        532.0,
+        551.0
+      ],
+      "center": [
+        295.0,
+        304.5
+      ],
+      "radius": 61.0,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 136
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "CrystalDepthPlate",
+      "rect": [
+        35.0,
+        35.0,
+        520.0,
+        540.0
+      ],
+      "center": [
+        295.0,
+        305.0
+      ],
+      "radius": 56.0,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 152
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "PearlLightGuide",
+      "rect": [
+        43.0,
+        43.0,
+        504.0,
+        524.0
+      ],
+      "center": [
+        295.0,
+        305.0
+      ],
+      "radius": 50.0,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 166
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ControlGrid",
+      "rect": [
+        83.0,
+        93.0,
+        424.0,
+        424.0
+      ],
+      "center": [
+        295.0,
+        305.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 296
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "DialButton",
+      "rect": [
+        92.0,
+        102.0,
+        88.0,
+        88.0
+      ],
+      "center": [
+        136.0,
+        146.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 331
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey0",
+      "rect": [
+        194.0,
+        98.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        242.0,
+        146.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 404
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey0.Cap",
+      "rect": [
+        194.0,
+        98.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        242.0,
+        146.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 199
+      },
+      "note": "Explicit 96×96 Cap; differs from the command-key template.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey0.Well",
+      "rect": [
+        204.0,
+        108.0,
+        76,
+        76
+      ],
+      "center": [
+        242.0,
+        146.0
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 356
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey1",
+      "rect": [
+        300.0,
+        98.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        348.0,
+        146.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 438
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey1.Cap",
+      "rect": [
+        300.0,
+        98.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        348.0,
+        146.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 199
+      },
+      "note": "Explicit 96×96 Cap; differs from the command-key template.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey1.Well",
+      "rect": [
+        310.0,
+        108.0,
+        76,
+        76
+      ],
+      "center": [
+        348.0,
+        146.0
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 356
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "JoystickSurface",
+      "rect": [
+        406.0,
+        98.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        454.0,
+        146.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 440
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey2",
+      "rect": [
+        88.0,
+        204.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        136.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 560
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey2.Cap",
+      "rect": [
+        88.0,
+        204.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        136.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 199
+      },
+      "note": "Explicit 96×96 Cap; differs from the command-key template.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey2.Well",
+      "rect": [
+        98.0,
+        214.0,
+        76,
+        76
+      ],
+      "center": [
+        136.0,
+        252.0
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 356
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey3",
+      "rect": [
+        194.0,
+        204.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        242.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 561
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey3.Cap",
+      "rect": [
+        194.0,
+        204.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        242.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 199
+      },
+      "note": "Explicit 96×96 Cap; differs from the command-key template.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey3.Well",
+      "rect": [
+        204.0,
+        214.0,
+        76,
+        76
+      ],
+      "center": [
+        242.0,
+        252.0
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 356
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey4",
+      "rect": [
+        300.0,
+        204.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        348.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 562
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey4.Cap",
+      "rect": [
+        300.0,
+        204.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        348.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 199
+      },
+      "note": "Explicit 96×96 Cap; differs from the command-key template.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey4.Well",
+      "rect": [
+        310.0,
+        214.0,
+        76,
+        76
+      ],
+      "center": [
+        348.0,
+        252.0
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 356
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey5",
+      "rect": [
+        406.0,
+        204.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        454.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 563
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey5.Cap",
+      "rect": [
+        406.0,
+        204.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        454.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 199
+      },
+      "note": "Explicit 96×96 Cap; differs from the command-key template.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "AgentKey5.Well",
+      "rect": [
+        416.0,
+        214.0,
+        76,
+        76
+      ],
+      "center": [
+        454.0,
+        252.0
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 356
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey06",
+      "rect": [
+        88.0,
+        310.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        136.0,
+        358.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 565
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey06.Cap",
+      "rect": [
+        88.5,
+        310.5,
+        95.0,
+        93.5
+      ],
+      "center": [
+        136.0,
+        357.25
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 71
+      },
+      "note": "CommandKey: Grid margin 0.5, Cap bottom margin 1.5.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey06.Well",
+      "rect": [
+        98.0,
+        319.25,
+        76,
+        76
+      ],
+      "center": [
+        136.0,
+        357.25
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 91
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey07",
+      "rect": [
+        194.0,
+        310.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        242.0,
+        358.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 568
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey07.Cap",
+      "rect": [
+        194.5,
+        310.5,
+        95.0,
+        93.5
+      ],
+      "center": [
+        242.0,
+        357.25
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 71
+      },
+      "note": "CommandKey: Grid margin 0.5, Cap bottom margin 1.5.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey07.Well",
+      "rect": [
+        204.0,
+        319.25,
+        76,
+        76
+      ],
+      "center": [
+        242.0,
+        357.25
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 91
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey08",
+      "rect": [
+        300.0,
+        310.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        348.0,
+        358.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 571
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey08.Cap",
+      "rect": [
+        300.5,
+        310.5,
+        95.0,
+        93.5
+      ],
+      "center": [
+        348.0,
+        357.25
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 71
+      },
+      "note": "CommandKey: Grid margin 0.5, Cap bottom margin 1.5.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey08.Well",
+      "rect": [
+        310.0,
+        319.25,
+        76,
+        76
+      ],
+      "center": [
+        348.0,
+        357.25
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 91
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey09",
+      "rect": [
+        406.0,
+        310.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        454.0,
+        358.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 574
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey09.Cap",
+      "rect": [
+        406.5,
+        310.5,
+        95.0,
+        93.5
+      ],
+      "center": [
+        454.0,
+        357.25
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 71
+      },
+      "note": "CommandKey: Grid margin 0.5, Cap bottom margin 1.5.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey09.Well",
+      "rect": [
+        416.0,
+        319.25,
+        76,
+        76
+      ],
+      "center": [
+        454.0,
+        357.25
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 91
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ModelKnob",
+      "rect": [
+        88.0,
+        416.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        136.0,
+        464.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 578
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey10",
+      "rect": [
+        194.0,
+        416.0,
+        202.0,
+        96.0
+      ],
+      "center": [
+        295.0,
+        464.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 674
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey10.Cap",
+      "rect": [
+        194.5,
+        416.5,
+        201.0,
+        93.5
+      ],
+      "center": [
+        295.0,
+        463.25
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 71
+      },
+      "note": "CommandKey: Grid margin 0.5, Cap bottom margin 1.5.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey10.Well",
+      "rect": [
+        215.0,
+        425.25,
+        160,
+        76
+      ],
+      "center": [
+        295.0,
+        463.25
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 91
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey12",
+      "rect": [
+        406.0,
+        416.0,
+        96.0,
+        96.0
+      ],
+      "center": [
+        454.0,
+        464.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 737
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey12.Cap",
+      "rect": [
+        406.5,
+        416.5,
+        95.0,
+        93.5
+      ],
+      "center": [
+        454.0,
+        463.25
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 71
+      },
+      "note": "CommandKey: Grid margin 0.5, Cap bottom margin 1.5.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActionKey12.Well",
+      "rect": [
+        416.0,
+        425.25,
+        76,
+        76
+      ],
+      "center": [
+        454.0,
+        463.25
+      ],
+      "radius": 38,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 91
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "DialSide",
+      "rect": [
+        95.0,
+        111.0,
+        82.0,
+        79.0
+      ],
+      "center": [
+        136.0,
+        150.5
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 495
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "DialReturn",
+      "rect": [
+        97.0,
+        106.0,
+        78.0,
+        80.0
+      ],
+      "center": [
+        136.0,
+        146.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 495
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "DialFace",
+      "rect": [
+        95.0,
+        102.0,
+        82.0,
+        81.0
+      ],
+      "center": [
+        136.0,
+        142.5
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 495
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "DialIndicator.unrotated",
+      "rect": [
+        133.0,
+        111.0,
+        6,
+        30
+      ],
+      "center": [
+        136.0,
+        126.0
+      ],
+      "radius": 3,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 522
+      },
+      "note": "Rotate 42° around its bottom center (136,141), not around its center.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "JoystickCap",
+      "rect": [
+        420.5,
+        112.5,
+        67,
+        67
+      ],
+      "center": [
+        454.0,
+        146.0
+      ],
+      "radius": 33.5,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 454
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "JoystickUp",
+      "rect": [
+        442.0,
+        92.0,
+        24,
+        24
+      ],
+      "center": [
+        454.0,
+        104.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 503
+      },
+      "note": "24×24 hit area; glyph container 14×10, base path M1,7 L6,2 L11,7.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "JoystickLeft",
+      "rect": [
+        400.0,
+        134.0,
+        24,
+        24
+      ],
+      "center": [
+        412.0,
+        146.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 513
+      },
+      "note": "24×24 hit area; glyph container 14×10, base path M1,7 L6,2 L11,7.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "JoystickRight",
+      "rect": [
+        484.0,
+        134.0,
+        24,
+        24
+      ],
+      "center": [
+        496.0,
+        146.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 528
+      },
+      "note": "24×24 hit area; glyph container 14×10, base path M1,7 L6,2 L11,7.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "JoystickDown",
+      "rect": [
+        442.0,
+        176.0,
+        24,
+        24
+      ],
+      "center": [
+        454.0,
+        188.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 543
+      },
+      "note": "24×24 hit area; glyph container 14×10, base path M1,7 L6,2 L11,7.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "QuotaKnob.Face",
+      "rect": [
+        121.0,
+        435.0,
+        58,
+        58
+      ],
+      "center": [
+        150.0,
+        464.0
+      ],
+      "radius": 29,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 568
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "QuotaKnob.Seat",
+      "rect": [
+        119.0,
+        434.0,
+        64,
+        64
+      ],
+      "center": [
+        151.0,
+        466.0
+      ],
+      "radius": 32,
+      "source": {
+        "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+        "line": 560
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "RuntimeLed",
+      "rect": [
+        98.0,
+        449.5,
+        7,
+        7
+      ],
+      "center": [
+        101.5,
+        453.0
+      ],
+      "radius": 3.5,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 589
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "DriverLed",
+      "rect": [
+        98.0,
+        460.5,
+        7,
+        7
+      ],
+      "center": [
+        101.5,
+        464.0
+      ],
+      "radius": 3.5,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 590
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ActivityLed",
+      "rect": [
+        98.0,
+        471.5,
+        7,
+        7
+      ],
+      "center": [
+        101.5,
+        475.0
+      ],
+      "radius": 3.5,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 591
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ControlPageButton",
+      "rect": [
+        259.0,
+        53.0,
+        36.0,
+        28.0
+      ],
+      "center": [
+        277.0,
+        67.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 286
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "ControlPageButton.Dot",
+      "rect": [
+        267.0,
+        63.5,
+        20,
+        7
+      ],
+      "center": [
+        277.0,
+        67.0
+      ],
+      "radius": 4,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 40
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorPageButton",
+      "rect": [
+        295.0,
+        53.0,
+        36.0,
+        28.0
+      ],
+      "center": [
+        313.0,
+        67.0
+      ],
+      "radius": null,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 289
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorPageButton.Dot",
+      "rect": [
+        309.5,
+        63.5,
+        7,
+        7
+      ],
+      "center": [
+        313.0,
+        67.0
+      ],
+      "radius": 4,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml",
+        "line": 40
+      },
+      "note": "",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask00",
+      "rect": [
+        88.0,
+        98.0,
+        96,
+        96
+      ],
+      "center": [
+        136.0,
+        146.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 0; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask01",
+      "rect": [
+        194.0,
+        98.0,
+        96,
+        96
+      ],
+      "center": [
+        242.0,
+        146.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 1; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask02",
+      "rect": [
+        300.0,
+        98.0,
+        96,
+        96
+      ],
+      "center": [
+        348.0,
+        146.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 2; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask03",
+      "rect": [
+        406.0,
+        98.0,
+        96,
+        96
+      ],
+      "center": [
+        454.0,
+        146.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 3; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask04",
+      "rect": [
+        88.0,
+        204.0,
+        96,
+        96
+      ],
+      "center": [
+        136.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 4; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask05",
+      "rect": [
+        194.0,
+        204.0,
+        96,
+        96
+      ],
+      "center": [
+        242.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 5; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask06",
+      "rect": [
+        300.0,
+        204.0,
+        96,
+        96
+      ],
+      "center": [
+        348.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 6; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask07",
+      "rect": [
+        406.0,
+        204.0,
+        96,
+        96
+      ],
+      "center": [
+        454.0,
+        252.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 7; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask08",
+      "rect": [
+        88.0,
+        310.0,
+        96,
+        96
+      ],
+      "center": [
+        136.0,
+        358.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 8; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask09",
+      "rect": [
+        194.0,
+        310.0,
+        96,
+        96
+      ],
+      "center": [
+        242.0,
+        358.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 9; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask10",
+      "rect": [
+        300.0,
+        310.0,
+        96,
+        96
+      ],
+      "center": [
+        348.0,
+        358.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 10; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask11",
+      "rect": [
+        406.0,
+        310.0,
+        96,
+        96
+      ],
+      "center": [
+        454.0,
+        358.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 11; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask12",
+      "rect": [
+        194.0,
+        416.0,
+        96,
+        96
+      ],
+      "center": [
+        242.0,
+        464.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 13; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    },
+    {
+      "id": "MonitorTask13",
+      "rect": [
+        300.0,
+        416.0,
+        96,
+        96
+      ],
+      "center": [
+        348.0,
+        464.0
+      ],
+      "radius": 14,
+      "source": {
+        "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+        "line": 60
+      },
+      "note": "Monitor page; cell 14; quota at 12, Codex at 15.",
+      "measurement": "source-derived nominal layout; before WPF device-pixel rounding"
+    }
+  ],
+  "grid": {
+    "columns": [
+      106.0,
+      106.0,
+      106.0,
+      106.0
+    ],
+    "rows": [
+      106.0,
+      106.0,
+      106.0,
+      106.0
+    ],
+    "cellCenters": [
+      [
+        136.0,
+        146.0
+      ],
+      [
+        242.0,
+        146.0
+      ],
+      [
+        348.0,
+        146.0
+      ],
+      [
+        454.0,
+        146.0
+      ],
+      [
+        136.0,
+        252.0
+      ],
+      [
+        242.0,
+        252.0
+      ],
+      [
+        348.0,
+        252.0
+      ],
+      [
+        454.0,
+        252.0
+      ],
+      [
+        136.0,
+        358.0
+      ],
+      [
+        242.0,
+        358.0
+      ],
+      [
+        348.0,
+        358.0
+      ],
+      [
+        454.0,
+        358.0
+      ],
+      [
+        136.0,
+        464.0
+      ],
+      [
+        242.0,
+        464.0
+      ],
+      [
+        348.0,
+        464.0
+      ],
+      [
+        454.0,
+        464.0
+      ]
+    ],
+    "nominalSingleKey": [
+      96,
+      96
+    ],
+    "nominalKeyGap": 10,
+    "doubleKey": [
+      202,
+      96
+    ]
+  },
+  "layers": {
+    "DeviceFrame": {
+      "type": "Border",
+      "attributes": {
+        "Name": "DeviceFrame",
+        "Margin": "23",
+        "CornerRadius": "66",
+        "BorderBrush": "#D9FFFFFF",
+        "BorderThickness": "2",
+        "ContextMenuOpening": "DeviceFrame_ContextMenuOpening",
+        "MouseLeftButtonDown": "DeviceFrame_MouseLeftButtonDown"
+      },
+      "children": [
+        {
+          "type": "Border.Background",
+          "attributes": {},
+          "children": [
+            {
+              "type": "LinearGradientBrush",
+              "attributes": {
+                "StartPoint": "0,0",
+                "EndPoint": "0,1"
+              },
+              "children": [
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#E4FFFFFF",
+                    "Offset": "0"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#D6F7FAF9",
+                    "Offset": "0.48"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#C8E8F0EF",
+                    "Offset": "0.78"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#B8C7D3D3",
+                    "Offset": "1"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Border.Effect",
+          "attributes": {},
+          "children": [
+            {
+              "type": "DropShadowEffect",
+              "attributes": {
+                "Color": "#526E7B80",
+                "BlurRadius": "30",
+                "ShadowDepth": "7",
+                "Direction": "270",
+                "Opacity": "0.29"
+              },
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "LeftSilkScreen": {
+      "type": "TextBlock",
+      "attributes": {
+        "Name": "LeftSilkScreen",
+        "Text": "CODEX  /  MICRO  /  CRYSTAL HID",
+        "FontSize": "8",
+        "FontWeight": "Bold",
+        "Foreground": "#6A5A6368",
+        "HorizontalAlignment": "Left",
+        "VerticalAlignment": "Center",
+        "Margin": "39,0,0,0",
+        "IsHitTestVisible": "False",
+        "Panel.ZIndex": "2"
+      },
+      "children": [
+        {
+          "type": "TextBlock.LayoutTransform",
+          "attributes": {},
+          "children": [
+            {
+              "type": "RotateTransform",
+              "attributes": {
+                "Angle": "-90"
+              },
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "RightSilkScreen": {
+      "type": "TextBlock",
+      "attributes": {
+        "Name": "RightSilkScreen",
+        "Text": "OPTICAL INPUT  /  PROJECT 2077",
+        "FontSize": "8",
+        "FontWeight": "SemiBold",
+        "Foreground": "#6A5A6368",
+        "HorizontalAlignment": "Right",
+        "VerticalAlignment": "Center",
+        "Margin": "0,0,39,0",
+        "IsHitTestVisible": "False",
+        "Panel.ZIndex": "2"
+      },
+      "children": [
+        {
+          "type": "TextBlock.LayoutTransform",
+          "attributes": {},
+          "children": [
+            {
+              "type": "RotateTransform",
+              "attributes": {
+                "Angle": "90"
+              },
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "BrandWordmarkPanel": {
+      "type": "StackPanel",
+      "attributes": {
+        "Name": "BrandWordmarkPanel",
+        "Orientation": "Horizontal",
+        "HorizontalAlignment": "Center",
+        "VerticalAlignment": "Bottom",
+        "Margin": "0,0,0,25",
+        "IsHitTestVisible": "False",
+        "Panel.ZIndex": "2"
+      },
+      "children": [
+        {
+          "type": "KeycapIcon",
+          "attributes": {
+            "Name": "BrandCodexIcon",
+            "Width": "10",
+            "Height": "10",
+            "Margin": "0,0,5,0",
+            "VerticalAlignment": "Center",
+            "PreserveMinimumSize": "False",
+            "KeycapId": "CODEX",
+            "IconBrush": "#80606A70"
+          },
+          "children": []
+        },
+        {
+          "type": "TextBlock",
+          "attributes": {
+            "Name": "BrandWordmarkText",
+            "Text": "OPENAI  CODEX",
+            "FontSize": "8",
+            "FontWeight": "Bold",
+            "Foreground": "#80606A70",
+            "VerticalAlignment": "Center"
+          },
+          "children": []
+        }
+      ]
+    },
+    "DialSelectionHud": {
+      "type": "Border",
+      "attributes": {
+        "Name": "DialSelectionHud",
+        "Grid.Row": "0",
+        "Grid.Column": "0",
+        "Grid.ColumnSpan": "4",
+        "Width": "250",
+        "Height": "30",
+        "Margin": "96,-36,0,0",
+        "HorizontalAlignment": "Left",
+        "VerticalAlignment": "Top",
+        "Background": "#F2FBFCFA",
+        "BorderBrush": "#D9FFFFFF",
+        "BorderThickness": "1",
+        "CornerRadius": "15",
+        "IsHitTestVisible": "False",
+        "Opacity": "0",
+        "Visibility": "Collapsed",
+        "Panel.ZIndex": "20"
+      },
+      "children": [
+        {
+          "type": "Border.Effect",
+          "attributes": {},
+          "children": [
+            {
+              "type": "DropShadowEffect",
+              "attributes": {
+                "Color": "#625B54",
+                "BlurRadius": "9",
+                "ShadowDepth": "2",
+                "Direction": "270",
+                "Opacity": "0.22"
+              },
+              "children": []
+            }
+          ]
+        },
+        {
+          "type": "Grid",
+          "attributes": {
+            "Margin": "10,0,11,0"
+          },
+          "children": [
+            {
+              "type": "Grid.ColumnDefinitions",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "ColumnDefinition",
+                  "attributes": {
+                    "Width": "Auto"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "ColumnDefinition",
+                  "attributes": {
+                    "Width": "*"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "type": "Ellipse",
+              "attributes": {
+                "Width": "7",
+                "Height": "7",
+                "Margin": "0,0,8,0",
+                "VerticalAlignment": "Center",
+                "Fill": "#756BC1"
+              },
+              "children": []
+            },
+            {
+              "type": "TextBlock",
+              "attributes": {
+                "Name": "DialSelectionText",
+                "Grid.Column": "1",
+                "VerticalAlignment": "Center",
+                "FontSize": "11",
+                "FontWeight": "SemiBold",
+                "Foreground": "#403B37",
+                "TextTrimming": "CharacterEllipsis"
+              },
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "CrystalPrismRim": {
+      "type": "Border",
+      "attributes": {
+        "Name": "CrystalPrismRim",
+        "Margin": "4,4,4,5",
+        "CornerRadius": "61",
+        "BorderThickness": "2",
+        "Opacity": "0.94",
+        "IsHitTestVisible": "False"
+      },
+      "children": [
+        {
+          "type": "Border.BorderBrush",
+          "attributes": {},
+          "children": [
+            {
+              "type": "LinearGradientBrush",
+              "attributes": {
+                "StartPoint": "0,0",
+                "EndPoint": "1,1"
+              },
+              "children": [
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#FFFFFFFF",
+                    "Offset": "0"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#B8DFF8F3",
+                    "Offset": "0.16"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#76FFFFFF",
+                    "Offset": "0.46"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#8BC6EEE5",
+                    "Offset": "0.78"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#D6FFFFFF",
+                    "Offset": "1"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "CrystalDepthPlate": {
+      "type": "Border",
+      "attributes": {
+        "Name": "CrystalDepthPlate",
+        "Margin": "10",
+        "CornerRadius": "56",
+        "BorderThickness": "1",
+        "Background": "#14748788",
+        "IsHitTestVisible": "False"
+      },
+      "children": [
+        {
+          "type": "Border.BorderBrush",
+          "attributes": {},
+          "children": [
+            {
+              "type": "LinearGradientBrush",
+              "attributes": {
+                "StartPoint": "0,0",
+                "EndPoint": "0,1"
+              },
+              "children": [
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#78FFFFFF",
+                    "Offset": "0"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#5EACBDBB",
+                    "Offset": "0.58"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#75859498",
+                    "Offset": "1"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PearlLightGuide": {
+      "type": "Border",
+      "attributes": {
+        "Name": "PearlLightGuide",
+        "Margin": "18",
+        "CornerRadius": "50",
+        "BorderBrush": "#A8FFFFFF",
+        "BorderThickness": "1",
+        "IsHitTestVisible": "False"
+      },
+      "children": [
+        {
+          "type": "Border.Background",
+          "attributes": {},
+          "children": [
+            {
+              "type": "LinearGradientBrush",
+              "attributes": {
+                "StartPoint": "0,0",
+                "EndPoint": "0,1"
+              },
+              "children": [
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#F4FFFFFF",
+                    "Offset": "0"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#EEF8FAF8",
+                    "Offset": "0.5"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#E9F1F5F2",
+                    "Offset": "0.82"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#E3E1EAE8",
+                    "Offset": "1"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "CrystalLowerRefraction": {
+      "type": "Border",
+      "attributes": {
+        "Name": "CrystalLowerRefraction",
+        "Height": "5",
+        "Margin": "88,0,88,18",
+        "HorizontalAlignment": "Stretch",
+        "VerticalAlignment": "Bottom",
+        "CornerRadius": "3",
+        "Opacity": "0.15",
+        "IsHitTestVisible": "False"
+      },
+      "children": [
+        {
+          "type": "Border.Background",
+          "attributes": {},
+          "children": [
+            {
+              "type": "LinearGradientBrush",
+              "attributes": {
+                "StartPoint": "0,0",
+                "EndPoint": "1,0"
+              },
+              "children": [
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#0098E8D5",
+                    "Offset": "0"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#A598E8D5",
+                    "Offset": "0.48"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#0098E8D5",
+                    "Offset": "1"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "JoystickCap": {
+      "type": "Grid",
+      "attributes": {
+        "Name": "JoystickCap",
+        "Width": "67",
+        "Height": "67",
+        "Background": "Transparent",
+        "Cursor": "SizeAll",
+        "HorizontalAlignment": "Center",
+        "VerticalAlignment": "Center",
+        "MouseLeftButtonDown": "JoystickCap_MouseLeftButtonDown",
+        "MouseMove": "JoystickCap_MouseMove",
+        "MouseLeftButtonUp": "JoystickCap_MouseLeftButtonUp",
+        "LostMouseCapture": "JoystickCap_LostMouseCapture",
+        "ToolTip": "按住并向任意方向拖动"
+      },
+      "children": [
+        {
+          "type": "Grid.Effect",
+          "attributes": {},
+          "children": [
+            {
+              "type": "DropShadowEffect",
+              "attributes": {
+                "BlurRadius": "5",
+                "Direction": "270",
+                "ShadowDepth": "3",
+                "Opacity": "0.42",
+                "Color": "#232624"
+              },
+              "children": []
+            }
+          ]
+        },
+        {
+          "type": "Grid.RenderTransform",
+          "attributes": {},
+          "children": [
+            {
+              "type": "TransformGroup",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "ScaleTransform",
+                  "attributes": {
+                    "Name": "JoystickScale",
+                    "CenterX": "33.5",
+                    "CenterY": "33.5"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "TranslateTransform",
+                  "attributes": {
+                    "Name": "JoystickTranslate"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Ellipse",
+          "attributes": {
+            "Stroke": "#CC000000",
+            "StrokeThickness": "1"
+          },
+          "children": [
+            {
+              "type": "Ellipse.Fill",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "RadialGradientBrush",
+                  "attributes": {
+                    "Center": "0.34,0.27",
+                    "GradientOrigin": "0.34,0.27",
+                    "RadiusX": "0.76",
+                    "RadiusY": "0.76"
+                  },
+                  "children": [
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#FF50524F",
+                        "Offset": "0"
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#FF363936",
+                        "Offset": "0.44"
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#FF222422",
+                        "Offset": "1"
+                      },
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Ellipse",
+          "attributes": {
+            "Margin": "1",
+            "Fill": "Transparent",
+            "Stroke": "#1AFFFFFF",
+            "StrokeThickness": "1"
+          },
+          "children": []
+        }
+      ]
+    },
+    "CommandKey": {
+      "type": "Style",
+      "attributes": {
+        "Key": "CommandKey",
+        "TargetType": "Button"
+      },
+      "children": [
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Background",
+            "Value": "{StaticResource PaperCommandKeyBaseBrush}"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "BorderBrush",
+            "Value": "{StaticResource KeyEdgeBrush}"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "BorderThickness",
+            "Value": "1"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Foreground",
+            "Value": "{StaticResource InkBrush}"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Cursor",
+            "Value": "Hand"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "FocusVisualStyle",
+            "Value": "{x:Null}"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Template"
+          },
+          "children": [
+            {
+              "type": "Setter.Value",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "ControlTemplate",
+                  "attributes": {
+                    "TargetType": "Button"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attributes": {
+                        "Margin": "0.5"
+                      },
+                      "children": [
+                        {
+                          "type": "Border",
+                          "attributes": {
+                            "Name": "FarShadow",
+                            "Margin": "2,4,2,0",
+                            "Background": "#33363C39",
+                            "CornerRadius": "14",
+                            "Opacity": "1"
+                          },
+                          "children": [
+                            {
+                              "type": "Border.Effect",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "BlurEffect",
+                                  "attributes": {
+                                    "Radius": "8"
+                                  },
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Border",
+                          "attributes": {
+                            "Name": "SwitchShadow",
+                            "Margin": "0,1.5,0,0",
+                            "Background": "#B8ADB4B0",
+                            "CornerRadius": "14",
+                            "Opacity": "1"
+                          },
+                          "children": []
+                        },
+                        {
+                          "type": "Border",
+                          "attributes": {
+                            "Name": "Cap",
+                            "Margin": "0,0,0,1.5",
+                            "Background": "{TemplateBinding Background}",
+                            "BorderBrush": "#F2FFFFFF",
+                            "BorderThickness": "{TemplateBinding BorderThickness}",
+                            "CornerRadius": "14"
+                          },
+                          "children": [
+                            {
+                              "type": "Border.RenderTransform",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "TranslateTransform",
+                                  "attributes": {},
+                                  "children": []
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "Border",
+                                  "attributes": {
+                                    "Margin": "1,1,0,0",
+                                    "BorderBrush": "#295F6662",
+                                    "BorderThickness": "0,0,1.5,1.5",
+                                    "CornerRadius": "13"
+                                  },
+                                  "children": []
+                                },
+                                {
+                                  "type": "Border",
+                                  "attributes": {
+                                    "Margin": "0,0,1,1",
+                                    "BorderBrush": "#F2FFFFFF",
+                                    "BorderThickness": "1.5,1.5,0,0",
+                                    "CornerRadius": "13"
+                                  },
+                                  "children": []
+                                },
+                                {
+                                  "type": "Border",
+                                  "attributes": {
+                                    "Name": "KeyWell",
+                                    "Width": "76",
+                                    "Height": "76",
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center",
+                                    "Background": "{TemplateBinding Background}",
+                                    "BorderBrush": "{StaticResource PaperRecessRingBrush}",
+                                    "BorderThickness": "1.6",
+                                    "CornerRadius": "38"
+                                  },
+                                  "children": []
+                                },
+                                {
+                                  "type": "ContentPresenter",
+                                  "attributes": {
+                                    "HorizontalAlignment": "Center",
+                                    "VerticalAlignment": "Center"
+                                  },
+                                  "children": []
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Border.Effect",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "DropShadowEffect",
+                                  "attributes": {
+                                    "BlurRadius": "2",
+                                    "Direction": "270",
+                                    "ShadowDepth": "1",
+                                    "Opacity": "0.12",
+                                    "Color": "#5F6662"
+                                  },
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "ControlTemplate.Triggers",
+                      "attributes": {},
+                      "children": [
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "Tag",
+                            "Value": "ACT10_ACT11"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "KeyWell",
+                                "Property": "Width",
+                                "Value": "160"
+                              },
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsMouseOver",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "Cap",
+                                "Property": "BorderBrush",
+                                "Value": "#FFFFFFFF"
+                              },
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsPressed",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Trigger.EnterActions",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "BeginStoryboard",
+                                  "attributes": {},
+                                  "children": [
+                                    {
+                                      "type": "Storyboard",
+                                      "attributes": {},
+                                      "children": [
+                                        {
+                                          "type": "DoubleAnimation",
+                                          "attributes": {
+                                            "Storyboard.TargetName": "Cap",
+                                            "Storyboard.TargetProperty": "(UIElement.RenderTransform).(TranslateTransform.Y)",
+                                            "To": "1",
+                                            "Duration": "0:0:0.08"
+                                          },
+                                          "children": []
+                                        },
+                                        {
+                                          "type": "DoubleAnimation",
+                                          "attributes": {
+                                            "Storyboard.TargetName": "SwitchShadow",
+                                            "Storyboard.TargetProperty": "Opacity",
+                                            "To": "0.35",
+                                            "Duration": "0:0:0.08"
+                                          },
+                                          "children": []
+                                        },
+                                        {
+                                          "type": "DoubleAnimation",
+                                          "attributes": {
+                                            "Storyboard.TargetName": "FarShadow",
+                                            "Storyboard.TargetProperty": "Opacity",
+                                            "To": "0.45",
+                                            "Duration": "0:0:0.08"
+                                          },
+                                          "children": []
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Trigger.ExitActions",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "BeginStoryboard",
+                                  "attributes": {},
+                                  "children": [
+                                    {
+                                      "type": "Storyboard",
+                                      "attributes": {},
+                                      "children": [
+                                        {
+                                          "type": "DoubleAnimation",
+                                          "attributes": {
+                                            "Storyboard.TargetName": "Cap",
+                                            "Storyboard.TargetProperty": "(UIElement.RenderTransform).(TranslateTransform.Y)",
+                                            "To": "0",
+                                            "Duration": "0:0:0.11"
+                                          },
+                                          "children": [
+                                            {
+                                              "type": "DoubleAnimation.EasingFunction",
+                                              "attributes": {},
+                                              "children": [
+                                                {
+                                                  "type": "CubicEase",
+                                                  "attributes": {
+                                                    "EasingMode": "EaseOut"
+                                                  },
+                                                  "children": []
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "DoubleAnimation",
+                                          "attributes": {
+                                            "Storyboard.TargetName": "SwitchShadow",
+                                            "Storyboard.TargetProperty": "Opacity",
+                                            "To": "1",
+                                            "Duration": "0:0:0.11"
+                                          },
+                                          "children": []
+                                        },
+                                        {
+                                          "type": "DoubleAnimation",
+                                          "attributes": {
+                                            "Storyboard.TargetName": "FarShadow",
+                                            "Storyboard.TargetProperty": "Opacity",
+                                            "To": "1",
+                                            "Duration": "0:0:0.11"
+                                          },
+                                          "children": []
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "AgentKey": {
+      "type": "Style",
+      "attributes": {
+        "Key": "AgentKey",
+        "TargetType": "Button"
+      },
+      "children": [
+        {
+          "type": "Style.Resources",
+          "attributes": {},
+          "children": [
+            {
+              "type": "DropShadowEffect",
+              "attributes": {
+                "Key": "AgentKeyShadow",
+                "BlurRadius": "3",
+                "Direction": "270",
+                "ShadowDepth": "2",
+                "Opacity": "0.20",
+                "Color": "#3A403D"
+              },
+              "children": []
+            },
+            {
+              "type": "DropShadowEffect",
+              "attributes": {
+                "Key": "AgentWhiteLightKeyShadow",
+                "BlurRadius": "3",
+                "Direction": "270",
+                "ShadowDepth": "2",
+                "Opacity": "0.05",
+                "Color": "#3A403D"
+              },
+              "children": []
+            },
+            {
+              "type": "SolidColorBrush",
+              "attributes": {
+                "Key": "AgentFarShadowBrush",
+                "Color": "#243A403D"
+              },
+              "children": []
+            },
+            {
+              "type": "SolidColorBrush",
+              "attributes": {
+                "Key": "AgentWhiteLightFarShadowBrush",
+                "Color": "#093A403D"
+              },
+              "children": []
+            },
+            {
+              "type": "LinearGradientBrush",
+              "attributes": {
+                "Key": "PaperWhiteLightRecessRingBrush",
+                "StartPoint": "0,0",
+                "EndPoint": "1,1"
+              },
+              "children": [
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#0A747B77",
+                    "Offset": "0"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#05747B77",
+                    "Offset": "0.42"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#8CFFFFFF",
+                    "Offset": "0.58"
+                  },
+                  "children": []
+                },
+                {
+                  "type": "GradientStop",
+                  "attributes": {
+                    "Color": "#CCFFFFFF",
+                    "Offset": "1"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Background",
+            "Value": "{StaticResource PaperAgentKeyBaseBrush}"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "BorderBrush",
+            "Value": "#008DB5FF"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "BorderThickness",
+            "Value": "1"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Cursor",
+            "Value": "Hand"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "FocusVisualStyle",
+            "Value": "{x:Null}"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Template"
+          },
+          "children": [
+            {
+              "type": "Setter.Value",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "ControlTemplate",
+                  "attributes": {
+                    "TargetType": "Button"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attributes": {
+                        "Margin": "0.5"
+                      },
+                      "children": [
+                        {
+                          "type": "Border",
+                          "attributes": {
+                            "Name": "FarShadow",
+                            "Width": "92",
+                            "Height": "92",
+                            "HorizontalAlignment": "Center",
+                            "VerticalAlignment": "Center",
+                            "Background": "{StaticResource AgentFarShadowBrush}",
+                            "CornerRadius": "14",
+                            "Opacity": "1"
+                          },
+                          "children": [
+                            {
+                              "type": "Border.RenderTransform",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "TranslateTransform",
+                                  "attributes": {
+                                    "Y": "3"
+                                  },
+                                  "children": []
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Border.Effect",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "BlurEffect",
+                                  "attributes": {
+                                    "Radius": "8"
+                                  },
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Border",
+                          "attributes": {
+                            "Name": "GlowWide",
+                            "Style": "{StaticResource AgentWideHalo}",
+                            "Background": "{TemplateBinding BorderBrush}",
+                            "Opacity": "0"
+                          },
+                          "children": []
+                        },
+                        {
+                          "type": "Border",
+                          "attributes": {
+                            "Name": "Glow",
+                            "Style": "{StaticResource AgentNearHalo}",
+                            "Background": "{TemplateBinding BorderBrush}",
+                            "Opacity": "0"
+                          },
+                          "children": []
+                        },
+                        {
+                          "type": "Border",
+                          "attributes": {
+                            "Name": "MintSeamLight",
+                            "Width": "98",
+                            "Height": "98",
+                            "HorizontalAlignment": "Center",
+                            "VerticalAlignment": "Center",
+                            "CornerRadius": "15",
+                            "BorderBrush": "#756EF0B0",
+                            "BorderThickness": "1.6",
+                            "Opacity": "0",
+                            "IsHitTestVisible": "False"
+                          },
+                          "children": [
+                            {
+                              "type": "Border.Effect",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "BlurEffect",
+                                  "attributes": {
+                                    "Radius": "5",
+                                    "RenderingBias": "Quality"
+                                  },
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Border",
+                          "attributes": {
+                            "Name": "Cap",
+                            "Width": "96",
+                            "Height": "96",
+                            "HorizontalAlignment": "Center",
+                            "VerticalAlignment": "Center",
+                            "Margin": "0",
+                            "Background": "{TemplateBinding Background}",
+                            "BorderBrush": "#99FFFFFF",
+                            "BorderThickness": "1",
+                            "CornerRadius": "14"
+                          },
+                          "children": [
+                            {
+                              "type": "Border.RenderTransform",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "TranslateTransform",
+                                  "attributes": {},
+                                  "children": []
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Grid",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "Border",
+                                  "attributes": {
+                                    "Name": "StatusCapWash",
+                                    "Margin": "4",
+                                    "Background": "{TemplateBinding BorderBrush}",
+                                    "CornerRadius": "10",
+                                    "Opacity": "0.07"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "Border.Effect",
+                                      "attributes": {},
+                                      "children": [
+                                        {
+                                          "type": "BlurEffect",
+                                          "attributes": {
+                                            "Radius": "6.5"
+                                          },
+                                          "children": []
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Border",
+                                  "attributes": {
+                                    "Name": "MintCapReturn",
+                                    "Margin": "2",
+                                    "CornerRadius": "11",
+                                    "BorderThickness": "1.5",
+                                    "Opacity": "0",
+                                    "IsHitTestVisible": "False"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "Border.BorderBrush",
+                                      "attributes": {},
+                                      "children": [
+                                        {
+                                          "type": "LinearGradientBrush",
+                                          "attributes": {
+                                            "StartPoint": "0,0",
+                                            "EndPoint": "1,1"
+                                          },
+                                          "children": [
+                                            {
+                                              "type": "GradientStop",
+                                              "attributes": {
+                                                "Color": "#008CECB4",
+                                                "Offset": "0"
+                                              },
+                                              "children": []
+                                            },
+                                            {
+                                              "type": "GradientStop",
+                                              "attributes": {
+                                                "Color": "#128CECB4",
+                                                "Offset": "0.42"
+                                              },
+                                              "children": []
+                                            },
+                                            {
+                                              "type": "GradientStop",
+                                              "attributes": {
+                                                "Color": "#668CECB4",
+                                                "Offset": "1"
+                                              },
+                                              "children": []
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "Border.Effect",
+                                      "attributes": {},
+                                      "children": [
+                                        {
+                                          "type": "BlurEffect",
+                                          "attributes": {
+                                            "Radius": "1.8",
+                                            "RenderingBias": "Quality"
+                                          },
+                                          "children": []
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Border",
+                                  "attributes": {
+                                    "Name": "CapInsetShadow",
+                                    "Margin": "1,1,0,0",
+                                    "BorderBrush": "#334E5451",
+                                    "BorderThickness": "0,0,2,2",
+                                    "CornerRadius": "13"
+                                  },
+                                  "children": []
+                                },
+                                {
+                                  "type": "Border",
+                                  "attributes": {
+                                    "Margin": "0,0,1,1",
+                                    "BorderBrush": "#B8FFFFFF",
+                                    "BorderThickness": "2,2,0,0",
+                                    "CornerRadius": "13"
+                                  },
+                                  "children": []
+                                },
+                                {
+                                  "type": "Ellipse",
+                                  "attributes": {
+                                    "Name": "StatusLightField",
+                                    "Width": "82",
+                                    "Height": "82",
+                                    "Fill": "{TemplateBinding BorderBrush}",
+                                    "Opacity": "0.36"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "Ellipse.Effect",
+                                      "attributes": {},
+                                      "children": [
+                                        {
+                                          "type": "BlurEffect",
+                                          "attributes": {
+                                            "Radius": "5.5"
+                                          },
+                                          "children": []
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Ellipse",
+                                  "attributes": {
+                                    "Name": "MintWellLight",
+                                    "Width": "81",
+                                    "Height": "81",
+                                    "Stroke": "#6874E7AD",
+                                    "StrokeThickness": "3",
+                                    "Opacity": "0",
+                                    "IsHitTestVisible": "False"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "Ellipse.Effect",
+                                      "attributes": {},
+                                      "children": [
+                                        {
+                                          "type": "BlurEffect",
+                                          "attributes": {
+                                            "Radius": "3.2",
+                                            "RenderingBias": "Quality"
+                                          },
+                                          "children": []
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Grid",
+                                  "attributes": {
+                                    "Name": "AgentWellDetail"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "Ellipse",
+                                      "attributes": {
+                                        "Name": "AgentWell",
+                                        "Width": "76",
+                                        "Height": "76",
+                                        "Fill": "{TemplateBinding Background}"
+                                      },
+                                      "children": []
+                                    },
+                                    {
+                                      "type": "Ellipse",
+                                      "attributes": {
+                                        "Name": "MintWellReturn",
+                                        "Width": "76",
+                                        "Height": "76",
+                                        "Opacity": "0",
+                                        "IsHitTestVisible": "False"
+                                      },
+                                      "children": [
+                                        {
+                                          "type": "Ellipse.Fill",
+                                          "attributes": {},
+                                          "children": [
+                                            {
+                                              "type": "RadialGradientBrush",
+                                              "attributes": {
+                                                "Center": "0.46,0.4",
+                                                "GradientOrigin": "0.46,0.4",
+                                                "RadiusX": "0.54",
+                                                "RadiusY": "0.57"
+                                              },
+                                              "children": [
+                                                {
+                                                  "type": "GradientStop",
+                                                  "attributes": {
+                                                    "Color": "#00FAFFFC",
+                                                    "Offset": "0"
+                                                  },
+                                                  "children": []
+                                                },
+                                                {
+                                                  "type": "GradientStop",
+                                                  "attributes": {
+                                                    "Color": "#08C8FBDD",
+                                                    "Offset": "0.4"
+                                                  },
+                                                  "children": []
+                                                },
+                                                {
+                                                  "type": "GradientStop",
+                                                  "attributes": {
+                                                    "Color": "#2698EDC1",
+                                                    "Offset": "0.74"
+                                                  },
+                                                  "children": []
+                                                },
+                                                {
+                                                  "type": "GradientStop",
+                                                  "attributes": {
+                                                    "Color": "#4481E9B2",
+                                                    "Offset": "1"
+                                                  },
+                                                  "children": []
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "Ellipse",
+                                      "attributes": {
+                                        "Name": "StatusWellWash",
+                                        "Width": "76",
+                                        "Height": "76",
+                                        "Fill": "{TemplateBinding BorderBrush}",
+                                        "Opacity": "0.42"
+                                      },
+                                      "children": []
+                                    },
+                                    {
+                                      "type": "Ellipse",
+                                      "attributes": {
+                                        "Name": "AgentWellHighlight",
+                                        "Width": "76",
+                                        "Height": "76",
+                                        "Fill": "Transparent",
+                                        "Stroke": "{StaticResource PaperRecessRingBrush}",
+                                        "StrokeThickness": "1.6"
+                                      },
+                                      "children": []
+                                    },
+                                    {
+                                      "type": "Ellipse",
+                                      "attributes": {
+                                        "Name": "CurrentSessionRing",
+                                        "Width": "82",
+                                        "Height": "82",
+                                        "Stroke": "#AA8F86B8",
+                                        "StrokeThickness": "1.25",
+                                        "Opacity": "0",
+                                        "IsHitTestVisible": "False"
+                                      },
+                                      "children": []
+                                    },
+                                    {
+                                      "type": "Grid",
+                                      "attributes": {
+                                        "Name": "AgentGlyph",
+                                        "Width": "18",
+                                        "Height": "18",
+                                        "HorizontalAlignment": "Center",
+                                        "VerticalAlignment": "Center",
+                                        "Opacity": "0.6"
+                                      },
+                                      "children": [
+                                        {
+                                          "type": "Grid.Effect",
+                                          "attributes": {},
+                                          "children": [
+                                            {
+                                              "type": "DropShadowEffect",
+                                              "attributes": {
+                                                "BlurRadius": "4",
+                                                "ShadowDepth": "0",
+                                                "Opacity": "0.38",
+                                                "Color": "#685FAE"
+                                              },
+                                              "children": []
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "Ellipse",
+                                          "attributes": {
+                                            "Width": "18",
+                                            "Height": "18",
+                                            "HorizontalAlignment": "Center",
+                                            "VerticalAlignment": "Center",
+                                            "Fill": "#FF685FAE"
+                                          },
+                                          "children": []
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "Ellipse",
+                                      "attributes": {
+                                        "Name": "WhiteAgentGlyph",
+                                        "Width": "18",
+                                        "Height": "18",
+                                        "Fill": "White",
+                                        "Stroke": "#28939A96",
+                                        "StrokeThickness": "0.8",
+                                        "Opacity": "0",
+                                        "IsHitTestVisible": "False"
+                                      },
+                                      "children": [
+                                        {
+                                          "type": "Ellipse.Effect",
+                                          "attributes": {},
+                                          "children": [
+                                            {
+                                              "type": "DropShadowEffect",
+                                              "attributes": {
+                                                "Color": "White",
+                                                "BlurRadius": "4",
+                                                "ShadowDepth": "0",
+                                                "Opacity": "0.38"
+                                              },
+                                              "children": []
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "Ellipse",
+                                      "attributes": {
+                                        "Name": "MintAgentGlyph",
+                                        "Width": "18",
+                                        "Height": "18",
+                                        "Fill": "#B9EFD2",
+                                        "Stroke": "#28939A96",
+                                        "StrokeThickness": "0.8",
+                                        "Opacity": "0",
+                                        "IsHitTestVisible": "False"
+                                      },
+                                      "children": [
+                                        {
+                                          "type": "Ellipse.Effect",
+                                          "attributes": {},
+                                          "children": [
+                                            {
+                                              "type": "DropShadowEffect",
+                                              "attributes": {
+                                                "Color": "#B9EFD2",
+                                                "BlurRadius": "4",
+                                                "ShadowDepth": "0",
+                                                "Opacity": "0.38"
+                                              },
+                                              "children": []
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Border.Effect",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "StaticResource",
+                                  "attributes": {
+                                    "ResourceKey": "AgentKeyShadow"
+                                  },
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "ControlTemplate.Triggers",
+                      "attributes": {},
+                      "children": [
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsMouseOver",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "Cap",
+                                "Property": "BorderBrush",
+                                "Value": "#F7FFFFFF"
+                              },
+                              "children": []
+                            },
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "AgentWellHighlight",
+                                "Property": "Opacity",
+                                "Value": "0.86"
+                              },
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsPressed",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Trigger.EnterActions",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "BeginStoryboard",
+                                  "attributes": {},
+                                  "children": [
+                                    {
+                                      "type": "Storyboard",
+                                      "attributes": {},
+                                      "children": [
+                                        {
+                                          "type": "DoubleAnimation",
+                                          "attributes": {
+                                            "Storyboard.TargetName": "Cap",
+                                            "Storyboard.TargetProperty": "(UIElement.RenderTransform).(TranslateTransform.Y)",
+                                            "To": "1.5",
+                                            "Duration": "0:0:0.08"
+                                          },
+                                          "children": []
+                                        },
+                                        {
+                                          "type": "DoubleAnimation",
+                                          "attributes": {
+                                            "Storyboard.TargetName": "FarShadow",
+                                            "Storyboard.TargetProperty": "Opacity",
+                                            "To": "0.45",
+                                            "Duration": "0:0:0.08"
+                                          },
+                                          "children": []
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Trigger.ExitActions",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "BeginStoryboard",
+                                  "attributes": {},
+                                  "children": [
+                                    {
+                                      "type": "Storyboard",
+                                      "attributes": {},
+                                      "children": [
+                                        {
+                                          "type": "DoubleAnimation",
+                                          "attributes": {
+                                            "Storyboard.TargetName": "Cap",
+                                            "Storyboard.TargetProperty": "(UIElement.RenderTransform).(TranslateTransform.Y)",
+                                            "To": "0",
+                                            "Duration": "0:0:0.11"
+                                          },
+                                          "children": [
+                                            {
+                                              "type": "DoubleAnimation.EasingFunction",
+                                              "attributes": {},
+                                              "children": [
+                                                {
+                                                  "type": "CubicEase",
+                                                  "attributes": {
+                                                    "EasingMode": "EaseOut"
+                                                  },
+                                                  "children": []
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "type": "DoubleAnimation",
+                                          "attributes": {
+                                            "Storyboard.TargetName": "FarShadow",
+                                            "Storyboard.TargetProperty": "Opacity",
+                                            "To": "1",
+                                            "Duration": "0:0:0.11"
+                                          },
+                                          "children": []
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "AgentWideHalo": {
+      "type": "Style",
+      "attributes": {
+        "Key": "AgentWideHalo",
+        "TargetType": "Border"
+      },
+      "children": [
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Width",
+            "Value": "106"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Height",
+            "Value": "106"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "HorizontalAlignment",
+            "Value": "Center"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "VerticalAlignment",
+            "Value": "Center"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "CornerRadius",
+            "Value": "21"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "IsHitTestVisible",
+            "Value": "False"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Opacity",
+            "Value": "0"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Effect"
+          },
+          "children": [
+            {
+              "type": "Setter.Value",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "BlurEffect",
+                  "attributes": {
+                    "Radius": "28",
+                    "RenderingBias": "Quality"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "AgentNearHalo": {
+      "type": "Style",
+      "attributes": {
+        "Key": "AgentNearHalo",
+        "TargetType": "Border"
+      },
+      "children": [
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Width",
+            "Value": "100"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Height",
+            "Value": "100"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "HorizontalAlignment",
+            "Value": "Center"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "VerticalAlignment",
+            "Value": "Center"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "CornerRadius",
+            "Value": "18"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "IsHitTestVisible",
+            "Value": "False"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Opacity",
+            "Value": "0"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Effect"
+          },
+          "children": [
+            {
+              "type": "Setter.Value",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "BlurEffect",
+                  "attributes": {
+                    "Radius": "16",
+                    "RenderingBias": "Quality"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "DialButton": {
+      "type": "Style",
+      "attributes": {
+        "Key": "DialButton",
+        "TargetType": "Button"
+      },
+      "children": [
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Background",
+            "Value": "Transparent"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "BorderThickness",
+            "Value": "0"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Cursor",
+            "Value": "Hand"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "FocusVisualStyle",
+            "Value": "{x:Null}"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Template"
+          },
+          "children": [
+            {
+              "type": "Setter.Value",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "ControlTemplate",
+                  "attributes": {
+                    "TargetType": "Button"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attributes": {},
+                      "children": [
+                        {
+                          "type": "Ellipse",
+                          "attributes": {
+                            "Margin": "3,9,3,0",
+                            "Fill": "#8B8E9DA3"
+                          },
+                          "children": []
+                        },
+                        {
+                          "type": "Ellipse",
+                          "attributes": {
+                            "Margin": "5,4,5,4",
+                            "Stroke": "#8AFFFFFF",
+                            "StrokeThickness": "1",
+                            "Fill": "#55DDE9EC"
+                          },
+                          "children": []
+                        },
+                        {
+                          "type": "Ellipse",
+                          "attributes": {
+                            "Name": "DialFace",
+                            "Margin": "3,0,3,7"
+                          },
+                          "children": [
+                            {
+                              "type": "Ellipse.Fill",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "LinearGradientBrush",
+                                  "attributes": {
+                                    "StartPoint": "0,0",
+                                    "EndPoint": "1,1"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "GradientStop",
+                                      "attributes": {
+                                        "Color": "#FFFFFFFF",
+                                        "Offset": "0"
+                                      },
+                                      "children": []
+                                    },
+                                    {
+                                      "type": "GradientStop",
+                                      "attributes": {
+                                        "Color": "#FFF4F9F9",
+                                        "Offset": "0.38"
+                                      },
+                                      "children": []
+                                    },
+                                    {
+                                      "type": "GradientStop",
+                                      "attributes": {
+                                        "Color": "#FFE3EDF0",
+                                        "Offset": "0.7"
+                                      },
+                                      "children": []
+                                    },
+                                    {
+                                      "type": "GradientStop",
+                                      "attributes": {
+                                        "Color": "#FFB4C2C8",
+                                        "Offset": "1"
+                                      },
+                                      "children": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Ellipse.Effect",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "DropShadowEffect",
+                                  "attributes": {
+                                    "BlurRadius": "8",
+                                    "Direction": "285",
+                                    "ShadowDepth": "3",
+                                    "Opacity": "0.3"
+                                  },
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Border",
+                          "attributes": {
+                            "Name": "DialIndicator",
+                            "Width": "6",
+                            "Height": "30",
+                            "Margin": "0,9,0,0",
+                            "Background": "#FF6A7379",
+                            "CornerRadius": "3",
+                            "HorizontalAlignment": "Center",
+                            "VerticalAlignment": "Top",
+                            "RenderTransformOrigin": "0.5,1"
+                          },
+                          "children": [
+                            {
+                              "type": "Border.RenderTransform",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "RotateTransform",
+                                  "attributes": {
+                                    "Angle": "42"
+                                  },
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "ContentPresenter",
+                          "attributes": {},
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "type": "ControlTemplate.Triggers",
+                      "attributes": {},
+                      "children": [
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsMouseOver",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "DialFace",
+                                "Property": "Stroke",
+                                "Value": "#99BDEFF2"
+                              },
+                              "children": []
+                            },
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "DialFace",
+                                "Property": "StrokeThickness",
+                                "Value": "2"
+                              },
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsPressed",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "DialFace",
+                                "Property": "Margin",
+                                "Value": "3,4,3,3"
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "DarkKnobButton": {
+      "type": "Style",
+      "attributes": {
+        "Key": "DarkKnobButton",
+        "TargetType": "Button"
+      },
+      "children": [
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Background",
+            "Value": "#FF2D2925"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "BorderThickness",
+            "Value": "0"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Cursor",
+            "Value": "Hand"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "FocusVisualStyle",
+            "Value": "{x:Null}"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Template"
+          },
+          "children": [
+            {
+              "type": "Setter.Value",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "ControlTemplate",
+                  "attributes": {
+                    "TargetType": "Button"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attributes": {},
+                      "children": [
+                        {
+                          "type": "Ellipse",
+                          "attributes": {
+                            "Width": "64",
+                            "Height": "64",
+                            "Margin": "0,4,1,0",
+                            "HorizontalAlignment": "Right",
+                            "VerticalAlignment": "Center",
+                            "Fill": "#4AFFFFFF",
+                            "Stroke": "#72C9D8DC",
+                            "StrokeThickness": "1"
+                          },
+                          "children": []
+                        },
+                        {
+                          "type": "Ellipse",
+                          "attributes": {
+                            "Name": "KnobFace",
+                            "Width": "58",
+                            "Height": "58",
+                            "Margin": "0,0,5,0",
+                            "HorizontalAlignment": "Right",
+                            "VerticalAlignment": "Center",
+                            "Fill": "{TemplateBinding Background}"
+                          },
+                          "children": [
+                            {
+                              "type": "Ellipse.Effect",
+                              "attributes": {},
+                              "children": [
+                                {
+                                  "type": "DropShadowEffect",
+                                  "attributes": {
+                                    "BlurRadius": "4",
+                                    "Direction": "270",
+                                    "ShadowDepth": "1",
+                                    "Opacity": "0.24",
+                                    "Color": "#4F483F"
+                                  },
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Grid",
+                          "attributes": {
+                            "Name": "KnobContent",
+                            "Width": "58",
+                            "Height": "58",
+                            "Margin": "0,0,5,0",
+                            "HorizontalAlignment": "Right",
+                            "VerticalAlignment": "Center"
+                          },
+                          "children": [
+                            {
+                              "type": "ContentPresenter",
+                              "attributes": {
+                                "HorizontalAlignment": "Center",
+                                "VerticalAlignment": "Center"
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "ControlTemplate.Triggers",
+                      "attributes": {},
+                      "children": [
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsMouseOver",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "KnobFace",
+                                "Property": "Opacity",
+                                "Value": "0.9"
+                              },
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsPressed",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "KnobFace",
+                                "Property": "Margin",
+                                "Value": "0,2,5,-2"
+                              },
+                              "children": []
+                            },
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "KnobContent",
+                                "Property": "Margin",
+                                "Value": "0,2,5,-2"
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "JoystickDirectionButton": {
+      "type": "Style",
+      "attributes": {
+        "Key": "JoystickDirectionButton",
+        "TargetType": "Button"
+      },
+      "children": [
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Background",
+            "Value": "Transparent"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "BorderThickness",
+            "Value": "0"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Cursor",
+            "Value": "Hand"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Focusable",
+            "Value": "False"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "FocusVisualStyle",
+            "Value": "{x:Null}"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Template"
+          },
+          "children": [
+            {
+              "type": "Setter.Value",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "ControlTemplate",
+                  "attributes": {
+                    "TargetType": "Button"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attributes": {
+                        "Background": "Transparent"
+                      },
+                      "children": [
+                        {
+                          "type": "Grid",
+                          "attributes": {
+                            "Name": "DirectionGlyph",
+                            "Width": "14",
+                            "Height": "10",
+                            "HorizontalAlignment": "Center",
+                            "VerticalAlignment": "Center",
+                            "IsHitTestVisible": "False",
+                            "Opacity": "0.88"
+                          },
+                          "children": [
+                            {
+                              "type": "Path",
+                              "attributes": {
+                                "Data": "{StaticResource JoystickChevronGeometry}",
+                                "Stretch": "Uniform",
+                                "Stroke": "#D8FFFFFF",
+                                "StrokeThickness": "1.8",
+                                "StrokeStartLineCap": "Round",
+                                "StrokeEndLineCap": "Round",
+                                "StrokeLineJoin": "Round"
+                              },
+                              "children": [
+                                {
+                                  "type": "Path.RenderTransform",
+                                  "attributes": {},
+                                  "children": [
+                                    {
+                                      "type": "TranslateTransform",
+                                      "attributes": {
+                                        "Y": "1"
+                                      },
+                                      "children": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Path",
+                              "attributes": {
+                                "Data": "{StaticResource JoystickChevronGeometry}",
+                                "Stretch": "Uniform",
+                                "Stroke": "#B347403B",
+                                "StrokeThickness": "1.65",
+                                "StrokeStartLineCap": "Round",
+                                "StrokeEndLineCap": "Round",
+                                "StrokeLineJoin": "Round"
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "ControlTemplate.Triggers",
+                      "attributes": {},
+                      "children": [
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsMouseOver",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "DirectionGlyph",
+                                "Property": "Opacity",
+                                "Value": "0.94"
+                              },
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsPressed",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "DirectionGlyph",
+                                "Property": "Margin",
+                                "Value": "0,1,0,-1"
+                              },
+                              "children": []
+                            },
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "DirectionGlyph",
+                                "Property": "Opacity",
+                                "Value": "1"
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "PaperRecessRingBrush": {
+      "type": "LinearGradientBrush",
+      "attributes": {
+        "Key": "PaperRecessRingBrush",
+        "StartPoint": "0,0",
+        "EndPoint": "1,1"
+      },
+      "children": [
+        {
+          "type": "GradientStop",
+          "attributes": {
+            "Color": "#28747B77",
+            "Offset": "0"
+          },
+          "children": []
+        },
+        {
+          "type": "GradientStop",
+          "attributes": {
+            "Color": "#14747B77",
+            "Offset": "0.42"
+          },
+          "children": []
+        },
+        {
+          "type": "GradientStop",
+          "attributes": {
+            "Color": "#8CFFFFFF",
+            "Offset": "0.58"
+          },
+          "children": []
+        },
+        {
+          "type": "GradientStop",
+          "attributes": {
+            "Color": "#CCFFFFFF",
+            "Offset": "1"
+          },
+          "children": []
+        }
+      ]
+    },
+    "PaperWhiteLightRecessRingBrush": {
+      "type": "LinearGradientBrush",
+      "attributes": {
+        "Key": "PaperWhiteLightRecessRingBrush",
+        "StartPoint": "0,0",
+        "EndPoint": "1,1"
+      },
+      "children": [
+        {
+          "type": "GradientStop",
+          "attributes": {
+            "Color": "#0A747B77",
+            "Offset": "0"
+          },
+          "children": []
+        },
+        {
+          "type": "GradientStop",
+          "attributes": {
+            "Color": "#05747B77",
+            "Offset": "0.42"
+          },
+          "children": []
+        },
+        {
+          "type": "GradientStop",
+          "attributes": {
+            "Color": "#8CFFFFFF",
+            "Offset": "0.58"
+          },
+          "children": []
+        },
+        {
+          "type": "GradientStop",
+          "attributes": {
+            "Color": "#CCFFFFFF",
+            "Offset": "1"
+          },
+          "children": []
+        }
+      ]
+    },
+    "PageDot": {
+      "type": "Style",
+      "attributes": {
+        "Key": "PageDot",
+        "TargetType": "{x:Type RadioButton}"
+      },
+      "children": [
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Width",
+            "Value": "36"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Height",
+            "Value": "28"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Focusable",
+            "Value": "False"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Cursor",
+            "Value": "Hand"
+          },
+          "children": []
+        },
+        {
+          "type": "Setter",
+          "attributes": {
+            "Property": "Template"
+          },
+          "children": [
+            {
+              "type": "Setter.Value",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "ControlTemplate",
+                  "attributes": {
+                    "TargetType": "{x:Type RadioButton}"
+                  },
+                  "children": [
+                    {
+                      "type": "Grid",
+                      "attributes": {
+                        "Background": "Transparent"
+                      },
+                      "children": [
+                        {
+                          "type": "Border",
+                          "attributes": {
+                            "Name": "Dot",
+                            "Width": "7",
+                            "Height": "7",
+                            "CornerRadius": "4",
+                            "Background": "#55718592",
+                            "HorizontalAlignment": "Center",
+                            "VerticalAlignment": "Center"
+                          },
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "type": "ControlTemplate.Triggers",
+                      "attributes": {},
+                      "children": [
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsChecked",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "Dot",
+                                "Property": "Width",
+                                "Value": "20"
+                              },
+                              "children": []
+                            },
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "Dot",
+                                "Property": "Background",
+                                "Value": "#FF7185EA"
+                              },
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Trigger",
+                          "attributes": {
+                            "Property": "IsMouseOver",
+                            "Value": "True"
+                          },
+                          "children": [
+                            {
+                              "type": "Setter",
+                              "attributes": {
+                                "TargetName": "Dot",
+                                "Property": "Opacity",
+                                "Value": "0.65"
+                              },
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "glyphs": {
+    "FAST": {
+      "source": {
+        "path": "src/CodexMicro.Windows/Controls/KeycapIcon.cs",
+        "line": 66
+      },
+      "viewBox": [
+        24,
+        24
+      ],
+      "transform": [
+        1,
+        0,
+        0
+      ],
+      "paths": [
+        {
+          "data": "M15.24 3.486v.002l-1.056 4.517h5.823c1.726 0 2.596 2.021 1.518 3.3l-.002.003-9.308 10.965-.002.002c-1.397 1.656-3.922.223-3.454-1.76v-.003l1.057-4.517H3.993c-1.726 0-2.596-2.021-1.519-3.3l.003-.003 9.308-10.965.002-.002c1.397-1.656 3.922-.223 3.454 1.76Zm-1.95-.444-1.34 5.735a.998.998 0 0 0 .973 1.226h7.074a.04.04 0 0 1 .003.01.045.045 0 0 1-.004.005l-9.287 10.94 1.341-5.735a.998.998 0 0 0-.973-1.226H4.003a.041.041 0 0 1-.003-.01l.004-.005 9.287-10.94Z",
+          "fillRule": "evenodd"
+        }
+      ]
+    },
+    "FAST_ON": {
+      "source": {
+        "path": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.g.cs",
+        "line": 28
+      },
+      "name": "lightning-outline",
+      "viewBox": [
+        24.0,
+        24.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "paths": [
+        {
+          "data": "F1 M11.912 21.413c-.383.45-.883.683-1.5.7-.616.016-1.116-.192-1.5-.625-.375-.434-.454-1.034-.237-1.8L9.687 16H4.575c-.567 0-1.008-.162-1.325-.488a1.68 1.68 0 0 1-.475-1.2c0-.474.154-.9.462-1.274l8.9-10.563c.384-.45.884-.683 1.5-.7.617-.017 1.113.192 1.488.625.383.433.467 1.033.25 1.8L14.312 8h5.113c.567 0 1.008.167 1.325.5.325.333.488.737.488 1.212 0 .467-.159.884-.476 1.25l-8.85 10.45Z",
+          "fillRule": "nonzero"
+        }
+      ]
+    },
+    "APPR": {
+      "source": {
+        "path": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.g.cs",
+        "line": 14
+      },
+      "name": "check-circle",
+      "viewBox": [
+        20.0,
+        21.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "paths": [
+        {
+          "data": "F1 M12.1599 7.63617C12.3713 7.33596 12.7863 7.26372 13.0866 7.47504C13.3867 7.68642 13.4589 8.10153 13.2477 8.40179L9.28876 14.0268C9.17264 14.1917 8.98808 14.2954 8.7868 14.308C8.61044 14.319 8.43764 14.2592 8.30634 14.144L8.25262 14.0912L6.16962 11.7993L6.08954 11.6918C5.93136 11.4259 5.97666 11.0761 6.21454 10.8598C6.45225 10.6439 6.80379 10.6326 7.05341 10.8149L7.15399 10.9047L8.67841 12.5815L12.1599 7.63617Z",
+          "fillRule": "nonzero"
+        },
+        {
+          "data": "F0 M9.99506 2.81226C14.3664 2.81226 17.9101 6.35596 17.9101 10.7273C17.9101 15.0986 14.3664 18.6423 9.99506 18.6423C5.62372 18.6423 2.08002 15.0986 2.08002 10.7273C2.08002 6.35596 5.62372 2.81226 9.99506 2.81226ZM9.99506 4.14233C6.35826 4.14233 3.4101 7.0905 3.4101 10.7273C3.4101 14.3641 6.35826 17.3123 9.99506 17.3123C13.6319 17.3123 16.58 14.3641 16.58 10.7273C16.58 7.0905 13.6319 4.14233 9.99506 4.14233Z",
+          "fillRule": "evenodd"
+        }
+      ]
+    },
+    "REJ": {
+      "source": {
+        "path": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.g.cs",
+        "line": 44
+      },
+      "name": "x-circle",
+      "viewBox": [
+        20.0,
+        20.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "paths": [
+        {
+          "data": "F1 M7.231 7.231a.665.665 0 0 1 .94 0L10 9.06l1.828-1.829.104-.085a.666.666 0 0 1 .921.922l-.084.104L10.94 10l1.829 1.828a.665.665 0 0 1-.94.94L10 10.94l-1.828 1.83a.665.665 0 0 1-.94-.94L9.06 10 7.23 8.172a.665.665 0 0 1 0-.94Z",
+          "fillRule": "nonzero"
+        },
+        {
+          "data": "F0 M10 2.085a7.915 7.915 0 1 1 0 15.83 7.915 7.915 0 0 1 0-15.83Zm0 1.33a6.585 6.585 0 1 0 0 13.17 6.585 6.585 0 0 0 0-13.17Z",
+          "fillRule": "evenodd"
+        }
+      ]
+    },
+    "SPLIT": {
+      "source": {
+        "path": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.g.cs",
+        "line": 42
+      },
+      "name": "worktree",
+      "viewBox": [
+        20.0,
+        20.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "paths": [
+        {
+          "data": "F1 M15.8 11.535c.367 0 .665.298.665.665v5a.665.665 0 0 1-.665.665h-5a.665.665 0 1 1 0-1.33h3.394l-3.565-3.564a.666.666 0 0 1 .942-.942l3.564 3.565V12.2c0-.367.298-.665.665-.665Zm0-9.4c.367 0 .665.298.665.665v5a.665.665 0 0 1-1.33 0V4.405l-5.128 5.128c-.323.324-.558.565-.842.74a2.668 2.668 0 0 1-.771.319c-.324.078-.662.073-1.12.073H1.93a.665.665 0 1 1 0-1.33h5.345c.52 0 .673-.005.809-.037.136-.033.266-.086.385-.16.12-.072.23-.177.598-.545l5.128-5.128H10.8a.665.665 0 0 1 0-1.33h5Z",
+          "fillRule": "nonzero"
+        }
+      ]
+    },
+    "MIC": {
+      "source": {
+        "path": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.g.cs",
+        "line": 29
+      },
+      "name": "mic",
+      "viewBox": [
+        20.0,
+        20.0
+      ],
+      "transform": [
+        0.8333333333333334,
+        0.0,
+        0.0
+      ],
+      "paths": [
+        {
+          "data": "F1 M18.5848 13.4121C18.7715 12.9516 19.2961 12.7296 19.7567 12.916C20.217 13.1027 20.4391 13.6274 20.2528 14.0879C19.0405 17.0826 16.2438 19.2675 12.9003 19.6035V22C12.9003 22.4971 12.4969 22.9004 11.9999 22.9004C11.5029 22.9003 11.0995 22.497 11.0995 22V19.6035C7.75618 19.2673 4.96018 17.0823 3.74791 14.0879C3.56144 13.6272 3.78344 13.1026 4.244 12.916C4.70458 12.7298 5.22933 12.9517 5.41588 13.4121C6.46985 16.0157 9.02264 17.8496 12.0008 17.8496C14.9787 17.8493 17.531 16.0155 18.5848 13.4121Z",
+          "fillRule": "nonzero"
+        },
+        {
+          "data": "F0 M11.9999 1.34961C14.7061 1.34961 16.9003 3.5438 16.9003 6.25V10.7334C16.9003 13.4396 14.7061 15.6338 11.9999 15.6338C9.29371 15.6337 7.09947 13.4396 7.09947 10.7334V6.25C7.09947 3.54384 9.29372 1.34967 11.9999 1.34961ZM11.9999 3.15039C10.2878 3.15045 8.90025 4.53795 8.90025 6.25V10.7334C8.90025 12.4454 10.2878 13.8339 11.9999 13.834C13.7119 13.834 15.0995 12.4455 15.0995 10.7334V6.25C15.0995 4.53792 13.7119 3.15039 11.9999 3.15039Z",
+          "fillRule": "evenodd"
+        }
+      ]
+    },
+    "CODEX": {
+      "source": {
+        "path": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.g.cs",
+        "line": 17
+      },
+      "name": "codex",
+      "viewBox": [
+        20.0,
+        20.0
+      ],
+      "transform": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "paths": [
+        {
+          "data": "F1 M13.333 11.418C13.7002 11.418 13.9978 11.7159 13.998 12.083C13.998 12.4503 13.7003 12.748 13.333 12.748H10.833C10.4657 12.748 10.168 12.4503 10.168 12.083C10.1682 11.7159 10.4659 11.418 10.833 11.418H13.333Z",
+          "fillRule": "nonzero"
+        },
+        {
+          "data": "F1 M6.74121 7.34668C7.0561 7.15796 7.46442 7.26036 7.65332 7.5752L8.90332 9.6582C9.02949 9.86874 9.02961 10.1323 8.90332 10.3428L7.65332 12.4258C7.46441 12.7403 7.05597 12.8427 6.74121 12.6543C6.42637 12.4654 6.32396 12.0561 6.5127 11.7412L7.55664 10L6.5127 8.25879C6.324 7.94395 6.4265 7.53562 6.74121 7.34668Z",
+          "fillRule": "nonzero"
+        },
+        {
+          "data": "F0 M9.00195 1.75C10.1157 1.75021 11.1362 2.15467 11.9238 2.82227C12.1849 2.77516 12.455 2.74903 12.7295 2.74902C15.2262 2.74978 17.2507 4.77449 17.251 7.27148C17.2509 7.54581 17.2238 7.81473 17.1768 8.0752C17.8448 8.86317 18.2499 9.88479 18.25 10.999C18.2496 12.9609 16.9996 14.6284 15.2549 15.2549C14.6285 16.9998 12.9608 18.2497 10.999 18.25C9.88486 18.25 8.86411 17.8448 8.07617 17.1768C7.8155 17.2239 7.54592 17.2509 7.27148 17.251C4.77445 17.2507 2.7504 15.2257 2.75 12.7285C2.75003 12.4539 2.77608 12.1848 2.82324 11.9238C2.20237 11.1913 1.80895 10.2574 1.75684 9.23438L1.75 9.00098C1.75022 7.03932 2.99952 5.36992 4.74414 4.74316C5.37104 2.99851 7.04034 1.75002 9.00195 1.75ZM9.00195 3.07812C7.52474 3.07814 6.27967 4.08156 5.91504 5.44531C5.85362 5.67419 5.67418 5.85363 5.44531 5.91504C4.08208 6.27984 3.07836 7.52408 3.07812 9.00098C3.07826 9.88321 3.43594 10.682 4.01465 11.2607C4.1816 11.4283 4.24663 11.6728 4.18555 11.9014C4.11505 12.1653 4.07719 12.4429 4.07715 12.7285C4.07755 14.4925 5.50753 15.9225 7.27148 15.9229C7.55712 15.9228 7.83548 15.886 8.09961 15.8154L8.18652 15.7979C8.38833 15.7722 8.59297 15.8403 8.73926 15.9863C9.31801 16.5649 10.1168 16.9218 10.999 16.9219C12.4759 16.9216 13.7203 15.9183 14.085 14.5547L14.1133 14.4707C14.1918 14.2821 14.3542 14.1386 14.5547 14.085C15.9181 13.7203 16.9225 12.4758 16.9229 10.999C16.9228 10.1168 16.5648 9.31802 15.9863 8.73926C15.819 8.57175 15.7544 8.3274 15.8154 8.09863C15.886 7.83454 15.9238 7.5568 15.9238 7.27148C15.9235 5.50751 14.4924 4.07762 12.7285 4.07715C12.4424 4.0772 12.164 4.11412 11.9004 4.18457C11.672 4.24541 11.4282 4.18048 11.2607 4.01367C10.7183 3.47141 9.98306 3.12271 9.16699 3.08105L9.00195 3.07812Z",
+          "fillRule": "evenodd"
+        }
+      ]
+    }
+  },
+  "icons": {
+    "nominalElement": [
+      28,
+      28
+    ],
+    "effectiveDrawingSizeFormula": "max(28, 24 / designScale)",
+    "drawingSizeAtDefaultScale": [
+      32,
+      32
+    ],
+    "windowDIPAtDefaultScale": [
+      24,
+      24
+    ],
+    "commandColor": "#171717",
+    "commandCenterOffsetFromSlot": [
+      0,
+      -0.75
+    ],
+    "source": {
+      "path": "src/CodexMicro.Windows/Controls/KeycapIcon.cs",
+      "line": 209
+    }
+  },
+  "lighting": {
+    "source": {
+      "path": "src/CodexMicro.Windows/Services/AgentLightingAppearance.cs",
+      "line": 43
+    },
+    "columns": [
+      "display",
+      "wideHalo",
+      "nearHalo",
+      "capWash",
+      "lightField",
+      "wellWash"
+    ],
+    "softwareBackgroundActive": [
+      0.94,
+      0.42,
+      0.22,
+      0.12,
+      0.43,
+      0.4
+    ],
+    "softwareSelectedActive": [
+      1,
+      0.82,
+      0.48,
+      0.28,
+      0.52,
+      0.48
+    ],
+    "softwareSelectedIdleAfterForDisplay": [
+      1,
+      0.96,
+      0.68,
+      0.18,
+      0.52,
+      0.38
+    ],
+    "idleUnselected": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "monitorWholeKeyOpacity": {
+      "empty": 0.42,
+      "stale": 0.58,
+      "fresh": 1
+    },
+    "monitorOpacitySource": {
+      "path": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+      "line": 441
+    },
+    "dot": {
+      "diameter": 18,
+      "purple": "#685FAE",
+      "purpleOpacity": 0.6,
+      "mintSelectedIdle": "#B9EFD2",
+      "mintStroke": "#28939A96",
+      "mintStrokeThickness": 0.8,
+      "glowBlurRadius": 4,
+      "glowDepth": 0,
+      "glowOpacity": 0.38
+    },
+    "colors": {
+      "running": "#304FFE",
+      "waiting": "#FF6D00",
+      "question": "#FFD54F",
+      "unread": "#00FF4C",
+      "error": "#FF0033"
+    },
+    "composition": "All shared halos are below every physical cap. Colored carriers multiply DisplayOpacity; neutral shared halos use a white brush without that multiplier. Mint layers use their own ARGB/gradient alpha.",
+    "details": {
+      "carriers": [
+        {
+          "id": "AgentWideHalo",
+          "label": "共享宽光晕",
+          "rectRelativeToCap": [
+            -5.0,
+            -5.0,
+            106,
+            106
+          ],
+          "behavior": "动态纯色；Z=-10；中性选中用纯白画刷",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 167
+          },
+          "node": {
+            "type": "Style",
+            "attributes": {
+              "Key": "AgentWideHalo",
+              "TargetType": "Border"
+            },
+            "children": [
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "Width",
+                  "Value": "106"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "Height",
+                  "Value": "106"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "HorizontalAlignment",
+                  "Value": "Center"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "VerticalAlignment",
+                  "Value": "Center"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "CornerRadius",
+                  "Value": "21"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "IsHitTestVisible",
+                  "Value": "False"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "Opacity",
+                  "Value": "0"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "Effect"
+                },
+                "children": [
+                  {
+                    "type": "Setter.Value",
+                    "attributes": {},
+                    "children": [
+                      {
+                        "type": "BlurEffect",
+                        "attributes": {
+                          "Radius": "28",
+                          "RenderingBias": "Quality"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "AgentNearHalo",
+          "label": "共享近光晕",
+          "rectRelativeToCap": [
+            -2.0,
+            -2.0,
+            100,
+            100
+          ],
+          "behavior": "动态纯色；Z=-9；位于所有实体键帽下方",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 183
+          },
+          "node": {
+            "type": "Style",
+            "attributes": {
+              "Key": "AgentNearHalo",
+              "TargetType": "Border"
+            },
+            "children": [
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "Width",
+                  "Value": "100"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "Height",
+                  "Value": "100"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "HorizontalAlignment",
+                  "Value": "Center"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "VerticalAlignment",
+                  "Value": "Center"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "CornerRadius",
+                  "Value": "18"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "IsHitTestVisible",
+                  "Value": "False"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "Opacity",
+                  "Value": "0"
+                },
+                "children": []
+              },
+              {
+                "type": "Setter",
+                "attributes": {
+                  "Property": "Effect"
+                },
+                "children": [
+                  {
+                    "type": "Setter.Value",
+                    "attributes": {},
+                    "children": [
+                      {
+                        "type": "BlurEffect",
+                        "attributes": {
+                          "Radius": "16",
+                          "RenderingBias": "Quality"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "MintSeamLight",
+          "label": "薄荷接缝",
+          "rectRelativeToCap": [
+            -1.0,
+            -1.0,
+            98,
+            98
+          ],
+          "behavior": "仅薄荷选中态；位于 Cap 后面，独立于 Cap 的按压位移",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 259
+          },
+          "node": {
+            "type": "Border",
+            "attributes": {
+              "Name": "MintSeamLight",
+              "Width": "98",
+              "Height": "98",
+              "HorizontalAlignment": "Center",
+              "VerticalAlignment": "Center",
+              "CornerRadius": "15",
+              "BorderBrush": "#756EF0B0",
+              "BorderThickness": "1.6",
+              "Opacity": "0",
+              "IsHitTestVisible": "False"
+            },
+            "children": [
+              {
+                "type": "Border.Effect",
+                "attributes": {},
+                "children": [
+                  {
+                    "type": "BlurEffect",
+                    "attributes": {
+                      "Radius": "5",
+                      "RenderingBias": "Quality"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "StatusCapWash",
+          "label": "键帽染光",
+          "rectRelativeToCap": [
+            5.0,
+            5.0,
+            86.0,
+            86.0
+          ],
+          "behavior": "动态纯色，使用 CapWashOpacity",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 291
+          },
+          "node": {
+            "type": "Border",
+            "attributes": {
+              "Name": "StatusCapWash",
+              "Margin": "4",
+              "Background": "{TemplateBinding BorderBrush}",
+              "CornerRadius": "10",
+              "Opacity": "0.07"
+            },
+            "children": [
+              {
+                "type": "Border.Effect",
+                "attributes": {},
+                "children": [
+                  {
+                    "type": "BlurEffect",
+                    "attributes": {
+                      "Radius": "6.5"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "MintCapReturn",
+          "label": "键帽回光",
+          "rectRelativeToCap": [
+            3.0,
+            3.0,
+            90.0,
+            90.0
+          ],
+          "behavior": "仅薄荷选中态；左上透明，右下渐强",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 300
+          },
+          "node": {
+            "type": "Border",
+            "attributes": {
+              "Name": "MintCapReturn",
+              "Margin": "2",
+              "CornerRadius": "11",
+              "BorderThickness": "1.5",
+              "Opacity": "0",
+              "IsHitTestVisible": "False"
+            },
+            "children": [
+              {
+                "type": "Border.BorderBrush",
+                "attributes": {},
+                "children": [
+                  {
+                    "type": "LinearGradientBrush",
+                    "attributes": {
+                      "StartPoint": "0,0",
+                      "EndPoint": "1,1"
+                    },
+                    "children": [
+                      {
+                        "type": "GradientStop",
+                        "attributes": {
+                          "Color": "#008CECB4",
+                          "Offset": "0"
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "GradientStop",
+                        "attributes": {
+                          "Color": "#128CECB4",
+                          "Offset": "0.42"
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "GradientStop",
+                        "attributes": {
+                          "Color": "#668CECB4",
+                          "Offset": "1"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "Border.Effect",
+                "attributes": {},
+                "children": [
+                  {
+                    "type": "BlurEffect",
+                    "attributes": {
+                      "Radius": "1.8",
+                      "RenderingBias": "Quality"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "StatusLightField",
+          "label": "井外圆形光场",
+          "rectRelativeToCap": [
+            7.0,
+            7.0,
+            82,
+            82
+          ],
+          "behavior": "动态纯色圆面；Blur5.5；在实体圆井后面",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 335
+          },
+          "node": {
+            "type": "Ellipse",
+            "attributes": {
+              "Name": "StatusLightField",
+              "Width": "82",
+              "Height": "82",
+              "Fill": "{TemplateBinding BorderBrush}",
+              "Opacity": "0.36"
+            },
+            "children": [
+              {
+                "type": "Ellipse.Effect",
+                "attributes": {},
+                "children": [
+                  {
+                    "type": "BlurEffect",
+                    "attributes": {
+                      "Radius": "5.5"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "MintWellLight",
+          "label": "井边薄荷光",
+          "rectRelativeToCap": [
+            7.5,
+            7.5,
+            81,
+            81
+          ],
+          "behavior": "仅薄荷选中态；3 DIP 描边，Blur3.2",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 344
+          },
+          "node": {
+            "type": "Ellipse",
+            "attributes": {
+              "Name": "MintWellLight",
+              "Width": "81",
+              "Height": "81",
+              "Stroke": "#6874E7AD",
+              "StrokeThickness": "3",
+              "Opacity": "0",
+              "IsHitTestVisible": "False"
+            },
+            "children": [
+              {
+                "type": "Ellipse.Effect",
+                "attributes": {},
+                "children": [
+                  {
+                    "type": "BlurEffect",
+                    "attributes": {
+                      "Radius": "3.2",
+                      "RenderingBias": "Quality"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "MintWellReturn",
+          "label": "井内回光",
+          "rectRelativeToCap": [
+            10.0,
+            10.0,
+            76,
+            76
+          ],
+          "behavior": "仅薄荷选中态；偏心径向渐变，无额外 Blur",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 360
+          },
+          "node": {
+            "type": "Ellipse",
+            "attributes": {
+              "Name": "MintWellReturn",
+              "Width": "76",
+              "Height": "76",
+              "Opacity": "0",
+              "IsHitTestVisible": "False"
+            },
+            "children": [
+              {
+                "type": "Ellipse.Fill",
+                "attributes": {},
+                "children": [
+                  {
+                    "type": "RadialGradientBrush",
+                    "attributes": {
+                      "Center": "0.46,0.4",
+                      "GradientOrigin": "0.46,0.4",
+                      "RadiusX": "0.54",
+                      "RadiusY": "0.57"
+                    },
+                    "children": [
+                      {
+                        "type": "GradientStop",
+                        "attributes": {
+                          "Color": "#00FAFFFC",
+                          "Offset": "0"
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "GradientStop",
+                        "attributes": {
+                          "Color": "#08C8FBDD",
+                          "Offset": "0.4"
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "GradientStop",
+                        "attributes": {
+                          "Color": "#2698EDC1",
+                          "Offset": "0.74"
+                        },
+                        "children": []
+                      },
+                      {
+                        "type": "GradientStop",
+                        "attributes": {
+                          "Color": "#4481E9B2",
+                          "Offset": "1"
+                        },
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "StatusWellWash",
+          "label": "井内染光",
+          "rectRelativeToCap": [
+            10.0,
+            10.0,
+            76,
+            76
+          ],
+          "behavior": "动态纯色圆面；位于实体圆井上面，无额外 Blur",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 377
+          },
+          "node": {
+            "type": "Ellipse",
+            "attributes": {
+              "Name": "StatusWellWash",
+              "Width": "76",
+              "Height": "76",
+              "Fill": "{TemplateBinding BorderBrush}",
+              "Opacity": "0.42"
+            },
+            "children": []
+          }
+        },
+        {
+          "id": "AgentWellHighlight",
+          "label": "凹槽明暗沿",
+          "rectRelativeToCap": [
+            10.0,
+            10.0,
+            76,
+            76
+          ],
+          "behavior": "1.6 DIP 对角渐变描边；白光时减弱暗端",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 382
+          },
+          "node": {
+            "type": "Ellipse",
+            "attributes": {
+              "Name": "AgentWellHighlight",
+              "Width": "76",
+              "Height": "76",
+              "Fill": "Transparent",
+              "Stroke": "{StaticResource PaperRecessRingBrush}",
+              "StrokeThickness": "1.6"
+            },
+            "children": []
+          }
+        },
+        {
+          "id": "AgentGlyph",
+          "label": "紫色中心点",
+          "rectRelativeToCap": [
+            39.0,
+            39.0,
+            18,
+            18
+          ],
+          "behavior": "普通态 Opacity=.6；白光或薄荷态隐藏",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 395
+          },
+          "node": {
+            "type": "Grid",
+            "attributes": {
+              "Name": "AgentGlyph",
+              "Width": "18",
+              "Height": "18",
+              "HorizontalAlignment": "Center",
+              "VerticalAlignment": "Center",
+              "Opacity": "0.6"
+            },
+            "children": [
+              {
+                "type": "Grid.Effect",
+                "attributes": {},
+                "children": [
+                  {
+                    "type": "DropShadowEffect",
+                    "attributes": {
+                      "BlurRadius": "4",
+                      "ShadowDepth": "0",
+                      "Opacity": "0.38",
+                      "Color": "#685FAE"
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "type": "Ellipse",
+                "attributes": {
+                  "Width": "18",
+                  "Height": "18",
+                  "HorizontalAlignment": "Center",
+                  "VerticalAlignment": "Center",
+                  "Fill": "#FF685FAE"
+                },
+                "children": []
+              }
+            ]
+          }
+        },
+        {
+          "id": "WhiteAgentGlyph",
+          "label": "白色中心点",
+          "rectRelativeToCap": [
+            39.0,
+            39.0,
+            18,
+            18
+          ],
+          "behavior": "白光且非薄荷态显示",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 413
+          },
+          "node": {
+            "type": "Ellipse",
+            "attributes": {
+              "Name": "WhiteAgentGlyph",
+              "Width": "18",
+              "Height": "18",
+              "Fill": "White",
+              "Stroke": "#28939A96",
+              "StrokeThickness": "0.8",
+              "Opacity": "0",
+              "IsHitTestVisible": "False"
+            },
+            "children": [
+              {
+                "type": "Ellipse.Effect",
+                "attributes": {},
+                "children": [
+                  {
+                    "type": "DropShadowEffect",
+                    "attributes": {
+                      "Color": "White",
+                      "BlurRadius": "4",
+                      "ShadowDepth": "0",
+                      "Opacity": "0.38"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "MintAgentGlyph",
+          "label": "薄荷中心点",
+          "rectRelativeToCap": [
+            39.0,
+            39.0,
+            18,
+            18
+          ],
+          "behavior": "薄荷选中态显示",
+          "source": {
+            "path": "src/CodexMicro.Windows/MicroSurfaceResources.xaml",
+            "line": 428
+          },
+          "node": {
+            "type": "Ellipse",
+            "attributes": {
+              "Name": "MintAgentGlyph",
+              "Width": "18",
+              "Height": "18",
+              "Fill": "#B9EFD2",
+              "Stroke": "#28939A96",
+              "StrokeThickness": "0.8",
+              "Opacity": "0",
+              "IsHitTestVisible": "False"
+            },
+            "children": [
+              {
+                "type": "Ellipse.Effect",
+                "attributes": {},
+                "children": [
+                  {
+                    "type": "DropShadowEffect",
+                    "attributes": {
+                      "Color": "#B9EFD2",
+                      "BlurRadius": "4",
+                      "ShadowDepth": "0",
+                      "Opacity": "0.38"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "runtimeSource": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml.cs",
+        "line": 3383
+      },
+      "compositionSource": {
+        "path": "src/CodexMicro.Windows/MainWindow.xaml.cs",
+        "line": 3460
+      },
+      "order": [
+        "shared wide halos (Z=-10)",
+        "shared near halos (Z=-9)",
+        "per-key FarShadow",
+        "MintSeamLight",
+        "Cap base and border",
+        "StatusCapWash",
+        "MintCapReturn",
+        "CapInsetShadow",
+        "white inset edge",
+        "StatusLightField",
+        "MintWellLight",
+        "AgentWell opaque base",
+        "MintWellReturn",
+        "StatusWellWash",
+        "AgentWellHighlight",
+        "active center glyph"
+      ],
+      "orderNote": "Cap shadow is an effect on the composed Cap subtree. Template GlowWide/Glow are disabled in MainWindow. CurrentSessionRing is always set to zero.",
+      "alphaRules": {
+        "coloredCarrier": "colorAlpha × DisplayOpacity × carrierOpacity, before blur and overlapping layers",
+        "neutralSharedHalo": "white brush alpha 1 × carrierOpacity; DisplayOpacity is bypassed",
+        "mintCarrier": "its own ARGB/gradient alpha × enabled opacity (0 or 1); independent of DisplayOpacity",
+        "monitor": "whole-key opacity applies to the key subtree, not the sibling shared halos; stale/unavailable appearance is cleared separately",
+        "notPixelBrightness": "These are source alpha coefficients, not final pixel luminance. Blur, occlusion and layer compositing still apply."
+      },
+      "selectionRules": {
+        "neutral": "current && (!active || whiteFallback || color == White)",
+        "mint": "current && (!active || whiteFallback)",
+        "whiteDot": "renderedColor == White && DisplayOpacity > 0 && !mint",
+        "purpleDot": "!whiteLight && !mint",
+        "ring": "CurrentSessionRing remains opacity 0"
+      },
+      "whiteLightShadowChanges": [
+        [
+          "Cap near shadow",
+          "Opacity .20 → .05; Blur3, depth2, color#3A403D unchanged"
+        ],
+        [
+          "FarShadow",
+          "#243A403D → #093A403D; Blur8 unchanged"
+        ],
+        [
+          "CapInsetShadow",
+          "Opacity 1 → .25"
+        ],
+        [
+          "Well rim dark stops",
+          "#28747B77 → #0A747B77 at0; #14747B77 → #05747B77 at.42; white stops unchanged"
+        ]
+      ],
+      "motion": {
+        "status": "The inspected renderer directly assigns light color/opacity; EffectName breath is a protocol label, not a local breathing storyboard. Upstream snapshots may change values over time.",
+        "hover": "Cap border #99FFFFFF → #F7FFFFFF; AgentWellHighlight opacity 1 → .86",
+        "press": "80ms: Cap translates down1.5; FarShadow opacity→.45. Release110ms: Cap returns with CubicEase EaseOut; FarShadow opacity→1. Shared halos and MintSeamLight do not move with Cap."
+      },
+      "lowerRefraction": {
+        "rect": [
+          113,
+          562,
+          364,
+          5
+        ],
+        "node": {
+          "type": "Border",
+          "attributes": {
+            "Name": "CrystalLowerRefraction",
+            "Height": "5",
+            "Margin": "88,0,88,18",
+            "HorizontalAlignment": "Stretch",
+            "VerticalAlignment": "Bottom",
+            "CornerRadius": "3",
+            "Opacity": "0.15",
+            "IsHitTestVisible": "False"
+          },
+          "children": [
+            {
+              "type": "Border.Background",
+              "attributes": {},
+              "children": [
+                {
+                  "type": "LinearGradientBrush",
+                  "attributes": {
+                    "StartPoint": "0,0",
+                    "EndPoint": "1,0"
+                  },
+                  "children": [
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#0098E8D5",
+                        "Offset": "0"
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#A598E8D5",
+                        "Offset": "0.48"
+                      },
+                      "children": []
+                    },
+                    {
+                      "type": "GradientStop",
+                      "attributes": {
+                        "Color": "#0098E8D5",
+                        "Offset": "1"
+                      },
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "source": {
+          "path": "src/CodexMicro.Windows/MainWindow.xaml",
+          "line": 198
+        },
+        "peakUnblurredAlpha": 0.09705882352941177
+      },
+      "statusLED": {
+        "diameter": 7,
+        "glowBlurRadius": 8,
+        "glowDepth": 0,
+        "glowOpacity": 0.78,
+        "colors": {
+          "neutralNoGlow": "#B8B98B",
+          "healthy": "#78A6FF",
+          "active": "#304FFE",
+          "waiting": "#FFC85A",
+          "error": "#FF7994"
+        },
+        "source": {
+          "path": "src/CodexMicro.Windows/MainWindow.xaml.cs",
+          "line": 50
+        }
+      },
+      "precision": "Source values and nominal geometry only; WPF blur kernel/antialiasing and physical brightness have not been measured."
+    }
+  },
+  "quota": {
+    "source": {
+      "path": "src/CodexMicro.Windows/Controls/QuotaKnob.cs",
+      "line": 133
+    },
+    "faceDiameter": 58,
+    "sourceGauge": [
+      52,
+      52
+    ],
+    "displayModes": {
+      "auto": "quota normally; model on hover or keyboard preview",
+      "quota": "always quota",
+      "model": "always model"
+    },
+    "gaugeScale": "58/52",
+    "trackDiametersInGaugeUnits": [
+      47,
+      41
+    ],
+    "trackThicknessInGaugeUnits": 1.4,
+    "progressThicknessInGaugeUnits": 1.6,
+    "displayTrackDiameters": [
+      52.42307692307692,
+      45.73076923076923
+    ],
+    "singleReadoutBox": [
+      36,
+      20
+    ],
+    "dualReadoutBox": [
+      34,
+      32
+    ],
+    "dualValueBox": [
+      27,
+      14
+    ],
+    "sevenSegment": {
+      "digit": [
+        7.5,
+        14
+      ],
+      "digitGap": 1.5,
+      "percentWidth": 6.5,
+      "percentGap": 4,
+      "percentPen": 0.9,
+      "segments": [
+        "M 1.5,0 L 6,0 6.7,0.7 6,1.4 1.5,1.4 0.8,0.7 Z",
+        "M 6.8,1.1 L 7.5,1.8 7.5,5.8 6.8,6.5 6.1,5.8 6.1,1.8 Z",
+        "M 6.8,7.5 L 7.5,8.2 7.5,12.2 6.8,12.9 6.1,12.2 6.1,8.2 Z",
+        "M 1.5,12.6 L 6,12.6 6.7,13.3 6,14 1.5,14 0.8,13.3 Z",
+        "M 0.7,7.5 L 1.4,8.2 1.4,12.2 0.7,12.9 0,12.2 0,8.2 Z",
+        "M 0.7,1.1 L 1.4,1.8 1.4,5.8 0.7,6.5 0,5.8 0,1.8 Z",
+        "M 1.5,6.3 L 6,6.3 6.7,7 6,7.7 1.5,7.7 0.8,7 Z"
+      ]
+    }
+  },
+  "text": {
+    "leftRotatedLeftEdge": 64,
+    "rightRotatedRightEdge": 526,
+    "verticalCenter": 305,
+    "sideFontSize": 8,
+    "brandBottomEdge": 560,
+    "brandIcon": [
+      10,
+      10
+    ],
+    "brandGap": 5,
+    "brandFontSize": 8,
+    "family": "Segoe UI Variable Text",
+    "limitation": "Text ink bounds and final measured line boxes require the actual font renderer; no invented bounding box."
+  },
+  "limitations": [
+    "No Windows process or GUI was started.",
+    "No font rasterization, WPF antialiasing or blur kernel equivalence was measured.",
+    "WPF BlurRadius must not be assumed to equal UIKit/CoreGraphics shadowRadius or half of it.",
+    "Colors are uncomposited ARGB values; a flattened screenshot cannot uniquely recover layer alpha.",
+    "Do not mix the historical KeypadExports rendering with the current vector-icon routing."
+  ]
+}

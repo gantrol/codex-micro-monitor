@@ -1,0 +1,122 @@
+{
+  "kind": "raster evidence, not authoritative current layout",
+  "path": "assets/KeypadExports/codex-micro-keypad-pearl.png",
+  "sha256": "e8686ec9d92380baca9bb0ecd62d90b57737510387775a191e3a6d98d97e2f59",
+  "dimensions": [
+    590,
+    610
+  ],
+  "alpha_range": [
+    0,
+    255
+  ],
+  "pixel_coordinates": "integer pixel indexes, not DIP; threshold bounds have at least ±1 pixel uncertainty",
+  "dots": [
+    {
+      "source_expected_center": [
+        136,
+        252
+      ],
+      "detected_bounds_half_open": [
+        129,
+        245,
+        146,
+        262
+      ],
+      "threshold_bbox_center": [
+        137.5,
+        253.5
+      ]
+    },
+    {
+      "source_expected_center": [
+        242,
+        252
+      ],
+      "detected_bounds_half_open": [
+        236,
+        245,
+        253,
+        262
+      ],
+      "threshold_bbox_center": [
+        244.5,
+        253.5
+      ]
+    },
+    {
+      "source_expected_center": [
+        348,
+        252
+      ],
+      "detected_bounds_half_open": [
+        341,
+        245,
+        358,
+        262
+      ],
+      "threshold_bbox_center": [
+        349.5,
+        253.5
+      ]
+    },
+    {
+      "source_expected_center": [
+        454,
+        252
+      ],
+      "detected_bounds_half_open": [
+        447,
+        245,
+        464,
+        262
+      ],
+      "threshold_bbox_center": [
+        455.5,
+        253.5
+      ]
+    }
+  ],
+  "method": "In a 35×35 ROI around nominal task center, retain RGBA pixels with 3<R-G<25, B-R>35 and A>200. Report half-open threshold bounding box; not fitted vector bounds.",
+  "sample": {
+    "pixel": [
+      128,
+      270
+    ],
+    "RGBA": [
+      247,
+      248,
+      246,
+      255
+    ]
+  },
+  "interpretation": "Raster centers are quantized/offset relative to nominal source coordinates; this old export also contains a different fork icon. Do not use it to overwrite current source dimensions or infer opacity.",
+  "brandIcon": {
+    "path": "assets/CodexMicro.png",
+    "sha256": "7ab7d658442c8e09bbfc7a92c07d0c789b03b7a025bb7ec9a9cb2e7127e06d2c",
+    "size": [
+      512,
+      512
+    ],
+    "alpha_nonzero_bounds": [
+      31,
+      31,
+      481,
+      481
+    ],
+    "alpha_at_least_128_bounds": [
+      34,
+      34,
+      479,
+      478
+    ],
+    "infinity_ink_threshold_bounds": [
+      113,
+      179,
+      399,
+      333
+    ],
+    "method": "Original 512px PNG; alpha thresholds 1 and 128; teal mask inside ROI x[90,422), y[150,362): A>=128, G-R>50, B-R>40. Half-open pixel boxes, not recovered vector geometry.",
+    "note": "Windows tray loads the executable application icon. Mac template should use the Micro infinity brand, not the CODEX command-key glyph. A raster silhouette does not supply exact Bezier control points."
+  }
+}

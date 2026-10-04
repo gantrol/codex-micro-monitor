@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="830" viewBox="0 0 1120 830">
+<style>text{font-family:Arial,sans-serif;fill:#163e3a} .small{font-size:11px} .label{font-size:13px} .dim{stroke:#087f8c;stroke-width:1;fill:none} .guide{stroke:#98b2b0;stroke-width:.7;stroke-dasharray:3 4;fill:none}</style>
+<rect width="1120" height="830" fill="#f8faf9"/>
+<text x="44" y="39" font-size="23" font-weight="700">Windows Micro / source dimensions</text>
+<text x="44" y="64" class="label">590 × 610 design DIP · origin at top left · nominal layout before WPF pixel rounding</text>
+<g transform="translate(44 103)">
+<rect x="0" y="0" width="590.0" height="610.0" rx="0" class="guide"/>
+<rect x="23.0" y="23.0" width="544.0" height="564.0" rx="66.0" class="dim"/>
+<rect x="29.0" y="29.0" width="532.0" height="551.0" rx="61.0" class="dim"/>
+<rect x="35.0" y="35.0" width="520.0" height="540.0" rx="56.0" class="dim"/>
+<rect x="43.0" y="43.0" width="504.0" height="524.0" rx="50.0" class="dim"/>
+<rect x="83.0" y="93.0" width="424.0" height="424.0" rx="0" class="guide"/>
+<rect x="95.0" y="102.0" width="82.0" height="81.0" rx="40.5" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="136.0" y="146.5" class="small" text-anchor="middle">82 × 81</text>
+<rect x="194.0" y="98.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="242.0" y="150.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="204.0" y="108.0" width="76" height="76" rx="38" class="guide"/>
+<rect x="300.0" y="98.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="348.0" y="150.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="310.0" y="108.0" width="76" height="76" rx="38" class="guide"/>
+<rect x="420.5" y="112.5" width="67" height="67" rx="33.5" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="454.0" y="150.0" class="small" text-anchor="middle">Ø67</text>
+<rect x="88.0" y="204.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="136.0" y="256.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="98.0" y="214.0" width="76" height="76" rx="38" class="guide"/>
+<rect x="194.0" y="204.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="242.0" y="256.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="204.0" y="214.0" width="76" height="76" rx="38" class="guide"/>
+<rect x="300.0" y="204.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="348.0" y="256.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="310.0" y="214.0" width="76" height="76" rx="38" class="guide"/>
+<rect x="406.0" y="204.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="454.0" y="256.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="416.0" y="214.0" width="76" height="76" rx="38" class="guide"/>
+<rect x="88.0" y="310.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="136.0" y="362.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="98.0" y="319.25" width="76" height="76" rx="38" class="guide"/>
+<rect x="194.0" y="310.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="242.0" y="362.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="204.0" y="319.25" width="76" height="76" rx="38" class="guide"/>
+<rect x="300.0" y="310.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="348.0" y="362.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="310.0" y="319.25" width="76" height="76" rx="38" class="guide"/>
+<rect x="406.0" y="310.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="454.0" y="362.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="416.0" y="319.25" width="76" height="76" rx="38" class="guide"/>
+<rect x="194.0" y="416.0" width="202.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="295.0" y="468.0" class="small" text-anchor="middle">202 × 96</text>
+<rect x="215.0" y="425.25" width="160" height="76" rx="38" class="guide"/>
+<rect x="406.0" y="416.0" width="96.0" height="96.0" rx="14" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="454.0" y="468.0" class="small" text-anchor="middle">96 × 96</text>
+<rect x="416.0" y="425.25" width="76" height="76" rx="38" class="guide"/>
+<rect x="121.0" y="435.0" width="58" height="58" rx="29" fill="#eaf2ef" stroke="#2d6862" stroke-width="1"/>
+<text x="150.0" y="468.0" class="small" text-anchor="middle">Ø58</text>
+<rect x="267.0" y="63.5" width="20" height="7" rx="4" fill="#087f8c"/>
+<rect x="309.5" y="63.5" width="7" height="7" rx="4" fill="#087f8c"/>
+<rect x="98.0" y="449.5" width="7" height="7" rx="3.5" fill="#087f8c"/>
+<rect x="98.0" y="460.5" width="7" height="7" rx="3.5" fill="#087f8c"/>
+<rect x="98.0" y="471.5" width="7" height="7" rx="3.5" fill="#087f8c"/>
+<path d="M136 83 V528" class="guide"/><text x="136" y="83" text-anchor="middle" class="small">x=136</text>
+<path d="M242 83 V528" class="guide"/><text x="242" y="83" text-anchor="middle" class="small">x=242</text>
+<path d="M348 83 V528" class="guide"/><text x="348" y="83" text-anchor="middle" class="small">x=348</text>
+<path d="M454 83 V528" class="guide"/><text x="454" y="83" text-anchor="middle" class="small">x=454</text>
+<path d="M73 146 H517" class="guide"/><text x="585" y="150" text-anchor="end" class="small">y=146</text>
+<path d="M73 252 H517" class="guide"/><text x="585" y="256" text-anchor="end" class="small">y=252</text>
+<path d="M73 358 H517" class="guide"/><text x="585" y="362" text-anchor="end" class="small">y=358</text>
+<path d="M73 464 H517" class="guide"/><text x="585" y="468" text-anchor="end" class="small">y=464</text>
+<path d="M0 633 H590 M0 628 V638 M590 628 V638" class="dim"/><text x="295" y="653" text-anchor="middle" class="label">590 DIP</text>
+</g>
+<text x="680" y="120" font-size="13" font-weight="700">OUTER SHELL</text>
+<text x="680" y="141" class="label">(23,23) · 544 × 564 · R66 · border 2</text>
+<text x="680" y="177" font-size="13" font-weight="700">PRISM / DEPTH / FACE</text>
+<text x="680" y="198" class="label">(29,29) 532 × 551 · R61</text>
+<text x="680" y="217" class="label">(35,35) 520 × 540 · R56</text>
+<text x="680" y="236" class="label">(43,43) 504 × 524 · R50</text>
+<text x="680" y="272" font-size="13" font-weight="700">GRID</text>
+<text x="680" y="293" class="label">(83,93) · 424 × 424</text>
+<text x="680" y="312" class="label">106 pitch · 96 key · 10 nominal gap</text>
+<text x="680" y="348" font-size="13" font-weight="700">COMMAND CAP ≠ AGENT CAP</text>
+<text x="680" y="369" class="label">Command: 95 × 93.5 · R14</text>
+<text x="680" y="388" class="label">Well / glyph center: slot y − 0.75</text>
+<text x="680" y="407" class="label">Agent: explicit 96 × 96 · R14</text>
+<text x="680" y="443" font-size="13" font-weight="700">PAGE INDICATORS</text>
+<text x="680" y="464" class="label">Centers (277,67) and (313,67)</text>
+<text x="680" y="483" class="label">Selected 20 × 7 · inactive 7 × 7</text>
+<text x="680" y="519" font-size="13" font-weight="700">WHITE DIAL</text>
+<text x="680" y="540" class="label">Control 88 × 88 · face 82 × 81</text>
+<text x="680" y="559" class="label">Indicator 6 × 30 · R3 · angle 42°</text>
+<text x="680" y="578" class="label">Rotation pivot (136,141)</text>
+<text x="680" y="614" font-size="13" font-weight="700">QUOTA / GLYPHS</text>
+<text x="680" y="635" class="label">Quota face center (150,464)</text>
+<text x="680" y="654" class="label">Glyph nominal 28 · default drawn 32</text>
+<text x="680" y="673" class="label">Default window: 442.5 × 457.5</text>
+<text x="44" y="805" class="small">Source commit 58b024408ec0 · This is a dimension drawing, not a rendered appearance preview.</text>
+</svg>

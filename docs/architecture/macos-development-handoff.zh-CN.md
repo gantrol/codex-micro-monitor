@@ -1,5 +1,13 @@
 # Codex Micro Monitor：macOS 开发交接
 
+2026-10-04 更新：Mac 已重建为 UIKit / Mac Catalyst 本地控制预览版 preview.5，构建与交付说明见 [apps/macos/README.md](../../apps/macos/README.md)。按 Windows 测量账本重建几何与光效；应用生命周期、双页、菜单栏、状态观察、已有对话模型/强度/Fast/Plan/审批/停止控制、旋钮连续输入与快捷 A/B和 Universal `.app` 已落地。尚未做真实 UI 或 Codex 联调业务验收。
+
+Windows 最新设置改为**叠层、点哪设置哪**，新对话问题和测试规划也在更新。远端仍是原交接快照，因此旧分类设置方案与旧新对话逻辑暂不继续移植。参见 [设置方向](settings-interaction.zh-CN.md)、[验证边界](verification-boundaries.zh-CN.md)。
+
+<details>
+<summary>原始源码交接记录（早于本地 Mac 实现，状态以顶部链接为准）</summary>
+
+
 更新：2026-10-04。本文描述源码现状和下一阶段工作，不代表已有 macOS 安装包。
 
 ## 接手结论
@@ -75,3 +83,5 @@ Windows 基线构建方法见[构建与分发](../build-and-distribution.md)。�
 当前没有 macOS 构建命令、自动化测试或签名产物。本次交接不声称已在 Mac 编译、运行或安装。接手者遵守仓库 AGENTS.md：未经用户明确要求，不新增测试代码、不执行真实 UI 手动测试；可运行已有自动化测试并记录未覆盖范围。
 
 下一次交接应给出：Mac 型号/架构与系统版本、Xcode/Swift 版本、Codex 版本、已实现能力表、构建命令、自动化验证结果、权限和签名状态、已知限制。真实账号、会话、令牌、完整本机日志与私有调试材料留在本地，公开文档只保留可复用结论。
+
+</details>
