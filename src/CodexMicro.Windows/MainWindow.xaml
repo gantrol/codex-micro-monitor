@@ -95,6 +95,7 @@
                     </Border.Background>
                     <Border.ContextMenu>
                         <ContextMenu x:Name="DeviceContextMenu"
+                                     Style="{StaticResource MicroContextMenu}"
                                      Opened="DeviceContextMenu_Opened">
                             <MenuItem x:Name="TopmostMenuItem"
                                       Header="窗口置顶"
@@ -601,7 +602,8 @@
                                         ContextMenuOpening="Settings_ContextMenuOpening"
                                         ToolTip="DeepSeek 模式左键切换快捷模型（未连接时先打开） · Codex 模式短按切换快捷模型、长按打开官方 Micro 设置 · 右键打开当前 Agent 设置&#x0a;三灯：Codex 为运行时 / HID / 事件；DeepSeek 为适配器 / 网页桥接 / 语音服务">
                                     <controls:QuotaKnob.ContextMenu>
-                                        <ContextMenu x:Name="KnobContextMenu">
+                                        <ContextMenu x:Name="KnobContextMenu"
+                                                     Style="{StaticResource MicroContextMenu}">
                                             <MenuItem x:Name="KnobSettingsMenuItem"
                                                       Header="设置">
                                                 <MenuItem x:Name="KnobOpenSoftwareSettingsMenuItem"
