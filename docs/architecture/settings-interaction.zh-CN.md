@@ -111,3 +111,7 @@ Windows 设置采用极简原生方向：冷白底、石墨文字、鼠尾草绿
 提示组件样式位于 [MicroToolTipResources.xaml](../../src/CodexMicro.Windows/Controls/MicroToolTipResources.xaml)，由主键盘资源字典加载；额度内容位于 [MainWindow.QuotaHelp.cs](../../src/CodexMicro.Windows/MainWindow.QuotaHelp.cs)，动画位于 [MicroToolTipMotion.cs](../../src/CodexMicro.Windows/Controls/MicroToolTipMotion.cs)。代码创建的提示显式引用共享样式，并替换系统默认弹出动画，避免两套动画叠加。
 
 设计参考 Windows 的[临时浮层材质](https://learn.microsoft.com/en-us/windows/apps/design/style/acrylic)与[动效原则](https://learn.microsoft.com/en-us/windows/apps/design/signature-experiences/motion)。当前实现是 WPF 矢量水晶材质，不采集桌面背景或引入额外图形依赖。
+
+## Windows 右键菜单（2026-10-04）
+
+面板与旋钮右键菜单共用 [MicroMenuResources.xaml](../../src/CodexMicro.Windows/Controls/MicroMenuResources.xaml)：浅灰白表面、石墨文字、鼠尾草绿高亮，外框圆角 6 DIP、选中行圆角 4 DIP，最小行高 32 DIP。勾选标记、文字与子菜单箭头分列对齐，分隔线使用单条细线。文字继承系统菜单字号，行高可随内容增长；键盘焦点保留清晰轮廓，高对比度使用系统颜色。样式仅应用到这两处文字菜单，交互仍由原生 WPF MenuItem 处理。
