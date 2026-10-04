@@ -1,0 +1,85 @@
+{
+  "product": { "name": "Codex Micro Monitor", "icon": "assets/CodexMicro.png" },
+  "renderScale": 3,
+  "canvas": { "width": 1920, "height": 1080, "background": "#F4F6F2", "ink": "#1A2926", "muted": "#65726C", "accent": "#197869" },
+  "storePanelBox": [560, 8, 800, 752],
+  "quota": { "plan": "pro", "weeklyRemaining": 77, "fiveHourRemaining": null },
+  "models": {
+    "astra": { "id": "gpt-6-astra", "label": "6 Astra", "effort": "ultra" },
+    "luna": { "id": "gpt-5.6-luna", "label": "5.6 Luna", "effort": "max" }
+  },
+  "stateIds": ["current-running", "running", "input", "question", "unread", "error", "idle", "current-idle"],
+  "scenes": [
+    { "id": "01-controls", "page": "control", "model": "astra", "readout": "quota", "fast": "off", "lights": ["current-running", "running", "input", "question", "unread", "error"] },
+    { "id": "02-monitor", "page": "monitor", "model": "astra", "readout": "quota", "fast": "off", "lights": ["current-running", "running", "input", "question", "unread", "error", "idle", "running", "question", "unread", "running", "input", "idle", "unread"] },
+    { "id": "03-model-astra", "page": "control", "model": "astra", "readout": "model", "fast": "off", "lights": ["current-idle", "running", "input", "question", "unread", "idle"] },
+    { "id": "04-model-luna", "page": "control", "model": "luna", "readout": "model", "fast": "off", "lights": ["current-idle", "running", "input", "question", "unread", "idle"] },
+    { "id": "05-quota-pro", "page": "control", "model": "astra", "readout": "quota", "fast": "off", "lights": ["current-idle", "running", "input", "question", "unread", "idle"] },
+    { "id": "06-fast", "page": "control", "model": "astra", "readout": "model", "fast": "on", "lights": ["current-idle", "running", "input", "question", "unread", "idle"] }
+  ],
+  "cards": [
+    { "id": "01-controls", "scene": "01-controls", "detail": "states", "states": ["running", "input", "question", "unread"] },
+    { "id": "02-monitor", "scene": "02-monitor", "detail": "states", "states": ["current-running", "current-idle", "error", "idle"] },
+    { "id": "03-models", "scene": "03-model-astra", "detail": "models" },
+    { "id": "04-quota", "scene": "05-quota-pro", "detail": "quota" },
+    { "id": "05-fast", "scene": "06-fast", "detail": "fast" }
+  ],
+  "locales": {
+    "zh-CN": {
+      "font": "msyh.ttc", "boldFont": "msyhbd.ttc",
+      "shortDescription": "用状态灯查Codex看 Codex 任务，快速切换模型、查看额度，并按需切换 Fast 模式。",
+      "description": [
+        "Codex Micro Monitor 将 Codex 任务状态放在桌面小面板里。第一屏把状态灯、模型旋钮和常用控制放在一起；第二屏可查看最多 14 个任务。通过灯光区分进行中、等待输入、待回答、未读和错误，点击进入对应会话。",
+        "快速切换配置好的常用模型，调节支持的推理强度，查看剩余额度，并在当前模型支持时切换 Fast 模式。",
+        "面板显示时，任务状态约每 2 秒读取，额度每 2 分钟自动刷新。模型、推理强度与 Fast 设置用于下一轮对话；可用性与额度消耗以 Codex 为准。配图是产品 XAML 的离线示例渲染。",
+        "Codex Micro Monitor 是独立开发的第三方辅助软件，与 OpenAI 或 Work Louder 无隶属关系，也未获得其背书。需另行安装并登录 Codex 桌面应用；无需购买 Codex Micro 硬件。"
+      ],
+      "disclosure": "离线渲染 · 示例状态与数据 · 第三方软件 · 需安装并登录 Codex 桌面应用",
+      "weekly": "每周剩余额度", "fastStates": ["已关闭", "切换中", "已开启"],
+      "stateLabels": { "current-running": "当前 · 进行中", "running": "进行中", "input": "等待输入", "question": "待回答", "unread": "未读", "error": "错误", "idle": "空闲", "current-idle": "当前 · 空闲" },
+      "cards": {
+        "01-controls": { "title": "Agent状态，\n一眼可见。", "subtitle": "第一屏：状态灯与常用控制。", "note": "点击任务键，回到对应会话。" },
+        "02-monitor": { "title": "更多任务，\n一屏掌握。", "subtitle": "第二屏：查看最多 14 个任务。", "note": "当前会话、运行状态与待处理事项，各有提示。" },
+        "03-models": { "title": "常用模型，\n快速切换。", "subtitle": "6 Astra 与 5.6 Luna，强度圈同步显示。", "note": "模型与推理强度变更用于下一轮对话。" },
+        "04-quota": { "title": "剩余额度，\n一眼可见。", "subtitle": "Pro 单圈显示，每周额度更清楚。", "note": "面板显示时自动刷新；77% 为示例数据。" },
+        "05-fast": { "title": "Fast 模式，\n随手切换。", "subtitle": "闪电键显示关闭、切换中和开启状态。", "note": "用于下一轮对话，需当前模型及 Codex 账号支持。" }
+      },
+      "captions": {
+        "01-controls": "第一屏：任务状态灯、模型旋钮与常用控制。产品 XAML 离线渲染，状态与额度为示例。",
+        "02-monitor": "第二屏：查看最多 14 个任务，点击任务键进入对应会话。离线示例状态。",
+        "03-model-astra": "模型示例：6 Astra / Ultra，内外圈显示推理强度。离线渲染；变更用于下一轮对话。",
+        "04-model-luna": "模型示例：5.6 Luna / Max，强度圈随设置变化。离线渲染；变更用于下一轮对话。",
+        "05-quota-pro": "Pro 每周剩余额度单圈显示。77% 为离线示例；面板显示时额度自动刷新。",
+        "06-fast": "Fast 模式开启时，闪电图标显示绿色。离线示例；用于下一轮对话，需模型支持。"
+      }
+    },
+    "en-US": {
+      "font": "segoeui.ttf", "boldFont": "segoeuib.ttf",
+      "shortDescription": "See Codex task status, switch models, check usage limits, and toggle Fast from a compact desktop panel.",
+      "description": [
+        "Codex Micro Monitor puts Codex task status in a compact desktop panel. The first page brings status lights, the model dial and common controls together. The second page shows up to 14 tasks. See activity, input requests, questions, unread results and errors, then click to open the chat.",
+        "Switch between configured models, adjust supported reasoning levels, check remaining usage and toggle Fast when your model supports it.",
+        "While visible, the panel checks task status approximately every 2 seconds and refreshes usage every 2 minutes. Model, reasoning and Fast settings apply to the next turn. Availability and usage consumption are determined by Codex. Images are offline renders of the product XAML using example data.",
+        "Codex Micro Monitor is an independent third-party companion, not affiliated with or endorsed by OpenAI or Work Louder. Requires a separately installed, signed-in Codex desktop app. No Codex Micro hardware is required."
+      ],
+      "disclosure": "Offline render · Example data · Third-party app · Requires installed, signed-in Codex desktop",
+      "weekly": "Weekly remaining", "fastStates": ["Off", "Switching", "On"],
+      "stateLabels": { "current-running": "Current · active", "running": "In progress", "input": "Needs input", "question": "Question", "unread": "Unread", "error": "Error", "idle": "Idle", "current-idle": "Current · idle" },
+      "cards": {
+        "01-controls": { "title": "Task status,\nat a glance.", "subtitle": "First page: status lights and everyday controls.", "note": "Click a task key to return to its chat." },
+        "02-monitor": { "title": "More tasks.\nOne clear view.", "subtitle": "Second page: keep up with as many as 14 tasks.", "note": "See current chats, activity and requests for attention." },
+        "03-models": { "title": "Your models.\nOne quick switch.", "subtitle": "6 Astra and 5.6 Luna, with visible reasoning rings.", "note": "Model and reasoning changes apply to the next turn." },
+        "04-quota": { "title": "Usage limits,\nat a glance.", "subtitle": "A single ring for Pro weekly usage.", "note": "Refreshes while the panel is visible. 77% is example data." },
+        "05-fast": { "title": "Fast mode,\nwithin reach.", "subtitle": "The lightning key shows off, switching and on.", "note": "Applies to the next turn. Requires a supported model and account." }
+      },
+      "captions": {
+        "01-controls": "First page: task lights, model dial and common controls. Offline product XAML render with example states and usage.",
+        "02-monitor": "Second page: follow up to 14 tasks and click to open their chats. Offline example states.",
+        "03-model-astra": "6 Astra / Ultra. Inner and outer rings show reasoning effort. Offline example; settings apply to the next turn.",
+        "04-model-luna": "5.6 Luna / Max. Reasoning rings follow the setting. Offline example; settings apply to the next turn.",
+        "05-quota-pro": "A single ring shows Pro weekly usage remaining. 77% is offline example data; usage refreshes while the panel is visible.",
+        "06-fast": "The lightning icon turns green when Fast is on. Offline example; applies to the next turn when supported by the model."
+      }
+    }
+  }
+}

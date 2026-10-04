@@ -33,6 +33,11 @@ $metadata | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $metadataPath -E
 foreach ($name in @('LICENSE','README.md','README.zh-CN.md')) {
     Copy-Item -LiteralPath (Join-Path $root $name) -Destination $desktop
 }
+$desktopImages = Join-Path $desktop 'plugins/codex-micro-keypad/assets'
+$desktopDocs = Join-Path $desktop 'docs'
+New-Item -ItemType Directory -Force $desktopImages, $desktopDocs | Out-Null
+Copy-Item -Path (Join-Path $root 'plugins/codex-micro-keypad/assets/*') -Destination $desktopImages -Recurse
+Copy-Item -LiteralPath (Join-Path $root 'docs/build-and-distribution.md') -Destination $desktopDocs
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $plugin
 $marketplace = Join-Path $destination '.agents/plugins'
 New-Item -ItemType Directory -Force $marketplace | Out-Null
