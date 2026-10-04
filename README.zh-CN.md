@@ -13,7 +13,7 @@ Windows 桌面小键盘与 Codex 插件，保留控制页和任务监控页。�
 先从独立 `codex-control` 仓库生成并导入固定组件包；不需要 AgentController 源码：
 
 ```powershell
-.\scripts\import-control-packages.ps1 -PackageDirectory D:\codex-control\dist\0.1.0-local.2\packages
+.\scripts\import-control-packages.ps1 -PackageDirectory ..\codex-control\dist\0.1.0-local.2\packages
 ```
 
 ```powershell

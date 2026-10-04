@@ -13,7 +13,7 @@ Requires Windows 10 19041+ / Windows 11 x64, .NET SDK 10.0.302, and a signed-in 
 Build the pinned packages in the independent `codex-control` repository, then import them. AgentController source is not required:
 
 ```powershell
-.\scripts\import-control-packages.ps1 -PackageDirectory D:\codex-control\dist\0.1.0-local.2\packages
+.\scripts\import-control-packages.ps1 -PackageDirectory ..\codex-control\dist\0.1.0-local.2\packages
 ```
 
 ```powershell
