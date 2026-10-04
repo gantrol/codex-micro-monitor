@@ -11,10 +11,6 @@ public enum MicroKeypadControlCommand
     Ping,
     Show,
     Restart,
-#if DEBUG
-    E2eNewTask,
-    E2eToggleQuickModel,
-#endif
 }
 
 public enum MicroKeypadControlState

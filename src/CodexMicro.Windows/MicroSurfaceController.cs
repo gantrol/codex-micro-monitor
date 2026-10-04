@@ -79,14 +79,6 @@ public sealed class MicroSurfaceController : IDisposable
         primary.Window.StartBackgroundServices();
     });
 
-#if DEBUG
-    public Task RunE2eNewTaskAsync() => DispatchAsync(window =>
-        window.RunE2eNewTaskAsync());
-
-    public Task RunE2eToggleQuickModelAsync() => DispatchAsync(window =>
-        window.RunE2eToggleQuickModelAsync());
-#endif
-
     public void Show() => Dispatch(() =>
     {
         foreach (var entry in _surfaces.Values)
@@ -294,20 +286,4 @@ public sealed class MicroSurfaceController : IDisposable
         await Task.WhenAll(closeTasks);
     }
 
-#if DEBUG
-    private Task DispatchAsync(Func<MicroSurfaceWindow, Task> action)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        if (_dispatcher.CheckAccess())
-        {
-            return action(_surfaces.Values.Single(entry => entry.IsPrimary).Window);
-        }
-
-        return _dispatcher
-            .InvokeAsync(() => action(
-                _surfaces.Values.Single(entry => entry.IsPrimary).Window))
-            .Task
-            .Unwrap();
-    }
-#endif
 }

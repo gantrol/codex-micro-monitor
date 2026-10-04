@@ -39,7 +39,6 @@ public partial class App : System.Windows.Application
 
 #if DEBUG
         Console.CancelKeyPress += Console_CancelKeyPress;
-        var e2eCommand = ResolveE2eControlCommand(e.Args);
 #endif
 
         if (!WaitForPreviousInstance(e.Args))
@@ -56,20 +55,6 @@ public partial class App : System.Windows.Application
         if (!isFirstInstance)
         {
 #if DEBUG
-            if (e2eCommand is { } command)
-            {
-                var response = MicroKeypadControlClient.TrySendAsync(
-                        command,
-                        command == MicroKeypadControlCommand
-                            .E2eToggleQuickModel
-                                ? TimeSpan.FromMinutes(10)
-                                : TimeSpan.FromSeconds(60))
-                    .GetAwaiter()
-                    .GetResult();
-                Shutdown(response is { Accepted: true } ? 0 : 3);
-                return;
-            }
-
             var message =
                 $"Codex Micro: {Environment.ProcessPath} was built/launched, " +
                 "but another keypad instance is running. Exit that keypad " +
@@ -285,76 +270,11 @@ public partial class App : System.Windows.Application
         MicroKeypadControlCommand command,
         CancellationToken cancellationToken)
     {
-#if DEBUG
-        if (command is
-            MicroKeypadControlCommand.E2eNewTask or
-            MicroKeypadControlCommand.E2eToggleQuickModel)
-        {
-            return HandleE2eControlCommandAsync(command, cancellationToken);
-        }
-#endif
         _ = cancellationToken;
         return Dispatcher
             .InvokeAsync(() => HandleControlCommand(command))
             .Task;
     }
-
-#if DEBUG
-    private async Task<MicroKeypadControlResponse>
-        HandleE2eControlCommandAsync(
-            MicroKeypadControlCommand command,
-            CancellationToken cancellationToken)
-    {
-        _ = cancellationToken;
-        if (_exiting || _restartQueued || _surface is null)
-        {
-            return ControlResponse(
-                accepted: false,
-                MicroKeypadControlState.Busy,
-                "The keypad is not ready for an E2E action.");
-        }
-
-        try
-        {
-            if (command == MicroKeypadControlCommand.E2eNewTask)
-            {
-                await _surface.RunE2eNewTaskAsync();
-            }
-            else
-            {
-                await _surface.RunE2eToggleQuickModelAsync();
-            }
-
-            return ControlResponse(
-                accepted: true,
-                MicroKeypadControlState.Ready);
-        }
-        catch (Exception exception)
-        {
-            return ControlResponse(
-                accepted: false,
-                MicroKeypadControlState.Rejected,
-                exception.Message);
-        }
-    }
-
-    private static MicroKeypadControlCommand? ResolveE2eControlCommand(
-        string[] arguments)
-    {
-        if (arguments.Contains(
-                "--e2e-new-task",
-                StringComparer.OrdinalIgnoreCase))
-        {
-            return MicroKeypadControlCommand.E2eNewTask;
-        }
-
-        return arguments.Contains(
-                "--e2e-toggle-quick-model",
-                StringComparer.OrdinalIgnoreCase)
-            ? MicroKeypadControlCommand.E2eToggleQuickModel
-            : null;
-    }
-#endif
 
     private MicroKeypadControlResponse HandleControlCommand(
         MicroKeypadControlCommand command)
