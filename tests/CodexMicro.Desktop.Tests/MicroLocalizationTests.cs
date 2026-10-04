@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Windows.Controls;
+using System.Windows.Automation;
 using CodexMicro.Desktop;
 using CodexMicro.Desktop.Services;
 using Xunit;
@@ -48,7 +49,7 @@ public sealed class MicroLocalizationTests
                 window.ApplyQuotaSnapshot(new CodexQuotaSnapshot(
                     new CodexQuotaWindow(
                         UsedPercent: 24,
-                        WindowDurationMinutes: 300,
+                        WindowDurationMinutes: 7 * 24 * 60,
                         ResetsAt: DateTimeOffset.Now.AddHours(3)),
                     Secondary: null,
                     PlanType: "pro",
@@ -67,13 +68,14 @@ public sealed class MicroLocalizationTests
                 var tooltip = Assert.IsType<ToolTip>(window.ActivityLed.ToolTip);
                 var panel = Assert.IsType<StackPanel>(tooltip.Content);
                 Assert.Equal(
-                    "Latest event",
+                    "Activity",
                     Assert.IsType<TextBlock>(panel.Children[0]).Text);
                 Assert.Equal(
-                    "No event has been sent.",
+                    "Idle",
                     Assert.IsType<TextBlock>(panel.Children[1]).Text);
-                Assert.Equal("SOL", window.QuotaCaptionText.Text);
-                Assert.Equal("76%", window.QuotaValueText.Text);
+                Assert.Equal(CodexQuickModel.Sol.Id, window.SettingsKey.ModelId);
+                Assert.Equal(76, window.SettingsKey.WeeklyRemaining);
+                Assert.Null(window.SettingsKey.FiveHourRemaining);
                 var quotaTooltip = Assert.IsType<ToolTip>(
                     window.SettingsKey.ToolTip);
                 var quotaPanel = Assert.IsType<StackPanel>(quotaTooltip.Content);
@@ -81,11 +83,11 @@ public sealed class MicroLocalizationTests
                     "Codex quota",
                     Assert.IsType<TextBlock>(quotaPanel.Children[0]).Text);
                 Assert.Contains(
-                    "5-hour limit",
-                    Assert.IsType<TextBlock>(quotaPanel.Children[1]).Text);
+                    "Weekly limit",
+                    AutomationProperties.GetHelpText(window.SettingsKey));
                 Assert.Contains(
                     "Click switches Sol / Luna",
-                    Assert.IsType<TextBlock>(quotaPanel.Children[1]).Text);
+                    AutomationProperties.GetHelpText(window.SettingsKey));
                 window.CloseForApplicationExit();
             }
             catch (Exception exception)

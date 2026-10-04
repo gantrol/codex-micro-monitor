@@ -60,13 +60,15 @@ public sealed class AgentLightingVisualTests
                 Assert.Equal(
                     lightingCase.ExpectedActive,
                     lightingCase.Appearance.IsActive);
-                Assert.Equal(lightingCase.ExpectedColor, rendered.Carrier.Color);
+                var expectedColor = lightingCase.Appearance.IsCurrentSession && !lightingCase.ExpectedActive
+                    ? Colors.White : lightingCase.ExpectedColor;
+                Assert.Equal(expectedColor, rendered.Carrier.Color);
                 Assert.Equal(
-                    lightingCase.Appearance.DisplayOpacity,
+                    lightingCase.Appearance.IsCurrentSession ? 1 : lightingCase.Appearance.DisplayOpacity,
                     rendered.Carrier.Opacity,
                     3);
 
-                if (!lightingCase.ExpectedActive)
+                if (!lightingCase.ExpectedActive && !lightingCase.Appearance.IsCurrentSession)
                 {
                     Assert.Equal(0, rendered.Carrier.Opacity, 3);
                     continue;
@@ -275,6 +277,8 @@ public sealed class AgentLightingVisualTests
             Background = new SolidColorBrush(ColorFromRgb(0xEEF2F7)),
         };
         var key = CreateAgentKey(style, appearance, IsolatedRenderSize);
+        // The surface projects selected-session emphasis before assigning carriers.
+        appearance = appearance.ForDisplay();
         stage.Children.Add(key);
         stage.Measure(new Size(IsolatedRenderSize, IsolatedRenderSize));
         stage.Arrange(new Rect(0, 0, IsolatedRenderSize, IsolatedRenderSize));
@@ -436,7 +440,8 @@ public sealed class AgentLightingVisualTests
         LightingCase lightingCase,
         Color sample)
     {
-        if (lightingCase.ExpectedColor == Colors.White)
+        if (lightingCase.ExpectedColor == Colors.White ||
+            !lightingCase.ExpectedActive && lightingCase.Appearance.IsCurrentSession)
         {
             Assert.InRange(Saturation(sample), 0, 0.10);
             Assert.True(

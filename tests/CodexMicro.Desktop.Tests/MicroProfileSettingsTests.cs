@@ -209,7 +209,7 @@ public sealed class MicroProfileSettingsTests
             missingCachePath);
 
         Assert.Equal("ultra", settings.Current.QuickModelAEffort);
-        settings.SetQuickModelAEffort("ultra");
+        Assert.Throws<ArgumentOutOfRangeException>(() => settings.SetQuickModelAEffort("ultra"));
         Assert.Equal("ultra", settings.Current.QuickModelAEffort);
     }
 
@@ -235,6 +235,7 @@ public sealed class MicroProfileSettingsTests
               "models": [
                 {
                   "slug": "gpt-5.6-sol",
+                  "visibility": "list",
                   "default_reasoning_level": "low",
                   "supported_reasoning_levels": [
                     { "effort": "low" },
@@ -247,6 +248,7 @@ public sealed class MicroProfileSettingsTests
                 },
                 {
                   "slug": "gpt-5.6-terra",
+                  "visibility": "list",
                   "default_reasoning_level": "medium",
                   "supported_reasoning_levels": [
                     { "effort": "low" },
@@ -259,6 +261,7 @@ public sealed class MicroProfileSettingsTests
                 },
                 {
                   "slug": "gpt-5.6-luna",
+                  "visibility": "list",
                   "default_reasoning_level": "medium",
                   "supported_reasoning_levels": [
                     { "effort": "low" },

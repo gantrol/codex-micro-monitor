@@ -20,13 +20,13 @@ public sealed class SoftwarePresentationTests
         var window = new MicroSurfaceWindow(new(MicroLanguage.ZhCn),
             profileSettings: MicroProfileSettings.CreateTransient(), transport: rig.Transport,
             activateSoftwareApplication: () => { calls++; return activation.Task; },
-            readSoftwareSelection: _ => Task.FromResult<string?>(null));
+            readSoftwareSelection: _ => Task.FromResult<string?>("01000000-0000-0000-0000-000000000001"));
         try
         {
             await rig.ConnectAsync();
             await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
             Assert.Equal(Color.FromRgb(0x9e, 0xbd, 0xff), ((SolidColorBrush)window.ActivityLed.Fill).Color);
-            window.ActionKey12.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            window.SelectSoftwareThread("01000000-0000-0000-0000-000000000001");
             Assert.Equal(1, calls);
             Assert.Equal(Color.FromRgb(0x9e, 0xbd, 0xff), ((SolidColorBrush)window.ActivityLed.Fill).Color);
             activation.SetResult(true);
@@ -48,7 +48,7 @@ public sealed class SoftwarePresentationTests
         var reads = 0;
         using var layout = new CodexMicroLayoutObserver();
         var editor = new KeycapEditorWindow("ACT09", new("FAST", null, new("skill", "saved-skill", "fixture/SKILL.md")),
-            new(MicroLanguage.ZhCn), new CodexMicroConfigWriter(layout.ConfigPath), layout,
+            new(MicroLanguage.EnUs), new CodexMicroConfigWriter(layout.ConfigPath), layout,
             _ => { reads++; return loaded.Task; });
         try
         {
@@ -58,7 +58,8 @@ public sealed class SoftwarePresentationTests
                 .Invoke(editor, [editor, EventArgs.Empty]);
             Assert.Equal(1, reads);
             Assert.False(loaded.Task.IsCompleted);
-            var chosen = editor.ActionCombo.Items.Cast<object>().First(item => item.ToString()!.Contains("New task"));
+            var chosen = editor.ActionCombo.Items.Cast<object>().First(item =>
+                Equals(item.GetType().GetProperty("Id")!.GetValue(item), "newTask"));
             editor.ActionCombo.SelectedItem = chosen;
             loaded.SetResult([new("later-skill", "fixture/later/SKILL.md")]);
             await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);

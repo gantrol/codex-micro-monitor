@@ -35,12 +35,12 @@ public sealed class SettingsWindowDesignTests
                     new CodexMicroConfigWriter(configPath),
                     observer);
 
-                editor.Measure(new Size(940, 820));
-                editor.Arrange(new Rect(0, 0, 940, 820));
+                editor.Measure(new Size(780, 700));
+                editor.Arrange(new Rect(0, 0, 780, 700));
                 var root = Assert.IsAssignableFrom<FrameworkElement>(
                     editor.Content);
-                root.Measure(new Size(940, 820));
-                root.Arrange(new Rect(0, 0, 940, 820));
+                root.Measure(new Size(780, 700));
+                root.Arrange(new Rect(0, 0, 780, 700));
                 editor.UpdateLayout();
 
                 Assert.Equal("编辑键帽", editor.EditorTitleText.Text);
@@ -56,8 +56,8 @@ public sealed class SettingsWindowDesignTests
                     "FAST",
                     ((CodexKeycapDefinition)editor.KeycapList.Items[0]).IconId);
                 Assert.True(editor.ActionCombo.Items.Count > 10);
-                Assert.Equal(940, editor.Width, 3);
-                Assert.Equal(820, editor.Height, 3);
+                Assert.Equal(780, editor.Width, 3);
+                Assert.Equal(700, editor.Height, 3);
 
                 editor.SearchBox.Text = "LAB";
                 var filteredKeycap = Assert.Single(
@@ -71,8 +71,8 @@ public sealed class SettingsWindowDesignTests
                     editor.SearchBox.Text = string.Empty;
                     editor.UpdateLayout();
                     var bitmap = new RenderTargetBitmap(
-                        940,
-                        820,
+                        780,
+                        700,
                         96,
                         96,
                         PixelFormats.Pbgra32);

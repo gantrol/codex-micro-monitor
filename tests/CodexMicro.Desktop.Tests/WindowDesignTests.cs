@@ -7,6 +7,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using CodexMicro.Desktop.Controls;
 using CodexMicro.Desktop.Services;
 using CodexMicro.Protocol;
 using Xunit;
@@ -312,7 +313,8 @@ public sealed class WindowDesignTests
                 AssertSquare(window.ActionKey06);
                 AssertSquare(window.SettingsKey);
                 AssertSquare(window.ActionKey12);
-                Assert.Same(window.QuotaGauge, window.SettingsKey.Content);
+                Assert.True(window.SettingsKey.UseQuotaReadout);
+                Assert.IsType<Viewbox>(window.SettingsKey.Content);
                 Assert.NotSame(window.ActionKey12.Template, window.SettingsKey.Template);
                 Assert.Equal(96, window.ActionKey06.ActualWidth, 3);
                 Assert.Equal(96, window.ActionKey06.ActualHeight, 3);
@@ -326,13 +328,13 @@ public sealed class WindowDesignTests
                 Assert.Equal(ResizeMode.NoResize, window.ResizeMode);
                 Assert.True(window.AllowsTransparency);
                 Assert.Equal(Brushes.Transparent, window.Background);
-                Assert.Contains("Codex Micro", window.Title);
+                Assert.Contains("Codex Micro Monitor", window.Title);
                 Assert.True(window.TopmostMenuItem.IsCheckable);
                 Assert.NotNull(window.DeviceFrame.ContextMenu);
-                Assert.Equal(2, window.SettingsMenuItem.Items.Count);
+                Assert.Empty(window.SettingsMenuItem.Items);
                 Assert.NotNull(window.SettingsKey.ContextMenu);
                 Assert.Equal(3, window.KnobContextMenu.Items.Count);
-                Assert.NotNull(window.ActionKey12.ContextMenu);
+                Assert.Null(window.ActionKey12.ContextMenu);
                 Assert.Equal(
                     Visibility.Collapsed,
                     window.CloseKeypadMenuItem.Visibility);
@@ -360,56 +362,25 @@ public sealed class WindowDesignTests
                 var harnessItems = window.HarnessContextMenu.Items
                     .OfType<MenuItem>()
                     .ToArray();
-                Assert.Contains(harnessItems, item =>
-                    Equals(item.Tag, "codex") && item.IsChecked);
-                Assert.Contains(harnessItems, item =>
-                    Equals(item.Tag, "deepseek-harness"));
-                Assert.All(harnessItems, item =>
-                    Assert.IsAssignableFrom<FrameworkElement>(item.Header));
-                foreach (var harnessItem in harnessItems)
-                {
-                    var header = Assert.IsType<Grid>(harnessItem.Header);
-                    Assert.Equal(34, header.Width, 3);
-                    Assert.IsType<CodexMicro.Desktop.Controls.KeycapIcon>(
-                        header.Children[0]);
-                    if (harnessItem.Tag is string)
-                    {
-                        Assert.Equal(2, header.Children.Count);
-                        var badge = Assert.IsType<Border>(header.Children[1]);
-                        Assert.Equal(16, badge.Width, 3);
-                        Assert.Equal(
-                            "+",
-                            Assert.IsType<TextBlock>(badge.Child).Text);
-                    }
-                    else
-                    {
-                        Assert.Single(header.Children);
-                    }
-                    var tooltip = Assert.IsType<ToolTip>(harnessItem.ToolTip);
-                    Assert.Equal(
-                        2,
-                        Assert.IsType<StackPanel>(tooltip.Content).Children.Count);
-                }
+                Assert.Single(harnessItems);
+                Assert.Equal("Codex", harnessItems[0].Header);
+                Assert.Null(window.ActionKey12.ContextMenu);
+                var codexIcon = window.ActionIcon12.KeycapId;
+                var codexBrand = window.BrandCodexIcon.KeycapId;
+                var codexSilkscreen = window.LeftSilkScreen.Text;
+                var codexWordmark = window.BrandWordmarkText.Text;
+                // Migrated legacy profile values must not revive removed adapters.
                 profile.SetActiveHarness("deepseek-harness");
-                Assert.Equal("DEEPSEEK", window.ActionIcon12.KeycapId);
-                Assert.Equal("DEEPSEEK", window.BrandCodexIcon.KeycapId);
-                Assert.Equal(
-                    "DEEPSEEK  /  MICRO  /  DIRECT BRIDGE",
-                    window.LeftSilkScreen.Text);
-                Assert.Equal(
-                    "DEEPSEEK  HARNESS",
-                    window.BrandWordmarkText.Text);
-                Assert.InRange(window.HarnessThemeWash.Opacity, 0.27, 0.29);
-                Assert.IsType<RadialGradientBrush>(
-                    window.HarnessThemeWash.Background);
+                Assert.Equal(codexIcon, window.ActionIcon12.KeycapId);
+                Assert.Equal(codexBrand, window.BrandCodexIcon.KeycapId);
+                Assert.Equal(codexSilkscreen, window.LeftSilkScreen.Text);
+                Assert.Equal(codexWordmark, window.BrandWordmarkText.Text);
+                Assert.Equal(0, window.HarnessThemeWash.Opacity, 3);
+                Assert.Null(window.ActionKey12.ContextMenu);
                 profile.SetActiveHarness("codex");
                 Assert.Equal("CODEX", window.ActionIcon12.KeycapId);
                 Assert.Equal("CODEX", window.BrandCodexIcon.KeycapId);
-                Assert.Equal(
-                    "CODEX  /  MICRO  /  CRYSTAL HID",
-                    window.LeftSilkScreen.Text);
                 Assert.Equal("OPENAI  CODEX", window.BrandWordmarkText.Text);
-                Assert.Equal(0, window.HarnessThemeWash.Opacity, 3);
                 Assert.Equal(Visibility.Visible, window.ActionKey10.Visibility);
                 Assert.Equal(Visibility.Collapsed, window.ActionKey10Split.Visibility);
                 Assert.Equal(Visibility.Collapsed, window.ActionKey11Split.Visibility);
@@ -419,7 +390,7 @@ public sealed class WindowDesignTests
                 window.ApplyActionTargetForegroundForVisualTest(isForeground: true);
                 Assert.Equal(Visibility.Visible, window.ActionSendBadge.Visibility);
                 profile.SetActiveHarness("deepseek-harness");
-                Assert.Equal(Visibility.Collapsed, window.ActionSendBadge.Visibility);
+                Assert.Equal(Visibility.Visible, window.ActionSendBadge.Visibility);
                 profile.SetActiveHarness("codex");
                 window.ApplyActionTargetForegroundForVisualTest(isForeground: true);
                 Assert.Equal(Visibility.Visible, window.ActionSendBadge.Visibility);
@@ -703,9 +674,45 @@ public sealed class WindowDesignTests
                 Assert.Equal(HorizontalAlignment.Right, knobContent.HorizontalAlignment);
                 Assert.Equal(58, knobContent.Width, 3);
                 Assert.Equal(5, knobContent.Margin.Right, 3);
-                Assert.Same(window.QuotaGauge, window.SettingsKey.Content);
-                Assert.Equal("—", window.QuotaValueText.Text);
-                Assert.Equal("S↔L", window.QuotaCaptionText.Text);
+                Assert.True(window.SettingsKey.UseQuotaReadout);
+                var quotaContent = Assert.IsType<Viewbox>(window.SettingsKey.Content);
+                var quotaGauge = Assert.IsType<Grid>(quotaContent.Child);
+                var quotaReadout = Assert.IsType<SevenSegmentReadout>(Assert.Single(
+                    quotaGauge.Children.OfType<Viewbox>(), viewbox =>
+                        viewbox.Visibility == Visibility.Visible).Child);
+                Assert.Equal("—", quotaReadout.Text);
+                Assert.Null(window.SettingsKey.FiveHourRemaining);
+                Assert.Null(window.SettingsKey.WeeklyRemaining);
+                Assert.Contains(
+                    "正在读取",
+                    AutomationProperties.GetHelpText(window.SettingsKey));
+
+                window.ApplyQuotaSnapshot(new CodexQuotaSnapshot(
+                    new CodexQuotaWindow(
+                        UsedPercent: 63,
+                        WindowDurationMinutes: 10080,
+                        ResetsAt: DateTimeOffset.Now.AddDays(2)),
+                    Secondary: null,
+                    PlanType: "pro",
+                    ReadAt: DateTimeOffset.Now));
+                window.DesignSurface.UpdateLayout();
+
+                Assert.Equal("37%", quotaReadout.Text);
+                Assert.Equal(37, window.SettingsKey.WeeklyRemaining);
+                Assert.Null(window.SettingsKey.FiveHourRemaining);
+                Assert.True(window.SettingsKey.HasWeeklyWindow);
+                Assert.False(window.SettingsKey.HasFiveHourWindow);
+                var quotaProgressRing = Assert.Single(
+                    quotaGauge.Children.OfType<System.Windows.Shapes.Path>(),
+                    path => path.Visibility == Visibility.Visible);
+                Assert.IsType<StreamGeometry>(quotaProgressRing.Data);
+                Assert.Equal(
+                    Color.FromRgb(0x9B, 0xDB, 0xBD),
+                    Assert.IsType<SolidColorBrush>(
+                        quotaProgressRing.Stroke).Color);
+                Assert.Contains(
+                    "37%",
+                    AutomationProperties.GetHelpText(window.SettingsKey));
                 Assert.Contains(
                     "短按",
                     AutomationProperties.GetHelpText(window.SettingsKey));
@@ -713,41 +720,19 @@ public sealed class WindowDesignTests
                     "长按",
                     AutomationProperties.GetHelpText(window.SettingsKey));
 
-                window.ApplyQuotaSnapshot(new CodexQuotaSnapshot(
-                    new CodexQuotaWindow(
-                        UsedPercent: 63,
-                        WindowDurationMinutes: 300,
-                        ResetsAt: DateTimeOffset.Now.AddHours(2)),
-                    Secondary: null,
-                    PlanType: "pro",
-                    ReadAt: DateTimeOffset.Now));
-                window.DesignSurface.UpdateLayout();
-
-                Assert.Equal("37%", window.QuotaValueText.Text);
-                Assert.IsType<StreamGeometry>(window.QuotaProgressRing.Data);
-                Assert.Equal(
-                    Color.FromRgb(0xA8, 0xC7, 0xFF),
-                    Assert.IsType<SolidColorBrush>(
-                        window.QuotaProgressRing.Stroke).Color);
-                Assert.Contains(
-                    "37%",
-                    AutomationProperties.GetItemStatus(window.SettingsKey));
-
                 window.ApplyQuickModel("visual-thread", CodexQuickModel.Luna);
-                Assert.Equal("LUNA", window.QuotaCaptionText.Text);
-                Assert.Contains(
-                    "Luna",
-                    AutomationProperties.GetItemStatus(window.SettingsKey));
+                Assert.Equal(CodexQuickModel.Luna.Id, window.SettingsKey.ModelId);
+                Assert.Equal("37%", quotaReadout.Text);
 
                 var knobCenter = settingsKnob.TranslatePoint(
                     new Point(
                         settingsKnob.ActualWidth / 2,
                         settingsKnob.ActualHeight / 2),
                     window.DesignSurface);
-                var quotaCenter = window.QuotaGauge.TranslatePoint(
+                var quotaCenter = quotaContent.TranslatePoint(
                     new Point(
-                        window.QuotaGauge.ActualWidth / 2,
-                        window.QuotaGauge.ActualHeight / 2),
+                        quotaContent.ActualWidth / 2,
+                        quotaContent.ActualHeight / 2),
                     window.DesignSurface);
                 Assert.InRange(
                     Math.Abs(knobCenter.X - quotaCenter.X),
@@ -766,10 +751,12 @@ public sealed class WindowDesignTests
                     Secondary: null,
                     PlanType: "pro",
                     ReadAt: DateTimeOffset.Now));
+                Assert.Equal("8%", quotaReadout.Text);
+                Assert.Equal(8, window.SettingsKey.WeeklyRemaining);
                 Assert.Equal(
                     Color.FromRgb(0xFF, 0x9E, 0x8B),
                     Assert.IsType<SolidColorBrush>(
-                        window.QuotaProgressRing.Stroke).Color);
+                        quotaProgressRing.Stroke).Color);
 
                 var runtimeLedTop = window.RuntimeLed
                     .TranslatePoint(new Point(), window.DesignSurface)
@@ -798,8 +785,7 @@ public sealed class WindowDesignTests
                 Assert.True(leftSilkRight < controlLeft);
                 Assert.True(rightSilkLeft > controlRight);
 
-                var deepSeekPreviewPath = Environment.GetEnvironmentVariable(
-                    "CODEX_MICRO_DEEPSEEK_PREVIEW_PATH");
+                // Legacy adapter state must not replace the Codex surface.
                 profile.SetActiveHarness("deepseek-harness");
                 window.ApplyVoiceServiceStateForVisualTest(ready: true);
                 window.ApplyHarnessStateForVisualTest(new(
@@ -855,41 +841,17 @@ public sealed class WindowDesignTests
                     isForeground: true);
                 window.DesignSurface.UpdateLayout();
                 Assert.Equal(Visibility.Visible, window.ActionSendBadge.Visibility);
-                Assert.Equal("PRO", window.QuotaValueText.Text);
-                Assert.Equal(Visibility.Collapsed, window.QuotaCaptionText.Visibility);
-                Assert.Equal(Geometry.Empty, window.QuotaProgressRing.Data);
+                Assert.True(window.SettingsKey.UseQuotaReadout);
+                Assert.Same(quotaContent, window.SettingsKey.Content);
+                Assert.Equal("8%", quotaReadout.Text);
+                Assert.Equal(CodexQuickModel.Luna.Id, window.SettingsKey.ModelId);
+                Assert.Equal("CODEX", window.BrandCodexIcon.KeycapId);
+                Assert.Single(window.HarnessContextMenu.Items.OfType<MenuItem>());
+                Assert.Null(window.ActionKey12.ContextMenu);
+                Assert.IsType<StreamGeometry>(quotaProgressRing.Data);
                 Assert.Equal(
-                    Color.FromRgb(0xFA, 0xFA, 0xF8),
+                    Color.FromRgb(0x2D, 0x29, 0x25),
                     Assert.IsType<SolidColorBrush>(window.SettingsKey.Background).Color);
-                Assert.Equal(
-                    Color.FromRgb(0x1D, 0x1D, 0x1B),
-                    Assert.IsType<SolidColorBrush>(window.QuotaValueText.Foreground).Color);
-                Assert.Equal(
-                    Color.FromRgb(0x30, 0x4F, 0xFE),
-                    Assert.IsType<SolidColorBrush>(
-                        window.AgentKey0.BorderBrush).Color);
-                Assert.Equal(
-                    Color.FromRgb(0x78, 0xA6, 0xFF),
-                    Assert.IsType<SolidColorBrush>(
-                        window.ActivityLed.Fill).Color);
-                if (!string.IsNullOrWhiteSpace(deepSeekPreviewPath))
-                {
-                    var deepSeekBitmap = new RenderTargetBitmap(
-                        590,
-                        610,
-                        96,
-                        96,
-                        PixelFormats.Pbgra32);
-                    deepSeekBitmap.Render(window.DesignSurface);
-                    var deepSeekEncoder = new PngBitmapEncoder();
-                    deepSeekEncoder.Frames.Add(BitmapFrame.Create(deepSeekBitmap));
-                    using var deepSeekStream = new FileStream(
-                        deepSeekPreviewPath,
-                        FileMode.Create,
-                        FileAccess.Write,
-                        FileShare.Read);
-                    deepSeekEncoder.Save(deepSeekStream);
-                }
                 profile.SetActiveHarness("codex");
                 window.ApplyActionTargetForegroundForVisualTest(isForeground: true);
 

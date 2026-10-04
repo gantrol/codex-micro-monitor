@@ -201,7 +201,7 @@ public sealed class CodexDraftModelToggleServiceTests
     }
 
     [Fact]
-    public void UnknownConfigValuesDoNotInventASelection()
+    public void ConfiguredModelIdIsPreservedButUnknownEffortIsNotAssumedSupported()
     {
         using var document = JsonDocument.Parse("""
             {
@@ -216,7 +216,7 @@ public sealed class CodexDraftModelToggleServiceTests
         var config = CodexDraftModelToggleService.ParseCurrentConfig(
             document.RootElement);
 
-        Assert.Equal(CodexQuickModel.Unknown, config.Model);
+        Assert.Equal("future-model", config.Model.Id);
         Assert.Null(config.Effort);
         Assert.Null(config.EncoderMode);
     }
