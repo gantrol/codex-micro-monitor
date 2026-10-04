@@ -145,8 +145,8 @@ final class KeycapControl: UIControl {
     @objc private func tapped() { haptic.selectionChanged(); onTap?() }
 }
 
-extension KeycapControl: UIContextMenuInteractionDelegate {
-    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+extension KeycapControl {
+    override func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                 configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
         guard let menu = contextMenu?() else { return nil }
         return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in menu }

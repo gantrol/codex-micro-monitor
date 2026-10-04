@@ -17,7 +17,9 @@ xcodebuild -project apps/ios/CodexMicro.xcodeproj \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-当前开发环境为 Windows：已做 Swift 语法解析、工程引用和资源格式静态检查；尚未使用 Xcode 编译，未运行 UI / 手动测试。此工程用于原型开发，未配置 App Store 图标与提交材料。
+2026-10-04 已在 macOS 15.5 / Xcode 16.3 使用上述 iOS Simulator Debug 目标完成构建（arm64、x86_64，关闭代码签名）。本次修复了 `KeycapControl` 重复声明 UIKit 已继承的菜单委托及缺少 `override` 的编译问题。未启动模拟器，未做 UI / 实机验收；未配置 App Store 图标与提交材料。
+
+按当前 Windows 产品重新审查的结论见 [Windows 基线与 Apple 实现审查](../../docs/architecture/windows-baseline-macos-review.zh-CN.md)。下文的“保持一致”仅指部分几何与外观来源，不能视为交互、状态或控制能力完整一致。
 
 ## 与 Windows 保持一致的界面
 
