@@ -67,6 +67,7 @@ public partial class MicroSettingsWindow : Window
         _codexConfigChanged = codexConfigChanged;
 
         InitializeComponent();
+        Loaded += (_, _) => MicroWindowLayout.FitDialog(this);
         LiveMicroPreviewBrush.Visual = previewVisual;
         _localization.LanguageChanged += Localization_LanguageChanged;
         _profileSettings.Changed += ProfileSettings_Changed;
@@ -101,6 +102,8 @@ public partial class MicroSettingsWindow : Window
         _syncing = true;
         try
         {
+            KeypadSizeSlider.Value = profile.WindowScale * 100;
+            KeypadSizeValue.Text = $"{profile.WindowScale:P0}";
             var models = _profileSettings.GetModels()
                 .Select(model => new ModelChoice(CodexQuickModel.FromId(model.Id), model.Label))
                 .ToArray();
@@ -172,6 +175,7 @@ public partial class MicroSettingsWindow : Window
         Title = english
                 ? "Codex Micro · Software settings"
                 : "Codex Micro · 软件设置";
+        KeypadSizeTitle.Text = english ? "Size" : "大小";
         WindowTitleText.Text = english ? "Micro software settings" : "Micro 软件设置";
         LocalBadgeText.Text = english ? "LIVE" : "实时";
         WindowSubtitleText.Text = english
@@ -532,7 +536,8 @@ public partial class MicroSettingsWindow : Window
                     _layoutObserver.Current.GetSlot(slotId),
                     _localization,
                     _configWriter,
-                    _layoutObserver);
+                    _layoutObserver,
+                    softwareProfile: _profileSettings);
             editor.Owner = this;
             editor.Topmost = Topmost;
             if (editor.ShowDialog() == true)
@@ -597,6 +602,7 @@ public partial class MicroSettingsWindow : Window
             _profileSettings.Current.ActiveHarnessId);
         {
             SaveLayoutChange(_configWriter.ResetLayout);
+            if (_lastConfigSaveSucceeded) _profileSettings.ResetKeycapIcons();
         }
     }
 
@@ -643,11 +649,17 @@ public partial class MicroSettingsWindow : Window
         object sender,
         MouseButtonEventArgs e)
     {
-        if (e.LeftButton == MouseButtonState.Pressed)
-        {
-            DragMove();
-        }
+        MicroWindowLayout.DragTitle(this, e);
     }
+
+    private void KeypadSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_syncing || KeypadSizeValue is null) return;
+        KeypadSizeValue.Text = $"{e.NewValue / 100:P0}";
+        _profileSettings.SetWindowScale(e.NewValue / 100);
+    }
+
+    private void ResetSizeButton_Click(object sender, RoutedEventArgs e) => _profileSettings.SetWindowScale(1);
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {

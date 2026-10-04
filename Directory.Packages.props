@@ -1,9 +1,12 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CodexControlVersion>0.1.0-local.2</CodexControlVersion>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageVersion Include="CodexControl" Version="[$(CodexControlVersion)]" />
+    <PackageVersion Include="CodexControl.Windows" Version="[$(CodexControlVersion)]" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="xunit" Version="2.9.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />

@@ -40,8 +40,10 @@ public partial class MicroSurfaceWindow
     private void ApplyCoreSurface()
     {
         ActionKey12.ContextMenu = null;
-        OpenOfficialSettingsMenuItem.Visibility = Visibility.Collapsed;
-        KnobOpenOfficialSettingsMenuItem.Visibility = Visibility.Collapsed;
+        SettingsMenuItem.Items.Clear();
+        SettingsMenuItem.Click += OpenSoftwareSettingsMenuItem_Click;
+        KnobSettingsMenuItem.Items.Clear();
+        KnobSettingsMenuItem.Click += OpenSoftwareSettingsMenuItem_Click;
         ApplySoftwareConnectionState(_broker.IsReady);
     }
 
@@ -125,7 +127,11 @@ public partial class MicroSurfaceWindow
             {
                 _modelToggleService.ObserveSelectedThread(threadId);
             }
-            if (changed) RefreshCurrentCodexThreadPresentation();
+            if (changed)
+            {
+                ++_softwareSelectionGeneration;
+                RefreshCurrentCodexThreadPresentation();
+            }
         }
         catch (OperationCanceledException) { }
         finally { _softwareSelectionReading = false; }
@@ -155,8 +161,15 @@ public partial class MicroSurfaceWindow
 
     private async Task<bool> ValidateSoftwareTargetAsync(string? expectedThreadId, CancellationToken token)
     {
-        if (_windowClosed || _softwareNavigationPending || expectedThreadId is null) return false;
+        if (_windowClosed || _softwareNavigationPending) return false;
         var generation = _softwareSelectionGeneration;
+        if (expectedThreadId is null)
+        {
+            if (_softwareDraft is not { } draft) return false;
+            var current = await _draftComposerModelSelector.CaptureDraftContextAsync(draft, token);
+            return !_windowClosed && !_softwareNavigationPending && generation == _softwareSelectionGeneration &&
+                current is not null && current.Presentation == draft.Presentation;
+        }
         var selected = await _readSoftwareSelection(token);
         if (_windowClosed || _softwareNavigationPending || generation != _softwareSelectionGeneration) return false;
         _modelToggleService.ObserveSelectedThread(selected);
@@ -174,20 +187,11 @@ public partial class MicroSurfaceWindow
         }
         return new MicroControlContext(
             _softwareNavigationPending ? null : CurrentCodexAgentThreadId(), threads,
-            _layoutObserver.Current, _profileSettings.Current);
+            _layoutObserver.Current, _profileSettings.Current, _softwareSelectionGeneration);
     }
 
     private async Task HandleSoftwareKeyAsync(string key, bool agentKey)
     {
-        if (key == "ACT12" && (_layoutObserver.Current.GetSlot(key).ResolvedAction == "composer.submit" ||
-            !IsHarnessForeground(ActiveHarness())))
-        {
-            await RunActionAsync(async () => await _activateSoftwareApplication()
-                ? new(MicroSendDisposition.Accepted, 0, 0, 0, "ChatGPT activated")
-                : MicroSendResult.NotSent("ChatGPT could not be activated"), key);
-            RefreshActionTargetForegroundState();
-            return;
-        }
         // A single Agent tap must navigate; the old focus preference must not consume it.
         var fast = !agentKey && _layoutObserver.Current.GetSlot(key).ResolvedAction == "composer.toggleFastMode";
         var fastThread = fast ? CurrentCodexAgentThreadId() : null;

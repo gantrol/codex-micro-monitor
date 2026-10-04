@@ -7,7 +7,7 @@ namespace CodexMicro.Codex;
 
 internal sealed class SoftwareQuestionObserver : IDisposable
 {
-    private readonly CodexPeerClient _peer;
+    private readonly ICodexDesktopConnection _peer;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly SemaphoreSlim _gate = new(1);
     private readonly object _sync = new();
@@ -17,9 +17,9 @@ internal sealed class SoftwareQuestionObserver : IDisposable
 
     internal event Action<string, IReadOnlyList<string>>? AnswersAccepted;
 
-    internal SoftwareQuestionObserver(CodexPeerClient? peer = null)
+    internal SoftwareQuestionObserver(CodexDesktopConnection? peer = null)
     {
-        _peer = peer ?? new();
+        _peer = peer ?? new CodexDesktopConnection();
         _peer.Broadcast += OnBroadcast;
         _peer.Disconnected += () => { lock (_sync) { _streams.Clear(); _resync.Clear(); } };
     }

@@ -280,6 +280,14 @@ public partial class MicroSurfaceWindow : Window
         _canCloseKeypad = canCloseKeypad;
         _configWriter = new CodexMicroConfigWriter(_layoutObserver.ConfigPath);
         InitializeComponent();
+        Loaded += (_, _) => MicroWindowLayout.SizeKeypad(this, _profileSettings.Current.WindowScale);
+        SizeChanged += (_, _) =>
+        {
+            if (_actionKeys is not null)
+                foreach (var (_, icon) in _actionKeys.Values) icon.InvalidateVisual();
+        };
+        DpiChanged += (_, _) => Dispatcher.BeginInvoke(new Action(() =>
+            MicroWindowLayout.SizeKeypad(this, _profileSettings.Current.WindowScale)));
         InitializeMonitorPage();
         _codexDeviceFrameBackground = DeviceFrame.Background;
         _codexPearlLightGuideBackground = PearlLightGuide.Background;
@@ -3502,7 +3510,8 @@ public partial class MicroSurfaceWindow : Window
         {
             var binding = snapshot.GetSlot(slotId);
             var definition = CodexKeycapCatalog.Get(binding.KeycapId);
-            presentation.Icon.KeycapId = binding.KeycapId;
+            presentation.Icon.KeycapId = _broker.UsesSoftwareControl
+                ? _profileSettings.ResolveKeycapIcon(slotId, binding.KeycapId) : binding.KeycapId;
             var action = binding.ResolvedAction;
             var physicalKeys = slotId == "ACT10_ACT11"
                 ? "ACT10 / ACT11"
@@ -3628,7 +3637,7 @@ public partial class MicroSurfaceWindow : Window
         var harness = ActiveHarness();
         var english = _localization.IsEnglish;
         var connected = _harnessStateSnapshot?.HarnessId == harness.Id;
-        ActionIcon12.KeycapId = _layoutObserver.Current.GetSlot("ACT12").KeycapId;
+        ActionIcon12.KeycapId = _profileSettings.ResolveKeycapIcon("ACT12", _layoutObserver.Current.GetSlot("ACT12").KeycapId);
         SetHelp(
             ActionKey12,
             "Codex",
@@ -3648,6 +3657,15 @@ public partial class MicroSurfaceWindow : Window
     private void RefreshActionKeyPresentation()
     {
         var harness = ActiveHarness();
+        if (_broker.UsesSoftwareControl)
+        {
+            ActionSendBadge.Visibility = _actionTargetIsForeground &&
+                _layoutObserver.Current.GetSlot("ACT12").ResolvedAction == "composer.submit"
+                    ? Visibility.Visible : Visibility.Collapsed;
+            SetHelp(ActionKey12, "Codex", string.Empty);
+            AutomationProperties.SetItemStatus(ActionKey12, string.Empty);
+            return;
+        }
         var english = _localization.IsEnglish;
         var canSend = SupportsHarnessComposerSubmit(harness);
         var sends = canSend && _actionTargetIsForeground;
@@ -3753,7 +3771,8 @@ public partial class MicroSurfaceWindow : Window
             foreach (var (slotId, presentation) in _actionKeys)
             {
                 var binding = snapshot.GetSlot(slotId);
-                presentation.Icon.KeycapId = binding.KeycapId;
+                presentation.Icon.KeycapId = _broker.UsesSoftwareControl
+                    ? _profileSettings.ResolveKeycapIcon(slotId, binding.KeycapId) : binding.KeycapId;
                 var physicalKeys = slotId == "ACT10_ACT11"
                     ? "ACT10 / ACT11"
                     : slotId;
@@ -4127,6 +4146,7 @@ public partial class MicroSurfaceWindow : Window
 
     private void ApplyProfileSettingsChange()
     {
+        MicroWindowLayout.SizeKeypad(this, _profileSettings.Current.WindowScale);
         CancelReasoningInput();
         _dialDirectionSettings.InvertDirection =
             _profileSettings.Current.InvertDialDirection;

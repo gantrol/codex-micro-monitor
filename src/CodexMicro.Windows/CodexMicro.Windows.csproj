@@ -10,7 +10,8 @@
     <Using Include="System"/><Using Include="System.Collections.Generic"/><Using Include="System.Linq"/>
     <Using Include="System.Threading"/><Using Include="System.Threading.Tasks"/>
     <ProjectReference Include="../CodexMicro.Core/CodexMicro.Core.csproj" />
-    <ProjectReference Include="../CodexMicro.Codex/CodexMicro.Codex.csproj" />
+    <PackageReference Include="CodexControl" />
+    <PackageReference Include="CodexControl.Windows" />
     <InternalsVisibleTo Include="CodexMicro" />
     <InternalsVisibleTo Include="CodexMicro.Plugin" />
     <InternalsVisibleTo Include="CodexMicro.Desktop.Tests" />

@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text.Json.Nodes;
 using CodexMicro.Control;
+using AgentController.Adapters.Codex.Windows;
 using CodexMicro.Desktop.Services;
 using CodexMicro.Protocol;
 
@@ -9,18 +10,22 @@ namespace CodexMicro.Codex;
 
 internal sealed class SoftwareMicroTransport : IMicroTransport
 {
-    private readonly KeypadController _controller;
+    private readonly ICodexControlClient _controller;
+    private readonly ICodexUiController? _ui;
     private readonly CancellationTokenSource _lifetime = new();
     private readonly SemaphoreSlim _actions = new(1);
     private volatile bool _ready;
     private bool _disposed;
     private Task? _shutdown;
     private string? _joystickDirection;
-    private static readonly BrokerDriverInfo Info = new(0, 0, 0, 0, 0, "Codex IPC", true);
+    private static readonly BrokerDriverInfo Info = new(0, 0, 0, 0, 0, "Codex", true);
 
-    public SoftwareMicroTransport(KeypadController? controller = null)
+    public SoftwareMicroTransport() : this(new CodexSoftwareClient(), new CodexUiController()) { }
+
+    public SoftwareMicroTransport(ICodexControlClient controller, ICodexUiController? ui = null)
     {
-        _controller = controller ?? new();
+        _controller = controller;
+        _ui = ui;
         _controller.Disconnected += OnDisconnected;
     }
     public event EventHandler<string>? Log;
@@ -82,11 +87,13 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         if (key.StartsWith("AG", StringComparison.Ordinal)) return Unsupported("Empty agent slot");
         if (key == "ENC_QUICK" || key == "ENC" && context.Layout.EncoderMode == "reasoning")
             return RunAsync(() => ToggleModelAsync(context));
-        if (key == "ENC") return Unsupported("Composer navigation is not implemented by the software controls.");
+        if (key == "ENC") return RunUiAsync(new(context.Layout.EncoderMode == "conversation-scroll"
+            ? CodexUiOperation.ScrollBottom : CodexUiOperation.ComposerActivate), context);
         if (!context.Layout.Slots.TryGetValue(key, out var binding)) return Unsupported("Unknown control");
-        if (binding.Action is { Type: not "command" }) return Unsupported("Composer skill insertion is not implemented by the software controls.");
-        return RunAsync(() => ExecuteActionAsync(binding.ResolvedAction, context),
-            queue: binding.ResolvedAction == "composer.toggleFastMode");
+        if (binding.Action is { Type: "skill" } skill)
+            return RunUiAsync(new(CodexUiOperation.InsertSkill, skill.Id, skill.SkillPath), context);
+        if (binding.Action is { Type: not "command" }) return Unsupported("Unknown binding type");
+        return DispatchActionAsync(binding.ResolvedAction, context);
     }
 
     public Task<MicroSendResult> SetKeyAsync(string key, bool pressed) => pressed
@@ -96,9 +103,13 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
     public Task<MicroSendResult> StepEncoderAsync(bool clockwise)
     {
         var context = CaptureContext?.Invoke() ?? throw new InvalidOperationException("No keypad context");
-        return context.Layout.EncoderMode == "reasoning"
-            ? RunAsync(() => StepReasoningAsync(context, DialDirectionSettings.ToReasoningStep(clockwise)))
-            : Unsupported("Composer navigation and scrolling are not implemented by the software controls.");
+        return context.Layout.EncoderMode switch
+        {
+            "reasoning" => RunAsync(() => StepReasoningAsync(context, DialDirectionSettings.ToReasoningStep(clockwise))),
+            "conversation-scroll" => RunUiAsync(new(clockwise ? CodexUiOperation.ScrollUp : CodexUiOperation.ScrollDown), context),
+            "composer-navigation" => RunUiAsync(new(clockwise ? CodexUiOperation.ComposerPrevious : CodexUiOperation.ComposerNext), context),
+            _ => Unsupported("Unknown encoder binding"),
+        };
     }
 
     public Task<MicroSendResult> OpenCodexMicroSettingsAsync(CancellationToken cancellationToken = default) =>
@@ -126,12 +137,42 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
             "left" => "navigateBack", "right" => "navigateForward", _ => null,
         });
         if (action is null) return Unsupported("Default joystick navigation is not implemented by the software controls.");
-        return RunAsync(() => ExecuteActionAsync(action, context));
+        return DispatchActionAsync(action, context);
     }
+
+    private Task<MicroSendResult> DispatchActionAsync(string action, MicroControlContext context) => action switch
+    {
+        "composer.submit" => RunUiAsync(new(CodexUiOperation.Submit), context),
+        "toggleSidebar" => RunUiAsync(new(CodexUiOperation.ToggleSidebar), context),
+        "navigateBack" => RunUiAsync(new(CodexUiOperation.Back), context),
+        "navigateForward" => RunUiAsync(new(CodexUiOperation.Forward), context),
+        _ => RunAsync(() => ExecuteActionAsync(action, context), queue: action == "composer.toggleFastMode"),
+    };
+
+    private Task<MicroSendResult> RunUiAsync(CodexUiRequest request, MicroControlContext context) => RunResultAsync(async () =>
+    {
+        if (_ui is null) return MicroSendResult.NotSent("Codex UI adapter is unavailable");
+        async Task<bool> Guard(CancellationToken token)
+        {
+            if (_disposed || CaptureContext?.Invoke() is not { } current || current.TargetVersion != context.TargetVersion ||
+                current.ThreadId != context.ThreadId) return false;
+            if (request.Operation is CodexUiOperation.Back or CodexUiOperation.Forward or CodexUiOperation.ToggleSidebar) return true;
+            if (ValidateTargetAsync is not null && !await ValidateTargetAsync(context.ThreadId, token)) return false;
+            token.ThrowIfCancellationRequested();
+            return !_disposed && CaptureContext?.Invoke() is { } after && after.TargetVersion == context.TargetVersion && after.ThreadId == context.ThreadId;
+        }
+        var result = await _ui.ExecuteAsync(request, Guard, _lifetime.Token);
+        return new(result.Disposition switch
+        {
+            CodexUiDisposition.Confirmed => MicroSendDisposition.Accepted,
+            CodexUiDisposition.OutcomeUnknown => MicroSendDisposition.OutcomeUnknown,
+            _ => MicroSendDisposition.NotSent,
+        }, 0, 0, 0, result.Code);
+    }, requiresIpc: false);
 
     private async Task OpenThreadAsync(string thread)
     {
-        await CallAsync("open_keypad_thread", new() { ["thread_id"] = thread });
+        await CallAsync(CodexOperation.OpenThread, new() { ["thread_id"] = thread });
         ThreadOpened?.Invoke(thread);
     }
 
@@ -139,7 +180,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
     {
         if (action == "newTask")
         {
-            await CallAsync("new_keypad_thread", new());
+            await CallAsync(CodexOperation.CreateDraft, new());
             ThreadOpened?.Invoke(null);
             return;
         }
@@ -149,13 +190,13 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         var thread = RequireThread(context);
         if (action is "toggleReviewTab" or "composer.togglePlanMode")
         {
-            await CallAsync(action == "toggleReviewTab" ? "open_keypad_review" : "toggle_keypad_plan",
+            await CallAsync(action == "toggleReviewTab" ? CodexOperation.OpenReview : CodexOperation.TogglePlan,
                 new() { ["thread_id"] = thread }, context);
             return;
         }
         if (action == "forkThread")
         {
-            var fork = await CallAsync("fork_keypad_thread", new() { ["thread_id"] = thread }, context);
+            var fork = await CallAsync(CodexOperation.ForkThread, new() { ["thread_id"] = thread }, context);
             ThreadOpened?.Invoke(fork.Required("threadId"));
             if (fork.Text("openError") is { } error) Log?.Invoke(this, error);
             return;
@@ -167,7 +208,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         }
         if (action == "composer.toggleFastMode")
         {
-            var updated = await CallAsync("toggle_keypad_fast", new() { ["thread_id"] = thread }, context);
+            var updated = await CallAsync(CodexOperation.ToggleFast, new() { ["thread_id"] = thread }, context);
             ServiceTierApplied?.Invoke(thread, updated["settings"]?.Text("serviceTier"));
             return;
         }
@@ -178,7 +219,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
             case "approval.decline":
                 var approvals = state["approvals"] as JsonArray;
                 if (approvals?.Count != 1) throw new InvalidOperationException("Select one specific approval in Codex; multiple or missing approvals are not dispatched.");
-                var approval = await CallAsync("reply_keypad_approval", new()
+                var approval = await CallAsync(CodexOperation.ReplyApproval, new()
                 {
                     ["thread_id"] = thread,
                     ["request_id"] = approvals[0]!.Required("id"),
@@ -188,7 +229,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
                     throw new InvalidOperationException("Codex did not acknowledge the approval decision");
                 break;
             case "turn.cancel":
-                await CallAsync("stop_keypad_turn", new()
+                await CallAsync(CodexOperation.StopTurn, new()
                 {
                     ["thread_id"] = thread,
                     ["turn_id"] = state.Text("activeTurnId") ?? throw new InvalidOperationException("No active turn")
@@ -205,7 +246,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         var effortA = context.Profile.QuickModelAEffort;
         if (sameModel && effortA is null)
         {
-            var models = await CallAsync("get_keypad_models", new());
+            var models = await CallAsync(CodexOperation.ListModels, new());
             effortA = models["data"]?.AsArray().FirstOrDefault(item => item?.Text("model") == context.Profile.QuickModelA.Id)
                 ?.Text("defaultReasoningEffort");
         }
@@ -215,14 +256,14 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         args["model"] = selectB ? context.Profile.QuickModelB.Id : context.Profile.QuickModelA.Id;
         var effort = selectB ? context.Profile.QuickModelBEffort : context.Profile.QuickModelAEffort;
         if (effort is not null) args["effort"] = effort;
-        await CallAsync("set_keypad_model", args, context);
+        await CallAsync(CodexOperation.SetModel, args, context);
     }
 
     private async Task StepReasoningAsync(MicroControlContext context, int direction)
     {
         var thread = RequireThread(context);
         var state = await StateAsync(thread);
-        var models = await CallAsync("get_keypad_models", new());
+        var models = await CallAsync(CodexOperation.ListModels, new());
         var model = models["data"]?.AsArray().FirstOrDefault(item => item?.Text("model") == state.Text("model"))
             ?? throw new InvalidOperationException("Current model is not in the Codex catalog");
         var supported = model["supportedReasoningEfforts"]?.AsArray()
@@ -233,7 +274,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         if (next == index) return;
         var args = SettingsArguments(thread, state);
         args["effort"] = supported[next];
-        await CallAsync("set_keypad_reasoning", args, context);
+        await CallAsync(CodexOperation.SetReasoning, args, context);
     }
 
     private static JsonObject SettingsArguments(string thread, JsonNode state) => new()
@@ -244,8 +285,8 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         ["expected_service_tier"] = state.Text("serviceTier")
     };
 
-    private Task<JsonNode> StateAsync(string thread) => CallAsync("get_keypad_state", new() { ["thread_id"] = thread });
-    private async Task<JsonNode> CallAsync(string tool, JsonObject args, MicroControlContext? context = null)
+    private Task<JsonNode> StateAsync(string thread) => CallAsync(CodexOperation.ReadThreadState, new() { ["thread_id"] = thread });
+    private async Task<JsonNode> CallAsync(CodexOperation tool, JsonObject args, MicroControlContext? context = null)
     {
         var result = await _controller.ExecuteAsync(tool, args, _lifetime.Token,
             context is null ? null : async () => !_disposed &&
@@ -259,7 +300,13 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
     private static string RequireThread(MicroControlContext context) => context.ThreadId is { } thread
         ? JsonSupport.ThreadId(thread) : throw new InvalidOperationException("Select a Codex chat first. A blank draft has no thread ID.");
 
-    private async Task<MicroSendResult> RunAsync(Func<Task> action, bool queue = false)
+    private Task<MicroSendResult> RunAsync(Func<Task> action, bool queue = false) => RunResultAsync(async () =>
+    {
+        await action();
+        return Accepted("Codex software request acknowledged");
+    }, requiresIpc: true, queue);
+
+    private async Task<MicroSendResult> RunResultAsync(Func<Task<MicroSendResult>> action, bool requiresIpc, bool queue = false)
     {
         if (_disposed) return MicroSendResult.NotSent("The keypad is closed");
         // Reversible Fast presses retain their order; approval and other actions never queue.
@@ -271,7 +318,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         try
         {
             if (_disposed) return MicroSendResult.NotSent("Keypad is closed");
-            if (!IsReady)
+            if (requiresIpc && !IsReady)
             {
                 try { await RecoverCodexLinkAsync(); }
                 catch (Exception error) when (error is IOException or TimeoutException or OperationCanceledException or ObjectDisposedException)
@@ -280,8 +327,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
                     return MicroSendResult.NotSent("Codex IPC is disconnected");
                 }
             }
-            await action();
-            return Accepted("Codex software request acknowledged");
+            return await action();
         }
         catch (NotSupportedException error)
         {
@@ -307,6 +353,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         _disposed = true;
         _ready = false;
         _lifetime.Cancel();
+        (_ui as IDisposable)?.Dispose();
         _controller.Disconnected -= OnDisconnected;
         _shutdown = DisposeControllerAsync();
     }

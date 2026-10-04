@@ -8,7 +8,8 @@ internal sealed record MicroControlContext(
     string? ThreadId,
     IReadOnlyDictionary<string, string> AgentThreads,
     CodexMicroLayoutSnapshot Layout,
-    MicroProfileSnapshot Profile);
+    MicroProfileSnapshot Profile,
+    long TargetVersion = 0);
 
 internal interface IMicroTransport : IDisposable
 {

@@ -1,6 +1,6 @@
+using CodexMicro.Codex;
 using System.Diagnostics;
 using CodexMicro.Windows;
-using CodexMicro.Codex;
 using CodexMicro.DesktopHost;
 
 namespace CodexMicro.Plugin;
@@ -74,7 +74,7 @@ internal static class Program
 
     private static async Task RunServerAsync()
     {
-        await using var controller = new KeypadController();
+        await using var controller = new CodexSoftwareClient();
         await new McpServer(controller).RunAsync();
     }
 }

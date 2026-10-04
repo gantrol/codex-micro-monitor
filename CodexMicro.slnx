@@ -1,6 +1,5 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/CodexMicro.Codex/CodexMicro.Codex.csproj" />
     <Project Path="src/CodexMicro.Core/CodexMicro.Core.csproj" />
     <Project Path="src/CodexMicro.Desktop/CodexMicro.Desktop.csproj" />
     <Project Path="src/CodexMicro.Plugin/CodexMicro.Plugin.csproj" />

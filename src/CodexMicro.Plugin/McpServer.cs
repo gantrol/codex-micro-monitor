@@ -1,12 +1,12 @@
+using CodexMicro.Codex;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using CodexMicro.Codex;
 
 namespace CodexMicro.Plugin;
 
-internal sealed class McpServer(KeypadController controller)
+internal sealed class McpServer(ICodexControlClient controller)
 {
     private static JsonObject StringField(string description) => new() { ["type"] = "string", ["minLength"] = 1, ["description"] = description };
     private static readonly JsonObject ThreadField = StringField("Exact local Codex thread ID.");
@@ -126,7 +126,7 @@ internal sealed class McpServer(KeypadController controller)
             {
                 "get_keypad_capabilities" => KeypadCapabilities.Read(),
                 "show_keypad" => await KeypadWindowHost.ShowAsync(arguments.Text("thread_id"), CancellationToken.None),
-                _ => await controller.ExecuteAsync(name, arguments)
+                _ => await controller.ExecuteAsync(Operation(name), arguments)
             };
             return new { content = new[] { new { type = "text", text = result.ToJsonString() } }, structuredContent = result, isError = false };
         }
@@ -136,4 +136,24 @@ internal sealed class McpServer(KeypadController controller)
             return new { content = new[] { new { type = "text", text = detail } }, isError = true };
         }
     }
+
+    private static CodexOperation Operation(string name) => name switch
+    {
+        "list_keypad_threads" => CodexOperation.ListThreads,
+        "get_keypad_models" => CodexOperation.ListModels,
+        "get_keypad_state" => CodexOperation.ReadThreadState,
+        "open_keypad_thread" => CodexOperation.OpenThread,
+        "new_keypad_thread" => CodexOperation.CreateDraft,
+        "open_keypad_review" => CodexOperation.OpenReview,
+        "fork_keypad_thread" => CodexOperation.ForkThread,
+        "set_keypad_model" => CodexOperation.SetModel,
+        "set_keypad_reasoning" => CodexOperation.SetReasoning,
+        "set_keypad_fast" => CodexOperation.SetFast,
+        "toggle_keypad_fast" => CodexOperation.ToggleFast,
+        "toggle_keypad_plan" => CodexOperation.TogglePlan,
+        "send_keypad_message" => CodexOperation.SendMessage,
+        "stop_keypad_turn" => CodexOperation.StopTurn,
+        "reply_keypad_approval" => CodexOperation.ReplyApproval,
+        _ => throw new ArgumentException("Unknown control operation"),
+    };
 }

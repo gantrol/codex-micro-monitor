@@ -1,3 +1,4 @@
+using CodexMicro.Codex;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -5,7 +6,6 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Windows.Threading;
 using CodexMicro.Windows;
-using CodexMicro.Codex;
 
 namespace CodexMicro.Plugin;
 

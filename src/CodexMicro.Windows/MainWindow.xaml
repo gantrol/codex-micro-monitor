@@ -248,9 +248,11 @@
                                     IsHitTestVisible="False"
                                     Panel.ZIndex="2">
                             <controls:KeycapIcon x:Name="BrandCodexIcon"
-                                                 Width="13"
-                                                 Height="13"
-                                                 Margin="0,0,6,0"
+                                                 Width="10"
+                                                 Height="10"
+                                                 Margin="0,0,5,0"
+                                                 VerticalAlignment="Center"
+                                                 PreserveMinimumSize="False"
                                                  KeycapId="CODEX"
                                                  IconBrush="#80606A70" />
                             <TextBlock x:Name="BrandWordmarkText"
