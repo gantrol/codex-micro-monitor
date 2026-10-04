@@ -1,39 +1,28 @@
 # Codex Micro Monitor
 
-A third-party Windows keypad and Codex plugin with control and chat-monitor panels, inspired by [Codex Micro](https://learn.chatgpt.com/docs/features/codex-micro).
+[![中文 | 点我](plugins/codex-micro-keypad/assets/badges/zh-CN.svg)](README.zh-CN.md)
 
-[简体中文](README.zh-CN.md) · [Source provenance](SOURCE.md) · [Validation](docs/migration-validation-2026-10-03.md)
+A Windows desktop companion for Codex. See task status, switch models and reasoning effort, check usage, and toggle Fast.
 
-Chat selection, status lights, unread markers, Fast, Plan, model/reasoning controls, tray and custom keycaps use software interfaces and Windows UI Automation. No virtual HID driver or AgentController installation is required.
+![Task status at a glance](plugins/codex-micro-keypad/assets/screenshots/en-US/01-controls.webp)
 
-## Build and package
+![Follow multiple tasks](plugins/codex-micro-keypad/assets/screenshots/en-US/02-monitor.webp)
 
-Requires Windows 10 19041+ / Windows 11 x64, .NET SDK 10.0.302, and a signed-in Codex / ChatGPT desktop app.
+![Switch models and adjust reasoning](plugins/codex-micro-keypad/assets/screenshots/en-US/03-models.webp)
 
-Build the pinned packages in the independent `codex-control` repository, then import them. AgentController source is not required:
+## Install
 
-```powershell
-.\scripts\import-control-packages.ps1 -PackageDirectory ..\codex-control\dist\0.1.0-local.2\packages
-```
+Requires Windows 10 build 19041+ / Windows 11 x64, .NET 10 Desktop Runtime x64, and a signed-in Codex desktop app. The current driverless adaptation baseline is **Codex 26.930.3930.0**; use that version or newer. Earlier versions are unverified, and later desktop updates may require adaptation.
 
-```powershell
-dotnet build CodexMicro.slnx -c Release
-dotnet run --project src/CodexMicro.Desktop -c Release
-.\scripts\package.ps1
-```
+- **Desktop:** extract `codex-micro-monitor-<version>-win-x64.zip` and run `CodexMicro.exe`.
+- **Codex Plugin:** extract the entire `codex-micro-monitor-plugin-<version>-win-x64.zip`, keeping `.agents/` and `plugins/`. From the extracted root, run `codex plugin marketplace add .` with the Codex CLI. Restart Codex, open **Plugins → Codex Micro Monitor**, and install `codex-micro-keypad`. In a new chat, ask it to open Codex Micro Monitor. See the [official marketplace guide](https://developers.openai.com/plugins/build/plugins#add-a-marketplace-from-the-cli).
 
-Quit an existing keypad normally before manually launching this build. Packaging does not install, replace or upload anything. `Version.props` supplies the version. `dist/<version>/` contains desktop/plugin ZIPs, the referenced control packages and ZIP checksums. Packaged applications require the .NET 10 Desktop Runtime x64.
+Packages are currently local build outputs; Microsoft Store and public plugin-directory releases are pending. See [build and distribution](docs/build-and-distribution.md).
 
-Extract the whole plugin ZIP, including `.agents/plugins/marketplace.json` and `plugins/codex-micro-keypad/`. Plugin ID: `codex-micro-keypad`; local marketplace: `codex-micro-monitor`. Public installation has not been verified or released.
+## Notice
 
-## Tests and limitations
+Codex Micro Monitor recreates the interaction and visual style of [Codex Micro](https://learn.chatgpt.com/docs/features/codex-micro) in software. No Micro hardware or virtual HID driver required. Originally maintained as part of [AgentController](https://github.com/gantrol/AgentController), it is now maintained independently in this repository.
 
-Run `scripts/test.ps1` for migrated regression and behavior acceptance tests. Known failures remain visible and return a nonzero exit code. `scripts/test-micro-live.ps1` provides reversible desktop checks using explicit idle fixture and restoration chat IDs.
+This is an independent third-party project, not affiliated with or endorsed by OpenAI or Work Louder. Product names and trademarks belong to their respective owners. Images show the software with example data; supported features differ from the hardware.
 
-Composer submit, choice menus, scrolling, sidebar/history navigation and skill insertion have been migrated. They have not received new live UI acceptance in this migration. MCP text submission is a separate operation. DeepSeek, external adapters, local speech/ASR and driver implementations remain removed; legacy voice settings survive only as inert compatibility data.
-
-The current Apple target is macOS desktop, which is not yet implemented. `apps/ios` preserves the earlier UIKit prototype with its Xcode project; it has not been built with Xcode and is no longer the active delivery target. Internal Codex desktop interfaces may require future adaptation.
-
-Both products consume pinned `CodexControl` and `CodexControl.Windows` packages from a third repository. This repository has no source/project links to either sibling repository. See the [repository boundaries](docs/repository-layout.zh-CN.md) and [migration validation](docs/migration-validation-2026-10-03.md).
-
-Licensed under [PolyForm Noncommercial 1.0.0](LICENSE).
+[PolyForm Noncommercial 1.0.0](LICENSE).

@@ -1,6 +1,6 @@
 # Codex Micro：设置、键帽编辑与尺寸规则
 
-> 2026-10-03 · 交互设计提案，尚未实现。
+> 2026-10-03 · macOS 交互设计提案，尚未实现。Windows 设置样式的后续实现见末节。
 > 当前目标为 macOS 桌面版；Windows 作为视觉与键位基准。先前 UIKit 方案仅为历史原型，旧 Avalonia Foundation Preview 已废弃，见[平台方向](platform-direction.zh-CN.md)。
 
 ## 当前依据
@@ -86,4 +86,28 @@ flowchart LR
 - 编辑器确认前不更新活动绑定；Host 尚未支持的映射只作为本地草稿，不能显示为已生效。
 - 默认保留 Windows 视觉与现有操作含义；先落设置导航和尺寸规则，再接键位编辑及完整图标库。
 
-本轮仅纠正平台方向与设计提案，尚未实现 macOS 客户端，未修改 Windows 设置、键位绑定或缩放范围，未运行 UI 测试。
+2026-10-03 的平台梳理仅纠正平台方向与设计提案，尚未实现 macOS 客户端，未修改 Windows 设置、键位绑定或缩放范围，未运行 UI 测试。
+
+## Windows 设置样式（2026-10-04）
+
+Windows 设置采用极简原生方向：冷白底、石墨文字、鼠尾草绿交互状态；布局、交互、快捷模型和连接沿单列排列，以间距和细分隔线组织内容。
+
+- 键盘实时预览缩至 160×166 DIP，与尺寸滑块并排，保留现有键位编辑入口。键位轮廓常显，鼠标悬停和键盘焦点分别增强轮廓。
+- 移除设置分组的大圆角卡片、标题徽标及隐藏的解释性文本；普通设置行采用最小高度，标签允许换行。
+- 下拉选择、开关、按钮与滑块统一控件高度、焦点反馈和配色；弹出列表不使用动画。高对比度模式改用 Windows 系统颜色。
+- 设置控件关联本地化的无障碍名称；连接状态同时显示文字，保存失败保留错误提示。设置文案继续使用 Micro 自身的本地化入口。
+- 样式集中在 [MicroSettingsResources.xaml](../../src/CodexMicro.Windows/MicroSettingsResources.xaml)，仅供 [设置窗口](../../src/CodexMicro.Windows/MicroSettingsWindow.xaml) 使用，不改变主键盘材质。
+
+本节仅记录 Windows 设置呈现；现有设置保存机制、键位绑定、尺寸范围和 macOS 实现状态保持原样。
+
+## Windows 悬停提示（2026-10-04）
+
+主键盘提示采用冰白水晶面板：复用键帽侧面的材质笔刷，外缘保留窄切面、顶部高光与底部折射亮边，单层柔影表达悬浮高度。文字区使用不透明的白至浅绿灰内表面，避免背后文字干扰阅读。外缘圆角 12 DIP、内表面圆角 8 DIP，标题、正文与额度数字分别使用 14、12、26 DIP 字号；含阴影留白的提示最大宽度 380 DIP。
+
+额度窗口以名称、大百分比和细进度条显示；重置条目与到期时间分列对齐，更新时间和操作标签通过细线分区。长内容换行，保留刷新失败状态和下一轮模型切换含义。文本及日期格式通过 Micro 本地化入口解析，无障碍提示保留完整信息。
+
+展开总时长 180 ms：外壳从 97% 宽、84% 高展开并上移 6 DIP，文字延迟 30 ms 后淡入，保持原字号，不随外壳缩放。只改变渲染变换与透明度，不逐帧重新布局；关闭时清理动画，额度更新复用已打开的提示，不重播入场。关闭系统客户区动画、关闭工具提示动画或启用高对比度时立即显示；高对比度模式使用系统颜色并去除光学装饰。
+
+提示组件样式位于 [MicroToolTipResources.xaml](../../src/CodexMicro.Windows/Controls/MicroToolTipResources.xaml)，由主键盘资源字典加载；额度内容位于 [MainWindow.QuotaHelp.cs](../../src/CodexMicro.Windows/MainWindow.QuotaHelp.cs)，动画位于 [MicroToolTipMotion.cs](../../src/CodexMicro.Windows/Controls/MicroToolTipMotion.cs)。代码创建的提示显式引用共享样式，并替换系统默认弹出动画，避免两套动画叠加。
+
+设计参考 Windows 的[临时浮层材质](https://learn.microsoft.com/en-us/windows/apps/design/style/acrylic)与[动效原则](https://learn.microsoft.com/en-us/windows/apps/design/signature-experiences/motion)。当前实现是 WPF 矢量水晶材质，不采集桌面背景或引入额外图形依赖。

@@ -15,7 +15,7 @@ dotnet run --project src/CodexMicro.Desktop -c Release
 
 Quit an existing Micro window normally before running another copy. `Version.props` supplies the package version. Packaging writes desktop/plugin ZIPs, control packages and checksums to `dist/<version>/`; it refuses to overwrite an existing version directory. It does not install or publish anything. Both ZIPs require .NET 10 Desktop Runtime x64. The Store MSIX has a separate self-contained packaging path.
 
-`scripts/test.ps1` runs the existing suite; known failures remain. Current evidence and limitations are recorded in `docs/migration-validation-2026-10-03.md` and `docs/micro-behavior-acceptance.md`. Do not treat compilation as complete UI acceptance. Windows is the current runnable target; macOS is not implemented and `apps/ios` is a historical prototype.
+`scripts/test.ps1` runs the existing unit, component and isolated control tests. Earlier migration checks and their limitations are recorded in `docs/migration-validation-2026-10-03.md` and `docs/micro-behavior-acceptance.md`; those dated results do not describe every later revision. Automated tests and compilation do not replace live installation acceptance. Windows is the current runnable target; macOS is not implemented and `apps/ios` is a historical prototype.
 
 ## Codex compatibility
 
