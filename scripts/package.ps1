@@ -4,6 +4,13 @@ Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
 [xml]$versionFile = Get-Content (Join-Path $root 'Version.props') -Raw
 $version = [string]$versionFile.Project.PropertyGroup.Version
+[xml]$dependencies = Get-Content -LiteralPath (Join-Path $root 'Directory.Packages.props') -Raw
+$controlVersion = [string]$dependencies.Project.PropertyGroup.CodexControlVersion
+$controlPackages = foreach ($id in @('CodexControl', 'CodexControl.Windows')) {
+    $path = Join-Path $root ".artifacts/control-packages/$id.$controlVersion.nupkg"
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Import the pinned control packages first: $path" }
+    $path
+}
 $destination = Join-Path $root "dist/$version"
 $desktop = Join-Path $destination $Runtime
 $plugin = Join-Path $destination 'plugins/codex-micro-keypad'
@@ -30,8 +37,9 @@ Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $plugin
 $marketplace = Join-Path $destination '.agents/plugins'
 New-Item -ItemType Directory -Force $marketplace | Out-Null
 Copy-Item -LiteralPath (Join-Path $root '.agents/plugins/marketplace.json') -Destination $marketplace
-dotnet pack (Join-Path $root 'src/CodexMicro.Codex/CodexMicro.Codex.csproj') -c Release -o (Join-Path $destination 'packages') --nologo -v minimal
-if ($LASTEXITCODE -ne 0) { throw 'Component pack failed.' }
+$packageOutput = Join-Path $destination 'packages'
+New-Item -ItemType Directory -Path $packageOutput -Force | Out-Null
+foreach ($package in $controlPackages) { Copy-Item -LiteralPath $package -Destination $packageOutput }
 Compress-Archive -Path "$desktop/*" -DestinationPath (Join-Path $destination "codex-micro-monitor-$version-$Runtime.zip")
 $pluginArchive = Join-Path $destination "codex-micro-monitor-plugin-$version-$Runtime.zip"
 # ZipFile includes the dot-prefixed marketplace directory as well as the plugin.

@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "codex-micro-keypad",
-  "version": "0.3.14-local.2",
-  "description": "Codex Micro Monitor: a driverless Windows keypad and chat monitor. Some composer controls are still unavailable.",
+  "version": "0.3.15-local.1",
+  "description": "Codex Micro Monitor: a driverless Windows keypad and chat monitor using shared Codex control components.",
   "author": {
     "name": "gantrol"
   },

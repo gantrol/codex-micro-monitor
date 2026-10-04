@@ -1,5 +1,21 @@
 # Source provenance
 
+## Current migration — 2026-10-03
+
+The independent baseline below was reconciled with AgentController commit
+`92c9e8a` and a snapshot of its three uncommitted draft model/reasoning selector
+files. `docs/migration-2026-10-03.json` records the 25 incoming source hashes;
+the original working-tree edits remain in AgentController. The completed iOS
+project was retained as history, while the active Apple target is macOS.
+
+Shared control implementations now live in the third repository `codex-control`.
+Both products consume exact-version `CodexControl` and `CodexControl.Windows`
+packages (`0.1.0-local.2`). No product references the other's projects or sources.
+See [repository boundaries](docs/repository-layout.zh-CN.md) and
+[current validation](docs/migration-validation-2026-10-03.md).
+
+## Initial extraction — historical baseline
+
 This independent repository was extracted from `gantrol/AgentController`, branch
 `codex/micro-behavior-acceptance`, commit
 `7d4a3382a82c94adab853a924249ed9823be28f5` on 2026-10-03.
