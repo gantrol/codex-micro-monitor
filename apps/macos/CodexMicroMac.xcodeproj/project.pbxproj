@@ -1,0 +1,333 @@
+// !$*UTF8*$!
+{
+  "archiveVersion" = 1;
+  "classes" = {
+  };
+  "objectVersion" = 56;
+  "objects" = {
+    "78BB58D9AAF0591F808FAC89" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/ControlModels.swift";
+      "sourceTree" = "<group>";
+    };
+    "DCA128FB28C3E931D7C47824" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "78BB58D9AAF0591F808FAC89";
+    };
+    "3AAAFF4231C0362B20C8EE6F" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/DesignExport.swift";
+      "sourceTree" = "<group>";
+    };
+    "A1FA9DF49B26804FAF681B4C" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "3AAAFF4231C0362B20C8EE6F";
+    };
+    "6D4116C4DFC0D693460642C6" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/DesktopClient.swift";
+      "sourceTree" = "<group>";
+    };
+    "2C5085AF20D19B2852B2E708" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "6D4116C4DFC0D693460642C6";
+    };
+    "DF40F40732BF2F450F408A2D" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/DialInput.swift";
+      "sourceTree" = "<group>";
+    };
+    "E587E4A89A390E1AE0DCBF24" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "DF40F40732BF2F450F408A2D";
+    };
+    "BE46C44310BE77A3B682010F" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/Entry.swift";
+      "sourceTree" = "<group>";
+    };
+    "AA6AF0A1FE0F0E6462A17526" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "BE46C44310BE77A3B682010F";
+    };
+    "426C0DC499A9C45598FA2C15" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/Localization.swift";
+      "sourceTree" = "<group>";
+    };
+    "801CAF86FF0AA495632BB198" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "426C0DC499A9C45598FA2C15";
+    };
+    "34E1671C4B23FA2BE6FEC0C2" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/MicroArtwork.generated.swift";
+      "sourceTree" = "<group>";
+    };
+    "98D52A8CD2586DB9E12EECF7" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "34E1671C4B23FA2BE6FEC0C2";
+    };
+    "3F9C435939FDB0A17A1195D6" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/MicroModel.swift";
+      "sourceTree" = "<group>";
+    };
+    "2A8B9CA0EF8F488ED94F667A" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "3F9C435939FDB0A17A1195D6";
+    };
+    "34816A6DB7A2D24A9C4CFBA7" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/MicroSurfaces.swift";
+      "sourceTree" = "<group>";
+    };
+    "6811A18EEA12DA175EF894D3" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "34816A6DB7A2D24A9C4CFBA7";
+    };
+    "9FA6818E76EAD69B88A02B5D" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/MicroView.swift";
+      "sourceTree" = "<group>";
+    };
+    "BDCCBE0536FAC33F9445A446" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "9FA6818E76EAD69B88A02B5D";
+    };
+    "9D517523EDCD78FB7C7EB6E1" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/Settings.swift";
+      "sourceTree" = "<group>";
+    };
+    "5B8722873E4313F970E93AF0" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "9D517523EDCD78FB7C7EB6E1";
+    };
+    "E01D2B73A085D1D25F9F6063" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/CodexMicroMac/SevenSegmentReadout.swift";
+      "sourceTree" = "<group>";
+    };
+    "76AB4BB8EDD3BB44A497428F" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "E01D2B73A085D1D25F9F6063";
+    };
+    "C34EFF2CB8D24590C10F12E5" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/MicroShared/DesktopServices.swift";
+      "sourceTree" = "<group>";
+    };
+    "FC6FD87262B7E9557B4C8FD4" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "C34EFF2CB8D24590C10F12E5";
+    };
+    "1D4A70E62C198DBA925E4C79" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "sourcecode.swift";
+      "path" = "Sources/MicroCore/MacPreviewCapabilities.swift";
+      "sourceTree" = "<group>";
+    };
+    "04A54EE8ECB96BB3927C4CAE" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "1D4A70E62C198DBA925E4C79";
+    };
+    "DBD3A49D0D906B4ED9216B73" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "text.plist.strings";
+      "name" = "en";
+      "path" = "Sources/CodexMicroMac/Resources/en.lproj/Localizable.strings";
+      "sourceTree" = "<group>";
+    };
+    "730D4D982206DA1ADF9AC14B" = {
+      "isa" = "PBXFileReference";
+      "lastKnownFileType" = "text.plist.strings";
+      "name" = "zh-Hans";
+      "path" = "Sources/CodexMicroMac/Resources/zh-Hans.lproj/Localizable.strings";
+      "sourceTree" = "<group>";
+    };
+    "E967D16DAE74A49B5E0E0512" = {
+      "isa" = "PBXVariantGroup";
+      "children" = ("DBD3A49D0D906B4ED9216B73", "730D4D982206DA1ADF9AC14B");
+      "name" = "Localizable.strings";
+      "sourceTree" = "<group>";
+    };
+    "430536E031B755058FD41BAC" = {
+      "isa" = "PBXBuildFile";
+      "fileRef" = "E967D16DAE74A49B5E0E0512";
+    };
+    "A8792157CB4F27FB949C035F" = {
+      "isa" = "PBXFileReference";
+      "explicitFileType" = "wrapper.application";
+      "path" = "Codex Micro Monitor.app";
+      "sourceTree" = "BUILT_PRODUCTS_DIR";
+    };
+    "0D6E4079E36703EBD37C0072" = {
+      "isa" = "PBXGroup";
+      "children" = ("78BB58D9AAF0591F808FAC89", "3AAAFF4231C0362B20C8EE6F", "6D4116C4DFC0D693460642C6", "DF40F40732BF2F450F408A2D", "BE46C44310BE77A3B682010F", "426C0DC499A9C45598FA2C15", "34E1671C4B23FA2BE6FEC0C2", "3F9C435939FDB0A17A1195D6", "34816A6DB7A2D24A9C4CFBA7", "9FA6818E76EAD69B88A02B5D", "9D517523EDCD78FB7C7EB6E1", "E01D2B73A085D1D25F9F6063", "C34EFF2CB8D24590C10F12E5", "1D4A70E62C198DBA925E4C79", "E967D16DAE74A49B5E0E0512", "A8792157CB4F27FB949C035F");
+      "sourceTree" = "<group>";
+    };
+    "878A52FC5FF6A57D50B7B870" = {
+      "isa" = "PBXSourcesBuildPhase";
+      "buildActionMask" = 2147483647;
+      "files" = ("DCA128FB28C3E931D7C47824", "A1FA9DF49B26804FAF681B4C", "2C5085AF20D19B2852B2E708", "E587E4A89A390E1AE0DCBF24", "AA6AF0A1FE0F0E6462A17526", "801CAF86FF0AA495632BB198", "98D52A8CD2586DB9E12EECF7", "2A8B9CA0EF8F488ED94F667A", "6811A18EEA12DA175EF894D3", "BDCCBE0536FAC33F9445A446", "5B8722873E4313F970E93AF0", "76AB4BB8EDD3BB44A497428F", "FC6FD87262B7E9557B4C8FD4", "04A54EE8ECB96BB3927C4CAE");
+      "runOnlyForDeploymentPostprocessing" = 0;
+    };
+    "41D311A605520FC7B8B9A980" = {
+      "isa" = "PBXResourcesBuildPhase";
+      "buildActionMask" = 2147483647;
+      "files" = ("430536E031B755058FD41BAC");
+      "runOnlyForDeploymentPostprocessing" = 0;
+    };
+    "E2AA269EB967A8853A258BFA" = {
+      "isa" = "PBXFrameworksBuildPhase";
+      "buildActionMask" = 2147483647;
+      "files" = ();
+      "runOnlyForDeploymentPostprocessing" = 0;
+    };
+    "A87BEF43EF83C8A9C93788A2" = {
+      "isa" = "PBXShellScriptBuildPhase";
+      "buildActionMask" = 2147483647;
+      "files" = ();
+      "inputPaths" = ();
+      "outputPaths" = ();
+      "alwaysOutOfDate" = 1;
+      "runOnlyForDeploymentPostprocessing" = 0;
+      "shellPath" = "/bin/bash";
+      "shellScript" = "\"$SRCROOT/../../scripts/build-macos-desktop-bridge.sh\"\n";
+    };
+    "4C9A8D7A2C3C670C889D63E4" = {
+      "isa" = "XCBuildConfiguration";
+      "name" = "Debug";
+      "buildSettings" = {
+        "SDKROOT" = "iphoneos";
+        "IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+        "MACOSX_DEPLOYMENT_TARGET" = "14.0";
+        "SWIFT_VERSION" = "5.0";
+        "SUPPORTS_MACCATALYST" = "YES";
+        "SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD" = "NO";
+        "DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER" = "NO";
+        "TARGETED_DEVICE_FAMILY" = "2,6";
+        "PRODUCT_NAME" = "Codex Micro Monitor";
+        "EXECUTABLE_NAME" = "CodexMicroMac";
+        "PRODUCT_MODULE_NAME" = "CodexMicroMac";
+        "PRODUCT_BUNDLE_IDENTIFIER" = "com.gantrol.codex-micro-monitor";
+        "INFOPLIST_FILE" = "Packaging/Info.plist";
+        "GENERATE_INFOPLIST_FILE" = "NO";
+        "CODE_SIGN_STYLE" = "Manual";
+        "CODE_SIGN_IDENTITY" = "-";
+        "ENABLE_APP_SANDBOX" = "NO";
+        "ENABLE_HARDENED_RUNTIME" = "NO";
+        "ENABLE_USER_SCRIPT_SANDBOXING" = "NO";
+        "SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+        "SWIFT_COMPILATION_MODE" = "incremental";
+        "CLANG_ENABLE_MODULES" = "YES";
+        "LD_RUNPATH_SEARCH_PATHS" = "$(inherited) @executable_path/../Frameworks";
+        "SUPPORTED_PLATFORMS" = "macosx";
+        "SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD" = "NO";
+      };
+    };
+    "C046A0DA18BED3407C966DDF" = {
+      "isa" = "XCBuildConfiguration";
+      "name" = "Release";
+      "buildSettings" = {
+        "SDKROOT" = "iphoneos";
+        "IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+        "MACOSX_DEPLOYMENT_TARGET" = "14.0";
+        "SWIFT_VERSION" = "5.0";
+        "SUPPORTS_MACCATALYST" = "YES";
+        "SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD" = "NO";
+        "DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER" = "NO";
+        "TARGETED_DEVICE_FAMILY" = "2,6";
+        "PRODUCT_NAME" = "Codex Micro Monitor";
+        "EXECUTABLE_NAME" = "CodexMicroMac";
+        "PRODUCT_MODULE_NAME" = "CodexMicroMac";
+        "PRODUCT_BUNDLE_IDENTIFIER" = "com.gantrol.codex-micro-monitor";
+        "INFOPLIST_FILE" = "Packaging/Info.plist";
+        "GENERATE_INFOPLIST_FILE" = "NO";
+        "CODE_SIGN_STYLE" = "Manual";
+        "CODE_SIGN_IDENTITY" = "-";
+        "ENABLE_APP_SANDBOX" = "NO";
+        "ENABLE_HARDENED_RUNTIME" = "NO";
+        "ENABLE_USER_SCRIPT_SANDBOXING" = "NO";
+        "SWIFT_OPTIMIZATION_LEVEL" = "-O";
+        "SWIFT_COMPILATION_MODE" = "wholemodule";
+        "CLANG_ENABLE_MODULES" = "YES";
+        "LD_RUNPATH_SEARCH_PATHS" = "$(inherited) @executable_path/../Frameworks";
+        "SUPPORTED_PLATFORMS" = "macosx";
+        "SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD" = "NO";
+      };
+    };
+    "175AB01246347EE3CB3AD67C" = {
+      "isa" = "XCConfigurationList";
+      "buildConfigurations" = ("4C9A8D7A2C3C670C889D63E4", "C046A0DA18BED3407C966DDF");
+      "defaultConfigurationIsVisible" = 0;
+      "defaultConfigurationName" = "Release";
+    };
+    "CBE79372575C6BD5A9131E8F" = {
+      "isa" = "XCBuildConfiguration";
+      "name" = "Debug";
+      "buildSettings" = {
+        "SDKROOT" = "iphoneos";
+        "SWIFT_VERSION" = "5.0";
+        "CLANG_ENABLE_MODULES" = "YES";
+      };
+    };
+    "2D49EBE4C1EF4247FC7BA12F" = {
+      "isa" = "XCBuildConfiguration";
+      "name" = "Release";
+      "buildSettings" = {
+        "SDKROOT" = "iphoneos";
+        "SWIFT_VERSION" = "5.0";
+        "CLANG_ENABLE_MODULES" = "YES";
+      };
+    };
+    "76F8DEC3DFE0BDB465198890" = {
+      "isa" = "XCConfigurationList";
+      "buildConfigurations" = ("CBE79372575C6BD5A9131E8F", "2D49EBE4C1EF4247FC7BA12F");
+      "defaultConfigurationIsVisible" = 0;
+      "defaultConfigurationName" = "Release";
+    };
+    "34A04005BCAF206EEC990BD9" = {
+      "isa" = "PBXNativeTarget";
+      "name" = "CodexMicroMac";
+      "productName" = "Codex Micro Monitor";
+      "productReference" = "A8792157CB4F27FB949C035F";
+      "productType" = "com.apple.product-type.application";
+      "buildConfigurationList" = "175AB01246347EE3CB3AD67C";
+      "buildPhases" = ("878A52FC5FF6A57D50B7B870", "41D311A605520FC7B8B9A980", "E2AA269EB967A8853A258BFA", "A87BEF43EF83C8A9C93788A2");
+      "buildRules" = ();
+      "dependencies" = ();
+    };
+    "244210E48437B6556980A702" = {
+      "isa" = "PBXProject";
+      "attributes" = {
+        "LastUpgradeCheck" = "1630";
+        "BuildIndependentTargetsInParallel" = "YES";
+      };
+      "buildConfigurationList" = "76F8DEC3DFE0BDB465198890";
+      "compatibilityVersion" = "Xcode 14.0";
+      "developmentRegion" = "en";
+      "hasScannedForEncodings" = 0;
+      "knownRegions" = ("en", "zh-Hans", "Base");
+      "mainGroup" = "0D6E4079E36703EBD37C0072";
+      "projectDirPath" = "";
+      "projectRoot" = "";
+      "targets" = ("34A04005BCAF206EEC990BD9");
+    };
+  };
+  "rootObject" = "244210E48437B6556980A702";
+}
