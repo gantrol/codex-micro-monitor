@@ -1,5 +1,7 @@
 # Codex Micro Monitor
 
+
+Local macOS control preview: [build and scope](apps/macos/README.md). Layered settings and new-draft controls await the updated Windows contracts; live UI acceptance is pending.
 [![中文 | 点我](plugins/codex-micro-keypad/assets/badges/zh-CN.svg)](README.zh-CN.md)
 
 <a href="https://apps.microsoft.com/detail/9NTVMG9QNMHC"><img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft Store" width="200" /></a>
@@ -21,6 +23,8 @@ Requires Windows 10 build 19041+ / Windows 11 x64 and a signed-in Codex desktop 
 - **Codex Plugin:** download the plugin ZIP from [plugin Releases](https://github.com/gantrol/codex-plugin-micro-keypad/releases/latest). Requires .NET 10 Desktop Runtime x64. Extract the entire `codex-micro-monitor-plugin-<version>-win-x64.zip`, keeping `.agents/` and `plugins/`. From the extracted root, run `codex plugin marketplace add .` with the Codex CLI. Restart Codex, open **Plugins → Codex Micro Monitor**, and install `codex-micro-keypad`. In a new chat, ask it to open Codex Micro Monitor. See the [official marketplace guide](https://developers.openai.com/plugins/build/plugins#add-a-marketplace-from-the-cli).
 
 The desktop app is available on Microsoft Store and GitHub Releases. Public plugin-directory publication is still pending. See [build and distribution](docs/build-and-distribution.md).
+
+For local development, open [codex-micro.code-workspace](codex-micro.code-workspace) with sibling checkouts of `codex-control` and `codex-plugin-micro-keypad`. The [repository map](docs/repository-layout.zh-CN.md) defines source ownership and one-way plugin synchronization.
 
 ## Notice
 

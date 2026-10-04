@@ -1,5 +1,7 @@
 # Codex Micro Monitor
 
+
+本地 macOS 控制预览版：[构建与能力范围](apps/macos/README.md)。叠层设置和新对话控制等待 Windows 更新对齐，真实 UI 验收尚未执行。
 [![English | Click here](plugins/codex-micro-keypad/assets/badges/en-US.svg)](README.md)
 
 <a href="https://apps.microsoft.com/detail/9NTVMG9QNMHC"><img src="https://get.microsoft.com/images/zh-cn%20dark.svg" alt="从 Microsoft Store 获取" width="200" /></a>
@@ -21,6 +23,8 @@
 - **Codex Plugin**：从[插件 Releases](https://github.com/gantrol/codex-plugin-micro-keypad/releases/latest) 下载插件包，需要 .NET 10 Desktop Runtime x64。完整解压 `codex-micro-monitor-plugin-<版本>-win-x64.zip`，保留 `.agents/` 和 `plugins/`。在解压根目录通过 Codex CLI 执行 `codex plugin marketplace add .`，重启 Codex，在 **插件 → Codex Micro Monitor** 中安装 `codex-micro-keypad`，随后新建对话并说“打开 Codex Micro Monitor”。详见[官方 marketplace 指南](https://developers.openai.com/plugins/build/plugins#add-a-marketplace-from-the-cli)。
 
 桌面应用已在 Microsoft Store 和 GitHub Releases 发布，公开插件目录尚未发布。构建方式及插件发布路线见[开发说明](docs/build-and-distribution.md)。
+
+本地开发打开 [codex-micro.code-workspace](codex-micro.code-workspace)，与相邻的 `codex-control`、`codex-plugin-micro-keypad` 一起维护。源码归属和插件单向同步见[仓库关系](docs/repository-layout.zh-CN.md)。
 
 ## 声明
 

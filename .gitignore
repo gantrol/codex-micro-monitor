@@ -8,3 +8,6 @@ dist/
 *.snupkg
 **/xcuserdata/
 .DS_Store
+**/.build/
+**/.swiftpm/
+**/__pycache__/

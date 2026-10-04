@@ -1,0 +1,7 @@
+{
+  "folders": [
+    { "name": "Micro · product", "path": "." },
+    { "name": "Control · shared library", "path": "../codex-control" },
+    { "name": "Keypad · distribution", "path": "../codex-plugin-micro-keypad" }
+  ]
+}
