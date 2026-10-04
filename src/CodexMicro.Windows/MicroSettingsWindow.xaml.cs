@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Automation;
@@ -36,7 +37,8 @@ public partial class MicroSettingsWindow : Window
     private readonly Func<Task>? _codexConfigChanged;
     private bool _lastConfigSaveSucceeded = true;
     private readonly CancellationTokenSource _catalogRefreshCancellation = new();
-    private bool _syncing;
+    // Ignore XAML control events until the saved profile has been applied.
+    private bool _syncing = true;
 
     internal MicroSettingsWindow(
         MicroLocalization localization,
@@ -67,6 +69,8 @@ public partial class MicroSettingsWindow : Window
         _codexConfigChanged = codexConfigChanged;
 
         InitializeComponent();
+        RefreshSettingsPalette();
+        SystemParameters.StaticPropertyChanged += SystemParameters_Changed;
         Loaded += (_, _) => MicroWindowLayout.FitDialog(this);
         LiveMicroPreviewBrush.Visual = previewVisual;
         _localization.LanguageChanged += Localization_LanguageChanged;
@@ -177,49 +181,21 @@ public partial class MicroSettingsWindow : Window
                 : "Codex Micro · 软件设置";
         KeypadSizeTitle.Text = english ? "Size" : "大小";
         WindowTitleText.Text = english ? "Micro software settings" : "Micro 软件设置";
-        LocalBadgeText.Text = english ? "LIVE" : "实时";
-        WindowSubtitleText.Text = english
-                ? "The running keypad is the editor. Changes are saved to the real Micro configuration."
-                : "直接编辑正在运行的小键盘；改动会保存到真实的 Micro 配置。";
-        LayoutHeadingText.Text = "Layout";
+        LayoutHeadingText.Text = _localization.Text("布局");
         ResetButton.Content = english ? "Reset layout" : "重置布局";
-        PreviewHintText.Text = english
-            ? "Hover and click a keycap to edit"
-            : "悬停并点击键帽进行编辑";
-        OptionsHeadingText.Text = "Options";
-        AgentKeysTitleText.Text = "Agent keys";
-        AgentKeysDetailText.Text = english
-            ? "Choose what the six agent keys follow or trigger"
-            : "选择六个 Agent 键跟随或触发的内容";
+        OptionsHeadingText.Text = _localization.Text("交互");
+        AgentKeysTitleText.Text = _localization.Text("任务按键");
         KnobTitleText.Text = english ? "Knob" : "旋钮";
-        KnobDetailText.Text = english
-            ? "Choose what turning the knob controls"
-            : "选择转动旋钮时控制的内容";
         InvertDialDirectionTitleText.Text = english
             ? "Reverse dial direction"
             : "反转旋钮方向";
-        InvertDialDirectionDetailText.Text = english
-            ? "Swap clockwise and counterclockwise input for this Codex keypad"
-            : "仅对当前 Codex 小键盘交换顺时针与逆时针输入";
         MicrophoneTitleText.Text = english ? "Microphone key" : "麦克风键";
-        MicrophoneDetailText.Text = english
-            ? "Choose hold, tap-to-toggle, or Codex realtime behavior"
-            : "选择按住说话、点按开始 / 停止，或 Codex 实时语音";
         SingleTapTitleText.Text = english
             ? "Focus Codex with a single tap"
             : "单击聚焦 Codex";
-        SingleTapDetailText.Text = english
-            ? "Open the assigned task and focus Codex with one tap instead of two"
-            : "单击即可打开对应任务并聚焦 Codex，无需双击";
-        ExtensionsHeadingText.Text = english ? "Extensions" : "扩展";
+        ExtensionsHeadingText.Text = _localization.Text("快捷模型");
         QuickModelATitleText.Text = english ? "Quick model A" : "快捷模型 A";
-        QuickModelADetailText.Text = english
-            ? "First model and its target reasoning effort"
-            : "第一个模型及切换后的目标思考强度";
         QuickModelBTitleText.Text = english ? "Quick model B" : "快捷模型 B";
-        QuickModelBDetailText.Text = english
-            ? "Second model and its target reasoning effort"
-            : "第二个模型及切换后的目标思考强度";
         AutoConfirmUltraTitleText.Text = english
             ? "Automatically choose Use Full access"
             : "自动选择 Use Full access";
@@ -235,6 +211,13 @@ public partial class MicroSettingsWindow : Window
         AutomationProperties.SetName(
             AutoConfirmUltraToggle,
             AutoConfirmUltraTitleText.Text);
+        AutomationProperties.SetName(ResetSizeButton, _localization.Text("恢复默认大小"));
+        AutomationProperties.SetName(QuickModelAEffortCombo, _localization.Text("快捷模型 A 思考强度"));
+        AutomationProperties.SetName(QuickModelBEffortCombo, _localization.Text("快捷模型 B 思考强度"));
+        foreach (var button in PreviewKeyTargets.Children.OfType<Button>())
+        {
+            button.ToolTip = string.Format(_localization.Text("编辑按键 {0}"), button.Tag);
+        }
         ApplyHarnessScope(harness);
         RefreshLayoutPresentation(layout);
         RefreshConnectionState();
@@ -246,9 +229,6 @@ public partial class MicroSettingsWindow : Window
 
         LayoutCard.IsEnabled = true;
         LayoutCard.Opacity = 1;
-        PreviewHintText.Text = _localization.IsEnglish
-            ? "Hover and click a keycap to edit"
-            : "悬停并点击键帽进行编辑";
 
         KnobModeCombo.IsEnabled = true;
         AgentSourceCombo.IsEnabled = true;
@@ -371,11 +351,11 @@ public partial class MicroSettingsWindow : Window
             _profileSettings.Current.ActiveHarnessId);
 
         var connected = _isConnected();
-        ConnectionStatusDot.Fill = new SolidColorBrush(
-            connected
-                ? Color.FromRgb(0x79, 0xA5, 0xFF)
-                : Color.FromRgb(0xD2, 0xB8, 0x72));
-        ConnectionStatusText.Text = "Codex Plugin";
+        ConnectionStatusDot.SetResourceReference(
+            System.Windows.Shapes.Shape.FillProperty,
+            connected ? "SettingsSuccess" : "SettingsMuted");
+        ConnectionStatusText.Text = _localization.Text(
+            connected ? "Codex Plugin · 已连接" : "Codex Plugin · 未连接");
     }
 
     private void RefreshSaveState()
@@ -383,17 +363,12 @@ public partial class MicroSettingsWindow : Window
         var saved = _profileSettings.LastSaveSucceeded &&
             _lastConfigSaveSucceeded &&
             _harnessRegistry.LastSaveSucceeded;
-        SaveStatusText.Text = saved
-            ? _localization.IsEnglish
-                ? "Changes are saved automatically on this device."
-                : "改动会自动保存在本机。"
-            : _localization.IsEnglish
-                ? "The change is active, but it could not be saved to disk."
-                : "改动已在本次运行中生效，但无法写入磁盘。";
-        SaveStatusText.Foreground = new SolidColorBrush(
-            saved
-                ? Color.FromRgb(0x77, 0x7A, 0x7D)
-                : Color.FromRgb(0xC0, 0x78, 0x58));
+        SaveStatusText.Text = _localization.Text(saved
+            ? "已保存"
+            : "保存失败，改动仅本次有效");
+        SaveStatusText.SetResourceReference(
+            TextBlock.ForegroundProperty,
+            saved ? "SettingsMuted" : "SettingsDanger");
     }
 
     private void QuickModelACombo_SelectionChanged(
@@ -698,6 +673,44 @@ public partial class MicroSettingsWindow : Window
         }
     }
 
+    private void SystemParameters_Changed(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(SystemParameters.HighContrast) or null or "")
+        {
+            RunOnDispatcher(RefreshSettingsPalette);
+        }
+    }
+
+    private void RefreshSettingsPalette()
+    {
+        (string Key, Brush Brush)[] overrides =
+        [
+            ("SettingsSurface", SystemColors.WindowBrush),
+            ("SettingsInk", SystemColors.WindowTextBrush),
+            ("SettingsMuted", SystemColors.WindowTextBrush),
+            ("SettingsLine", SystemColors.WindowTextBrush),
+            ("SettingsStrongLine", SystemColors.WindowTextBrush),
+            ("SettingsHover", SystemColors.ControlBrush),
+            ("SettingsAccent", SystemColors.HighlightBrush),
+            ("SettingsSelected", SystemColors.HighlightBrush),
+            ("SettingsSelectedInk", SystemColors.HighlightTextBrush),
+            ("SettingsOnAccent", SystemColors.HighlightTextBrush),
+            ("SettingsSuccess", SystemColors.WindowTextBrush),
+            ("SettingsDanger", SystemColors.WindowTextBrush),
+        ];
+        foreach (var (key, brush) in overrides)
+        {
+            if (SystemParameters.HighContrast)
+            {
+                Resources[key] = brush;
+            }
+            else
+            {
+                Resources.Remove(key);
+            }
+        }
+    }
+
     private void Window_Closed(object? sender, EventArgs e)
     {
         LiveMicroPreviewBrush.Visual = null;
@@ -705,6 +718,7 @@ public partial class MicroSettingsWindow : Window
         _profileSettings.Changed -= ProfileSettings_Changed;
         _layoutObserver.LayoutChanged -= LayoutObserver_LayoutChanged;
         _harnessRegistry.Changed -= HarnessRegistry_Changed;
+        SystemParameters.StaticPropertyChanged -= SystemParameters_Changed;
         Closed -= Window_Closed;
     }
 }

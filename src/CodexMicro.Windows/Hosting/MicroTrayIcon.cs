@@ -25,6 +25,7 @@ internal sealed class MicroTrayIcon : IDisposable
     private readonly ToolStripMenuItem _exitItem;
     private Icon? _icon;
     private bool _disposed;
+    private bool _updatingStartup;
 
     internal MicroTrayIcon(
         MicroSurfaceController surface,
@@ -49,7 +50,7 @@ internal sealed class MicroTrayIcon : IDisposable
         _startupItem = new ToolStripMenuItem(
             string.Empty,
             image: null,
-            (_, _) => ToggleStartup());
+            async (_, _) => await UpdateStartupAsync(toggle: true));
         _autoLanguageItem = CreateLanguageItem(MicroLanguage.Auto);
         _zhCnLanguageItem = CreateLanguageItem(MicroLanguage.ZhCn);
         _enUsLanguageItem = CreateLanguageItem(MicroLanguage.EnUs);
@@ -73,17 +74,18 @@ internal sealed class MicroTrayIcon : IDisposable
         _menu.Items.Add(new ToolStripSeparator());
         _menu.Items.Add(_restartItem);
         _menu.Items.Add(_exitItem);
-        _menu.Opening += (_, _) =>
+        _menu.Opening += async (_, _) =>
         {
             _localization.RefreshAutoLanguage();
             RefreshText();
+            await UpdateStartupAsync(toggle: false);
         };
 
         _icon = LoadApplicationIcon();
         _notifyIcon = new NotifyIcon
         {
             Icon = _icon,
-            Text = "Codex Micro",
+            Text = "Codex Micro Monitor",
             ContextMenuStrip = _menu,
             Visible = true,
         };
@@ -119,7 +121,7 @@ internal sealed class MicroTrayIcon : IDisposable
 
         _notifyIcon.ShowBalloonTip(
             3000,
-            "Codex Micro",
+            "Codex Micro Monitor",
             _localization.IsEnglish
                 ? "The keypad restarted successfully."
                 : "小键盘已成功重启。",
@@ -136,8 +138,8 @@ internal sealed class MicroTrayIcon : IDisposable
         _notifyIcon.ShowBalloonTip(
             5000,
             _localization.IsEnglish
-                ? "Codex Micro restart failed"
-                : "Codex Micro 重启失败",
+                ? "Codex Micro Monitor restart failed"
+                : "Codex Micro Monitor 重启失败",
             detail,
             ToolTipIcon.Error);
     }
@@ -170,29 +172,46 @@ internal sealed class MicroTrayIcon : IDisposable
     private void Surface_SurfacesChanged(object? sender, EventArgs e) =>
         RefreshText();
 
-    private void ToggleStartup()
+    private async Task UpdateStartupAsync(bool toggle)
     {
+        if (_disposed || _updatingStartup) return;
+        _updatingStartup = true;
+        _startupItem.Enabled = false;
         try
         {
-            _startupRegistration.SetEnabled(!_startupRegistration.IsEnabled);
+            var state = await _startupRegistration.GetStateAsync();
+            if (_disposed) return;
+            if (toggle && state.CanChange)
+            {
+                await _startupRegistration.SetEnabledAsync(!state.IsEnabled);
+                state = await _startupRegistration.GetStateAsync();
+            }
+            if (_disposed) return;
+            _startupItem.Checked = state.IsEnabled;
+            _startupItem.Enabled = state.CanChange;
         }
         catch (Exception exception) when (
             exception is InvalidOperationException or
                 UnauthorizedAccessException or
+                System.Runtime.InteropServices.COMException or
                 System.Security.SecurityException)
         {
+            if (_disposed) return;
             _notifyIcon.ShowBalloonTip(
                 4000,
                 _localization.IsEnglish
-                    ? "Codex Micro startup"
-                    : "Codex Micro 开机自启动",
+                    ? "Codex Micro Monitor startup"
+                    : "Codex Micro Monitor 开机自启动",
                 _localization.IsEnglish
                     ? $"Could not update startup: {exception.Message}"
                     : $"无法更新开机自启动：{exception.Message}",
                 ToolTipIcon.Error);
         }
 
-        RefreshText();
+        finally
+        {
+            _updatingStartup = false;
+        }
     }
 
     private void RefreshText()
@@ -210,19 +229,18 @@ internal sealed class MicroTrayIcon : IDisposable
         _startupItem.Text = english
             ? "Start with Windows"
             : "开机自启动";
-        _startupItem.Checked = _startupRegistration.IsEnabled;
         _autoLanguageItem.Text = english
             ? "Auto (Agent Controller / Windows)"
             : "自动（跟随 Agent Controller / Windows）";
         _zhCnLanguageItem.Text = "简体中文";
         _enUsLanguageItem.Text = "English";
         _restartItem.Text = english
-            ? "Restart Codex Micro"
-            : "重启 Codex Micro";
+            ? "Restart Codex Micro Monitor"
+            : "重启 Codex Micro Monitor";
         _exitItem.Text = english ? "Exit" : "退出";
         _notifyIcon.Text = english
-            ? $"Codex Micro · {_surface.SurfaceCount} keypad(s)"
-            : $"Codex Micro · {_surface.SurfaceCount} 个小键盘";
+            ? $"Codex Micro Monitor · {_surface.SurfaceCount} keypad(s)"
+            : $"Codex Micro Monitor · {_surface.SurfaceCount} 个小键盘";
         _autoLanguageItem.Checked =
             _localization.SelectedLanguage == MicroLanguage.Auto;
         _zhCnLanguageItem.Checked =

@@ -119,6 +119,52 @@ public sealed class MicroLocalization
 
 internal static class MicroEnglishTranslations
 {
+    private static readonly Dictionary<string, string> QuotaLabels = new(StringComparer.Ordinal)
+    {
+        ["M月d日 HH:mm"] = "MMM d, h:mm tt",
+        ["剩余 {0}%"] = "{0}% left",
+        ["周额度"] = "Weekly limit",
+        ["重置于 {0}"] = "Resets {0}",
+        ["额度重置 · 可用 {0} 次"] = "Usage limit resets · {0} available",
+        ["额度重置"] = "Usage limit resets",
+        ["可用 {0} 次"] = "{0} available",
+        ["{0} 到期"] = "Expires {0}",
+        ["{0} · {1} 到期"] = "{0} · expires {1}",
+        ["更新于 {0}"] = "Updated {0}",
+        ["刷新失败 · 显示上次额度"] = "Refresh failed · Last known quota",
+        ["额度刷新暂不可用"] = "Quota refresh unavailable",
+        ["短按切换 {0}（下一轮）"] = "Click switches {0} (next turn)",
+        ["长按 · Micro 设置"] = "Hold · Micro settings",
+        ["右键 · 当前 Agent 软件设置"] = "Right-click · Current Agent settings",
+        ["短按"] = "Click",
+        ["长按"] = "Hold",
+        ["右键"] = "Right-click",
+        ["{0}（下一轮）"] = "{0} (next turn)",
+        ["Micro 设置"] = "Micro settings",
+        ["当前 Agent 软件设置"] = "Current Agent settings",
+        ["{0} 周额度"] = "{0}-week limit",
+        ["{0} 天额度"] = "{0}-day limit",
+        ["{0} 小时额度"] = "{0}-hour limit",
+        ["{0} 分钟额度"] = "{0}-minute limit",
+    };
+
+    // Exact labels must not replace fragments inside longer presentation text.
+    private static readonly Dictionary<string, string> SettingsLabels = new(StringComparer.Ordinal)
+    {
+        ["快捷模型 A 思考强度"] = "Quick model A reasoning effort",
+        ["快捷模型 B 思考强度"] = "Quick model B reasoning effort",
+        ["恢复默认大小"] = "Reset size",
+        ["编辑按键 {0}"] = "Edit key {0}",
+        ["Codex Plugin · 已连接"] = "Codex Plugin · Connected",
+        ["Codex Plugin · 未连接"] = "Codex Plugin · Disconnected",
+        ["保存失败，改动仅本次有效"] = "Save failed; changes apply to this session only",
+        ["已保存"] = "Saved",
+        ["快捷模型"] = "Quick models",
+        ["任务按键"] = "Agent keys",
+        ["布局"] = "Layout",
+        ["交互"] = "Interaction",
+    };
+
     private static readonly (string Chinese, string English)[] Replacements =
     [
         ("正在连接 Codex。", "Connecting to Codex."),
@@ -671,6 +717,16 @@ internal static class MicroEnglishTranslations
 
     internal static string Translate(string value)
     {
+        if (QuotaLabels.TryGetValue(value, out var quotaLabel))
+        {
+            return quotaLabel;
+        }
+
+        if (SettingsLabels.TryGetValue(value, out var label))
+        {
+            return label;
+        }
+
         var translated = value;
         foreach (var (chinese, english) in Replacements)
         {

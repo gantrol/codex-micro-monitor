@@ -831,16 +831,7 @@ public partial class MicroSurfaceWindow : Window
             return;
         }
 
-        if (!_broker.IsReady)
-        {
-            await EnsureReadyFeedbackAsync();
-            return;
-        }
-
-        {
-            await RunActionAsync(() => _broker.SetKeyAsync(button.Tag as string ?? "ACT10_ACT11", true), "voice");
-            return;
-        }
+        await HandleSoftwareKeyAsync(button.Tag as string ?? "ACT10_ACT11", agentKey: false);
     }
 
     private async void Voice_PreviewMouseLeftButtonUp(
@@ -900,16 +891,7 @@ public partial class MicroSurfaceWindow : Window
             return;
         }
 
-        if (!_broker.IsReady)
-        {
-            await EnsureReadyFeedbackAsync();
-            return;
-        }
-
-        {
-            await RunActionAsync(() => _broker.SetKeyAsync(button.Tag as string ?? "ACT10_ACT11", true), "voice");
-            return;
-        }
+        await HandleSoftwareKeyAsync(button.Tag as string ?? "ACT10_ACT11", agentKey: false);
     }
 
     private async void Voice_PreviewKeyUp(object sender, KeyEventArgs e)
@@ -1844,7 +1826,7 @@ public partial class MicroSurfaceWindow : Window
         {
             AnimateDialStep(intent.Direction > 0);
             if (_layoutObserver.Current.EncoderMode == "reasoning")
-                await StepReasoningAsync(intent.Direction);
+                await StepReasoningAsync(_dialDirectionSettings.ToReasoningSteps(intent.Direction));
             else
                 await RunActionAsync(
                     () => _broker.StepEncoderAsync(_dialDirectionSettings.ToReportedClockwise(intent.Direction > 0)),
@@ -3436,8 +3418,10 @@ public partial class MicroSurfaceWindow : Window
         }
         if (key.Template.FindName("AgentWellHighlight", key) is Ellipse wellHighlight)
         {
-            wellHighlight.Stroke = (Brush)key.FindResource(
-                whiteLight ? "PaperWhiteLightRecessRingBrush" : "PaperRecessRingBrush");
+            if (whiteLight)
+                wellHighlight.Stroke = (Brush)key.FindResource("PaperWhiteLightRecessRingBrush");
+            else
+                wellHighlight.ClearValue(Shape.StrokeProperty);
         }
     }
 
@@ -3546,6 +3530,7 @@ public partial class MicroSurfaceWindow : Window
         }
 
         RefreshHarnessPresentation();
+        RefreshSoftwareFeedback();
     }
 
     private void RefreshDialHelp(CodexMicroLayoutSnapshot snapshot)
@@ -3920,12 +3905,17 @@ public partial class MicroSurfaceWindow : Window
             _quotaRefreshFailed
                 ? english ? "Quota refresh unavailable" : "额度刷新暂不可用"
                 : string.Empty);
-        ApplyHelp(SettingsKey, "Codex 剩余额度",
-            _quotaSnapshot is { } snapshot
-                ? BuildQuotaHelpDetail(snapshot, english)
-                : _quotaRefreshFailed
-                    ? "额度暂不可用"
-                    : "正在读取 Codex 剩余额度。");
+        if (_quotaSnapshot is { } snapshot)
+        {
+            var quotaHelp = BuildQuotaHelpDetail(snapshot);
+            ApplyHelp(SettingsKey, "Codex 剩余额度", quotaHelp.Detail, quotaHelp.Content);
+        }
+        else
+        {
+            ApplyHelp(SettingsKey, "Codex 剩余额度", _quotaRefreshFailed
+                ? "额度暂不可用"
+                : "正在读取 Codex 剩余额度。");
+        }
     }
 
     private void ApplySettingsDisplayTheme(bool light)
@@ -3944,119 +3934,10 @@ public partial class MicroSurfaceWindow : Window
             : Color.FromArgb(0xBF, 0xDD, 0xE7, 0xF2));
     }
 
-    private string BuildQuotaHelpDetail(
-        CodexQuotaSnapshot snapshot,
-        bool english)
-    {
-        var displayWindow = snapshot.DisplayWindow;
-        var culture = CultureInfo.GetCultureInfo(english ? "en-US" : "zh-CN");
-        var lines = snapshot.Windows
-            .OrderBy(window => window.WindowDurationMinutes)
-            .Select(window =>
-            {
-                var marker = ReferenceEquals(window, displayWindow) ? "●" : "○";
-                var label = FormatQuotaWindowLabel(
-                    window.WindowDurationMinutes,
-                    english);
-                var remaining = (int)Math.Round(
-                    window.RemainingPercent,
-                    MidpointRounding.AwayFromZero);
-                var reset = window.ResetsAt.ToLocalTime().ToString(
-                    english ? "MMM d, h:mm tt" : "MM/dd HH:mm",
-                    culture);
-                return english
-                    ? $"{marker} {label}: {remaining}% left · resets {reset}"
-                    : $"{marker} {label}：剩余 {remaining}% · {reset} 重置";
-            })
-            .ToList();
-
-        lines.Add(string.Empty);
-        if (snapshot.AvailableResets is { } resets)
-        {
-            lines.Add(english
-                ? $"Usage limit resets: {resets.Count} available"
-                : $"额度重置：可用 {resets.Count} 次");
-            foreach (var credit in resets)
-            {
-                var title = !english && credit.Title.Equals(
-                    "Full reset",
-                    StringComparison.OrdinalIgnoreCase)
-                    ? "全额重置"
-                    : credit.Title;
-                var expiration = credit.ExpiresAt.ToLocalTime().ToString(
-                    english ? "MMM d, h:mm tt" : "MM/dd HH:mm",
-                    culture);
-                lines.Add(english
-                    ? $"○ {title} · expires {expiration}"
-                    : $"○ {title} · {expiration} 到期");
-            }
-        }
-        else
-        {
-            lines.Add(english
-                ? "Usage limit resets: unavailable"
-                : "额度重置：暂不可用");
-        }
-
-        lines.Add(string.Empty);
-        var updated = snapshot.ReadAt.ToLocalTime().ToString(
-            english ? "h:mm tt" : "HH:mm",
-            culture);
-        lines.Add(english ? $"Updated {updated}" : $"更新于 {updated}");
-        if (_quotaRefreshFailed)
-        {
-            lines.Add(english
-                ? "The latest refresh failed; showing the last successful reading."
-                : "最近一次刷新失败，当前显示上次成功读取的结果。");
-        }
-
-        lines.Add(string.Empty);
-        var quickModelPair = FormatQuickModelPair(_profileSettings.Current);
-        lines.Add(english
-            ? $"The rings show remaining quota. Click switches {quickModelPair} for this task's next turn; hold opens official Micro settings; right-click opens the current Agent's software settings."
-            : $"圆环显示剩余额度。短按为当前任务的下一轮切换 {quickModelPair}；长按打开官方 Micro 设置；右键直达右下角当前 Agent 的软件设置。");
-        return string.Join('\n', lines);
-    }
-
     private static string FormatQuickModelPair(
         MicroProfileSnapshot snapshot) =>
         $"{FormatQuickModelName(snapshot.QuickModelA)} / " +
         FormatQuickModelName(snapshot.QuickModelB);
-
-    private static string FormatQuotaWindowLabel(
-        int durationMinutes,
-        bool english)
-    {
-        const int minutesPerWeek = 7 * 24 * 60;
-        const int minutesPerDay = 24 * 60;
-
-        if (durationMinutes % minutesPerWeek == 0)
-        {
-            var weeks = durationMinutes / minutesPerWeek;
-            if (english)
-            {
-                return weeks == 1 ? "Weekly limit" : $"{weeks}-week limit";
-            }
-
-            return weeks == 1 ? "周额度" : $"{weeks} 周额度";
-        }
-
-        if (durationMinutes % minutesPerDay == 0)
-        {
-            var days = durationMinutes / minutesPerDay;
-            return english ? $"{days}-day limit" : $"{days} 天额度";
-        }
-
-        if (durationMinutes % 60 == 0)
-        {
-            var hours = durationMinutes / 60;
-            return english ? $"{hours}-hour limit" : $"{hours} 小时额度";
-        }
-
-        return english
-            ? $"{durationMinutes}-minute limit"
-            : $"{durationMinutes} 分钟额度";
-    }
 
     internal static Geometry CreateQuotaArcGeometry(double remainingPercent)
     {
@@ -4116,7 +3997,7 @@ public partial class MicroSurfaceWindow : Window
         AutomationProperties.SetHelpText(this, Localize(value));
         SetHelp(
             DeviceFrame,
-            "Agent Controller · Micro Surface",
+            "Codex Micro Monitor",
             $"{value}\n\n拖动机身移动 · 右击机身打开窗口菜单 · 关闭时收起到托盘");
     }
 
@@ -4295,9 +4176,7 @@ public partial class MicroSurfaceWindow : Window
     {
         RefreshPageHelp();
         RefreshMonitorPresentation();
-        Title = _localization.IsEnglish
-            ? $"Codex Micro · {_keypadDisplayName}"
-            : $"Codex Micro · {_keypadDisplayName}";
+        Title = $"Codex Micro Monitor · {_keypadDisplayName}";
         TopmostMenuItem.Header = Localize("窗口置顶");
         SettingsMenuItem.Header = _localization.IsEnglish ? "Settings" : "设置";
         KnobSettingsMenuItem.Header = SettingsMenuItem.Header;
@@ -4516,37 +4395,39 @@ public partial class MicroSurfaceWindow : Window
     private void ApplyHelp(
         FrameworkElement element,
         string title,
-        string detail)
+        string detail,
+        FrameworkElement? detailContent = null)
     {
         var localizedTitle = Localize(title);
         var localizedDetail = Localize(detail);
-        var content = new StackPanel
-        {
-            MaxWidth = 360,
-        };
+        var content = new StackPanel();
         content.Children.Add(new TextBlock
         {
             Text = localizedTitle,
-            FontSize = 13,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x2F, 0x34, 0x38)),
+            Style = (Style)FindResource("MicroHelpTitle"),
         });
-        content.Children.Add(new TextBlock
+        detailContent ??= new TextBlock
         {
             Text = localizedDetail,
-            Margin = new Thickness(0, 4, 0, 0),
-            FontSize = 11.5,
-            LineHeight = 17,
-            TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x68, 0x70, 0x76)),
-        });
-
-        element.ToolTip = new ToolTip
-        {
-            Content = content,
-            IsHitTestVisible = false,
-            Placement = PlacementMode.MousePoint,
+            Style = (Style)FindResource("MicroHelpDetail"),
         };
+        content.Children.Add(detailContent);
+
+        var helpStyle = (Style)FindResource(typeof(ToolTip));
+        if (element.ToolTip is ToolTip existing && ReferenceEquals(existing.Style, helpStyle))
+        {
+            // Refresh the content without reopening the popup or replaying its entrance.
+            existing.Content = content;
+        }
+        else
+        {
+            element.ToolTip = new ToolTip
+            {
+                Content = content,
+                Style = helpStyle,
+                IsHitTestVisible = false,
+            };
+        }
         ToolTipService.SetInitialShowDelay(element, 320);
         ToolTipService.SetBetweenShowDelay(element, 100);
         ToolTipService.SetShowDuration(element, 16000);

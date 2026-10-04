@@ -146,10 +146,20 @@ public partial class MicroSurfaceWindow
             return;
         }
 
+        QueueReasoningSteps(_dialDirectionSettings.ToReasoningSteps(steps), encoderSteps: steps);
+    }
+
+    private void QueueReasoningSteps(int effortSteps, int? encoderSteps = null)
+    {
+        if (effortSteps == 0 || _windowClosed || _pageSwitching ||
+            _quickModelSwitching || _softwareNavigationPending)
+        {
+            return;
+        }
+
         {
             var window = CodexWindowActivator.CaptureForegroundWindow();
             var threadId = _modelToggleService.CurrentForegroundVisibleThreadId(window);
-            var effortSteps = _dialDirectionSettings.ToReasoningSteps(steps);
             if (window != IntPtr.Zero &&
                 ResolveReasoningTarget(threadId, effortSteps) is { } target)
             {
@@ -163,14 +173,14 @@ public partial class MicroSurfaceWindow
                 return;
             }
 
-            if (_layoutObserver.Current.EncoderMode == "reasoning")
+            if (encoderSteps is { } physicalSteps && _layoutObserver.Current.EncoderMode == "reasoning")
             {
-                EnqueueEncoderSteps(steps, "æ—‹é’®æ»šè½®");
+                EnqueueEncoderSteps(physicalSteps, "旋钮滚轮");
                 return;
             }
         }
 
-        _reasoningSteps.Add(steps, Stopwatch.GetTimestamp());
+        _reasoningSteps.Add(effortSteps, Stopwatch.GetTimestamp());
         StartReasoningStepPump();
     }
 
@@ -179,7 +189,7 @@ public partial class MicroSurfaceWindow
         if (!_reasoningPumpRunning)
         {
             _reasoningPumpRunning = true;
-            _ = RunDialInputSafelyAsync(PumpReasoningStepsAsync, "æ—‹é’®æ»šè½®");
+            _ = RunDialInputSafelyAsync(PumpReasoningStepsAsync, "思考强度调节");
         }
     }
 
@@ -229,7 +239,7 @@ public partial class MicroSurfaceWindow
         }
     }
 
-    private async Task StepReasoningAsync(int direction, CodexThreadModelState? target = null)
+    private async Task StepReasoningAsync(int effortStep, CodexThreadModelState? target = null)
     {
         if (_quickModelSwitching || _reasoningAdjusting || _windowClosed)
         {
@@ -291,7 +301,6 @@ public partial class MicroSurfaceWindow
                             _modelToggleService.CurrentForegroundVisibleThreadId(window),
                             StringComparison.Ordinal));
 
-                var effortStep = _dialDirectionSettings.ToReasoningSteps(Math.Sign(direction));
                 if (!draft)
                 {
                     var catalog = _reasoningCatalog ?? CodexModelCatalog.Load();

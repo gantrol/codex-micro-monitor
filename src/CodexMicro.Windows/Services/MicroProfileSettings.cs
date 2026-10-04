@@ -598,7 +598,7 @@ internal sealed class MicroProfileSettings
     private static string ToSettingValue(CodexQuickModel model) => model.Id;
 
     private static string? NormalizeReasoningEffort(string? effort) =>
-        string.IsNullOrWhiteSpace(effort) ? null : effort.Trim();
+        string.IsNullOrWhiteSpace(effort) ? null : effort.Trim().ToLowerInvariant();
 
     private static string? NormalizeReasoningEffortForModel(CodexQuickModel model, string? effort) =>
         NormalizeReasoningEffort(effort);

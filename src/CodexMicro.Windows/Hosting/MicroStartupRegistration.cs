@@ -1,32 +1,48 @@
 using Microsoft.Win32;
+using System.Runtime.InteropServices;
+using Windows.ApplicationModel;
 
 namespace CodexMicro.DesktopHost;
 
 internal sealed class MicroStartupRegistration(string valueName = "CodexMicroKeypad")
 {
+    internal const string StartupTaskId = "MicroMonitorStartup";
     private const string RunKeyPath =
         @"Software\Microsoft\Windows\CurrentVersion\Run";
 
-    internal bool IsEnabled
+    internal async Task<(bool IsEnabled, bool CanChange)> GetStateAsync()
     {
-        get
+        if (IsPackaged)
         {
-            try
-            {
-                using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
-                return key?.GetValue(valueName) is string value &&
-                    !string.IsNullOrWhiteSpace(value);
-            }
-            catch (Exception exception) when (
-                exception is UnauthorizedAccessException or
-                    System.Security.SecurityException)
-            {
-                return false;
-            }
+            var task = await StartupTask.GetAsync(StartupTaskId);
+            return (task.State is StartupTaskState.Enabled or StartupTaskState.EnabledByPolicy,
+                task.State is StartupTaskState.Enabled or StartupTaskState.Disabled);
         }
+
+        return await Task.Run(() =>
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
+            return (key?.GetValue(valueName) is string value &&
+                !string.IsNullOrWhiteSpace(value), true);
+        });
     }
 
-    internal void SetEnabled(bool enabled)
+    internal async Task SetEnabledAsync(bool enabled)
+    {
+        if (IsPackaged)
+        {
+            var task = await StartupTask.GetAsync(StartupTaskId);
+            if (enabled)
+                await task.RequestEnableAsync();
+            else
+                task.Disable();
+            return;
+        }
+
+        await Task.Run(() => SetUnpackagedEnabled(enabled));
+    }
+
+    private void SetUnpackagedEnabled(bool enabled)
     {
         using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath) ??
             throw new InvalidOperationException(
@@ -49,4 +65,16 @@ internal sealed class MicroStartupRegistration(string valueName = "CodexMicroKey
             $"\"{executable}\" --background",
             RegistryValueKind.String);
     }
+
+    private static bool IsPackaged
+    {
+        get
+        {
+            uint length = 0;
+            return GetCurrentPackageFullName(ref length, IntPtr.Zero) == 122;
+        }
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetCurrentPackageFullName(ref uint length, IntPtr name);
 }

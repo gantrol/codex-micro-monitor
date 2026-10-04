@@ -193,7 +193,13 @@ public partial class MicroSurfaceWindow
     private async Task HandleSoftwareKeyAsync(string key, bool agentKey)
     {
         // A single Agent tap must navigate; the old focus preference must not consume it.
-        var fast = !agentKey && _layoutObserver.Current.GetSlot(key).ResolvedAction == "composer.toggleFastMode";
+        var action = agentKey ? null : _layoutObserver.Current.GetSlot(key).ResolvedAction;
+        if (action is "composer.increaseReasoningEffort" or "composer.decreaseReasoningEffort")
+        {
+            QueueReasoningSteps(action == "composer.increaseReasoningEffort" ? 1 : -1);
+            return;
+        }
+        var fast = action == "composer.toggleFastMode";
         var fastThread = fast ? CurrentCodexAgentThreadId() : null;
         if (fast)
         {
@@ -232,12 +238,15 @@ public partial class MicroSurfaceWindow
         ApplySoftwareConnectionState(_broker.IsReady);
         var current = _modelToggleService.CurrentVisibleThreadId;
         var state = _modelToggleService.CurrentThreadState;
+        var fastActive = current is not null && state?.ThreadId == current && CodexServiceTier.IsFast(state.ServiceTier);
         foreach (var (key, presentation) in _actionKeys)
         {
-            if (_layoutObserver.Current.GetSlot(key).ResolvedAction != "composer.toggleFastMode") continue;
-            var pending = current is not null && _softwareFastPending.ContainsKey(current);
+            var fast = _layoutObserver.Current.GetSlot(key).ResolvedAction == "composer.toggleFastMode";
+            if (!fast && !presentation.Icon.IsFastActive) continue;
+            var pending = fast && current is not null && _softwareFastPending.ContainsKey(current);
+            presentation.Icon.IsFastActive = fast && fastActive;
             presentation.Icon.IconBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(
-                pending ? "#C28B21" : state?.ThreadId == current && CodexServiceTier.IsFast(state?.ServiceTier) ? "#14876D" : "#171717"));
+                pending ? "#C28B21" : presentation.Icon.IsFastActive ? "#14876D" : "#171717"));
         }
         for (var slot = 0; slot < _agentKeys.Length; slot++)
             _agentKeys[slot].Opacity = SoftwareThreadFeedbackPending(_latestAgentRoster?.GetSlot(slot)?.ThreadId) ? .65 : 1;

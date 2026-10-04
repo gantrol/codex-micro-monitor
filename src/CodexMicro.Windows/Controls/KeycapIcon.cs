@@ -13,7 +13,7 @@ using CodexMicro.Desktop.Services;
 namespace CodexMicro.Desktop.Controls;
 
 /// <summary>
-/// Official vector keycap artwork with local reasoning-slider and Harness glyphs.
+/// Official vector keycap artwork with local FAST, reasoning-slider and Harness glyphs.
 /// </summary>
 public sealed class KeycapIcon : FrameworkElement
 {
@@ -25,6 +25,16 @@ public sealed class KeycapIcon : FrameworkElement
     {
         get => (bool)GetValue(PreserveMinimumSizeProperty);
         set => SetValue(PreserveMinimumSizeProperty, value);
+    }
+
+    public static readonly DependencyProperty IsFastActiveProperty =
+        DependencyProperty.Register(nameof(IsFastActive), typeof(bool), typeof(KeycapIcon),
+            new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public bool IsFastActive
+    {
+        get => (bool)GetValue(IsFastActiveProperty);
+        set => SetValue(IsFastActiveProperty, value);
     }
 
     public static readonly DependencyProperty KeycapIdProperty =
@@ -90,21 +100,28 @@ public sealed class KeycapIcon : FrameworkElement
     private FrameworkElement? _interactionOwner;
     private static readonly DependencyProperty ReasoningPositionProperty = DependencyProperty.Register(
         "ReasoningPosition", typeof(double), typeof(KeycapIcon),
-        new FrameworkPropertyMetadata(0.5, FrameworkPropertyMetadataOptions.AffectsRender));
-    private static readonly Brush ReasoningFill = new LinearGradientBrush(
-        Color.FromRgb(75, 76, 239), Color.FromRgb(167, 89, 250), 0);
+        new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
+    private static readonly Brush ReasoningBlueFill = new SolidColorBrush(Color.FromRgb(57, 120, 246));
+    private static readonly Brush ReasoningPurpleFill = new SolidColorBrush(Color.FromRgb(152, 88, 239));
+
+    static KeycapIcon()
+    {
+        ReasoningBlueFill.Freeze();
+        ReasoningPurpleFill.Freeze();
+    }
 
     public KeycapIcon()
     {
         Loaded += (_, _) =>
         {
+            ResetReasoningMotion();
             for (DependencyObject? parent = VisualTreeHelper.GetParent(this); parent is not null;
                  parent = VisualTreeHelper.GetParent(parent))
                 if (parent is ButtonBase or ListBoxItem)
                 {
                     _interactionOwner = (FrameworkElement)parent;
                     _interactionOwner.MouseEnter += AnimateReasoning;
-                    _interactionOwner.PreviewMouseLeftButtonDown += AnimateReasoning;
+                    _interactionOwner.MouseLeave += ReasoningMouseLeave;
                     break;
                 }
         };
@@ -113,7 +130,7 @@ public sealed class KeycapIcon : FrameworkElement
             if (_interactionOwner is not null)
             {
                 _interactionOwner.MouseEnter -= AnimateReasoning;
-                _interactionOwner.PreviewMouseLeftButtonDown -= AnimateReasoning;
+                _interactionOwner.MouseLeave -= ReasoningMouseLeave;
                 _interactionOwner = null;
             }
             ResetReasoningMotion();
@@ -123,19 +140,24 @@ public sealed class KeycapIcon : FrameworkElement
     private void ResetReasoningMotion()
     {
         BeginAnimation(ReasoningPositionProperty, null);
-        SetValue(ReasoningPositionProperty, KeycapId == "MIND+" ? 0.82 : 0.18);
+        SetValue(ReasoningPositionProperty, ReasoningRestPosition);
     }
+
+    private double ReasoningRestPosition => KeycapId == "MIND+" ? 2.0 / 3 : 1.0 / 3;
+
+    private void ReasoningMouseLeave(object sender, MouseEventArgs e) => ResetReasoningMotion();
 
     private void AnimateReasoning(object sender, MouseEventArgs e)
     {
         if (KeycapId is not ("MIND+" or "MIND-") || !SystemParameters.ClientAreaAnimation) return;
         var increase = KeycapId == "MIND+";
-        BeginAnimation(ReasoningPositionProperty,
-            new DoubleAnimation(increase ? 0.18 : 0.82, increase ? 0.82 : 0.18, TimeSpan.FromMilliseconds(260))
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
-                FillBehavior = FillBehavior.Stop,
-            });
+        var animation = new DoubleAnimation(ReasoningRestPosition, increase ? 1 : 0,
+            TimeSpan.FromMilliseconds(180))
+        {
+            FillBehavior = FillBehavior.HoldEnd,
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+        };
+        BeginAnimation(ReasoningPositionProperty, animation);
     }
 
     public string KeycapId
@@ -194,7 +216,8 @@ public sealed class KeycapIcon : FrameworkElement
         drawingContext.PushTransform(new ScaleTransform(scale, scale));
 
         var brush = IconBrush;
-        if (KeycapId is not ("MIND+" or "MIND-") && CodexOfficialArtwork.Draw(drawingContext, KeycapId, brush))
+        // FAST chooses between the local outline and the exported filled artwork below.
+        if (KeycapId is not ("FAST" or "MIND+" or "MIND-") && CodexOfficialArtwork.Draw(drawingContext, KeycapId, brush))
         {
             drawingContext.Pop();
             drawingContext.Pop();
@@ -210,7 +233,10 @@ public sealed class KeycapIcon : FrameworkElement
         switch (KeycapId)
         {
             case "FAST":
-                DrawPaperGeometry(drawingContext, brush, PaperFastGeometry);
+                if (IsFastActive)
+                    CodexOfficialArtwork.Draw(drawingContext, KeycapId, brush);
+                else
+                    DrawPaperGeometry(drawingContext, brush, PaperFastGeometry);
                 break;
             case "APPR":
                 DrawPaperGeometry(drawingContext, brush, PaperApproveGeometry);
@@ -345,15 +371,19 @@ public sealed class KeycapIcon : FrameworkElement
     private void DrawReasoningSlider(DrawingContext dc)
     {
         var position = (double)GetValue(ReasoningPositionProperty);
+        var highest = position >= 1;
+        var fill = highest ? ReasoningPurpleFill : ReasoningBlueFill;
         var thumb = 4 + 12 * position;
-        dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromRgb(228, 222, 245)), null,
+        dc.DrawRoundedRectangle(new SolidColorBrush(highest
+                ? Color.FromRgb(228, 222, 245) : Color.FromRgb(223, 234, 254)), null,
             new Rect(1, 9, 18, 6), 3, 3);
-        dc.DrawRoundedRectangle(ReasoningFill, null, new Rect(1, 9, thumb, 6), 3, 3);
-        dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(32, 40, 20, 70)), null,
+        dc.DrawRoundedRectangle(fill, null, new Rect(1, 9, thumb, 6), 3, 3);
+        dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(32, 30, 40, 60)), null,
             new Point(thumb, 12.6), 3.5, 3.5);
-        dc.DrawEllipse(Brushes.White, CreatePen(new SolidColorBrush(Color.FromRgb(221, 216, 233)), 0.5),
+        dc.DrawEllipse(Brushes.White, CreatePen(new SolidColorBrush(highest
+                ? Color.FromRgb(221, 216, 233) : Color.FromRgb(206, 218, 242)), 0.5),
             new Point(thumb, 12), 3.3, 3.3);
-        var sign = CreatePen(ReasoningFill, 1.4);
+        var sign = CreatePen(fill, 1.4);
         dc.DrawLine(sign, new Point(8, 4), new Point(12, 4));
         if (KeycapId == "MIND+") dc.DrawLine(sign, new Point(10, 2), new Point(10, 6));
     }
