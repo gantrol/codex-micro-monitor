@@ -15,7 +15,6 @@ final class KeycapControl: UIControl {
     var contextMenu: (() -> UIMenu?)?
     private(set) var glowColor: UIColor = .clear
     private(set) var glowOpacity: Float = 0
-    private var agent = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -42,7 +41,7 @@ final class KeycapControl: UIControl {
         seam.borderWidth = 1.5
         seam.backgroundColor = UIColor.clear.cgColor
         symbol.contentMode = .scaleAspectFit
-        symbol.tintColor = UIColor(hex: 0x171717)
+        symbol.tintColor = UIColor(hex: 0x34413C)
         symbol.isUserInteractionEnabled = false
         addSubview(symbol)
         addTarget(self, action: #selector(tapped), for: .touchUpInside)
@@ -52,7 +51,6 @@ final class KeycapControl: UIControl {
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
 
     func configure(thread: MicroThread?, selected: Bool, stale: Bool) {
-        agent = true
         symbol.isHidden = true
         let status = thread?.status ?? .idle
         let active = thread != nil && status != .idle && !stale
@@ -84,15 +82,16 @@ final class KeycapControl: UIControl {
     }
 
     func configure(symbol name: String, label: String, enabled: Bool, active: Bool = false) {
-        agent = false
         isEnabled = enabled
         accessibilityLabel = label
         accessibilityTraits = enabled ? .button : [.button, .notEnabled]
         symbol.isHidden = false
-        symbol.image = UIImage(systemName: name,
-                               withConfiguration: UIImage.SymbolConfiguration(pointSize: 26, weight: .medium))
-        symbol.alpha = enabled ? 1 : 0.28
-        symbol.tintColor = active ? MicroTheme.accent : UIColor(hex: 0x171717)
+        let assets = ["bolt": "MicroFast", "checkmark.circle": "MicroApprove", "xmark.circle": "MicroReject",
+                      "arrow.triangle.branch": "MicroFork", "mic": "MicroMicrophone", "terminal": "MicroCodex"]
+        symbol.image = assets[name].flatMap { UIImage(named: $0)?.withRenderingMode(.alwaysTemplate) }
+            ?? UIImage(systemName: name, withConfiguration: UIImage.SymbolConfiguration(pointSize: 26, weight: .medium))
+        symbol.alpha = enabled ? 1 : 0.26
+        symbol.tintColor = active ? MicroTheme.accent : UIColor(hex: 0x34413C)
         cap.backgroundColor = MicroTheme.paper.cgColor
         wash.opacity = 0
         well.backgroundColor = MicroTheme.paper.cgColor

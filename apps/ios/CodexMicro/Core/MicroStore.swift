@@ -20,6 +20,7 @@ final class MicroStore {
     private var generation = UUID()
     private var active = false
     private var demoTransport: MicroTransport?
+    private let journalKey = "micro.unresolvedCommands"
 
     var selected: MicroThread? { snapshot?.threads.first { $0.id == selectedID } }
     var isBusy: Bool { !pending.isEmpty }
@@ -33,7 +34,11 @@ final class MicroStore {
     }
 
     func supports(_ kind: MicroCommandKind) -> Bool {
-        canControl && selected?.capabilities.contains(kind) == true
+        guard canControl, let selected, selected.capabilities.contains(kind) else { return false }
+        if kind == .approve || kind == .decline {
+            return selected.approvalID != nil && selected.approvalSummary?.isEmpty == false
+        }
+        return true
     }
 
     func resume() {
@@ -105,11 +110,17 @@ final class MicroStore {
             }
         case .lease(let id): leaseID = id
         case .snapshot(let next):
-            if let current = snapshot, current.hostEpoch == next.hostEpoch,
+            if let current = snapshot, current.hostID == next.hostID, current.hostEpoch == next.hostEpoch,
                next.revision <= current.revision { return }
-            if let current = snapshot, current.hostID != next.hostID {
+            if let current = snapshot, current.hostID != next.hostID || current.hostEpoch != next.hostEpoch {
                 selectedID = nil
                 uncertain.formUnion(pending.keys)
+            }
+            if !isDemo, snapshot == nil {
+                for command in journal() where command.hostID == next.hostID {
+                    pending[command.requestID] = command
+                    uncertain.insert(command.requestID)
+                }
             }
             snapshot = next
             if !next.threads.contains(where: { $0.id == selectedID }) {
@@ -124,6 +135,7 @@ final class MicroStore {
             case .applied, .rejected, .notSent:
                 pending.removeValue(forKey: receipt.requestID)
                 uncertain.remove(receipt.requestID)
+                if !isDemo { saveJournal(journal().filter { $0.requestID != receipt.requestID }) }
             }
             if receipt.status == .rejected, let reason = receipt.reason { onError?(reason) }
         }
@@ -139,6 +151,7 @@ final class MicroStore {
                                    threadID: thread.id, kind: kind, expectedRevision: snapshot.revision,
                                    value: value, turnID: thread.turnID, approvalID: thread.approvalID)
         pending[command.requestID] = command
+        if !isDemo { saveJournal(journal() + [command]) }
         lastReceipt = nil
         onChange?()
         let sender = transport
@@ -150,6 +163,22 @@ final class MicroStore {
                                                    reason: error.localizedDescription)))
             }
         }
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            guard let self, self.pending[command.requestID] != nil else { return }
+            self.receive(.receipt(MicroReceipt(requestID: command.requestID, status: .unknown,
+                                               reason: "等待 Host 确认")))
+        }
+    }
+
+    // Only IDs and absolute setting values are retained; reconnect queries them without replaying writes.
+    private func journal() -> [MicroCommand] {
+        guard let data = UserDefaults.standard.data(forKey: journalKey) else { return [] }
+        return (try? JSONDecoder().decode([MicroCommand].self, from: data)) ?? []
+    }
+
+    private func saveJournal(_ commands: [MicroCommand]) {
+        if let data = try? JSONEncoder().encode(commands) { UserDefaults.standard.set(data, forKey: journalKey) }
     }
 
     func stepEffort(_ steps: Int) {

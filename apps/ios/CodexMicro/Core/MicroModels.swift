@@ -26,6 +26,7 @@ struct MicroThread: Codable, Identifiable {
     var plan: Bool
     var turnID: String?
     var approvalID: String?
+    var approvalSummary: String?
     var capabilities: Set<MicroCommandKind>
 }
 

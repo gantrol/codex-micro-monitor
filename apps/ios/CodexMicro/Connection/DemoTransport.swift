@@ -19,6 +19,7 @@ final class DemoTransport: MicroTransport {
                            effort: "high", fast: false, plan: false,
                            turnID: status == .running ? "turn-\(index)" : nil,
                            approvalID: status == .waiting ? "approval-\(index)" : nil,
+                           approvalSummary: status == .waiting ? "演示命令：git status" : nil,
                            capabilities: Set(MicroCommandKind.allCases))
     }
 
@@ -40,6 +41,7 @@ final class DemoTransport: MicroTransport {
         case .effort: threads[index].effort = command.value ?? threads[index].effort
         case .approve, .decline:
             threads[index].approvalID = nil
+            threads[index].approvalSummary = nil
             threads[index].status = command.kind == .approve ? .running : .idle
             threads[index].turnID = command.kind == .approve ? UUID().uuidString : nil
         case .stop: threads[index].status = .idle; threads[index].turnID = nil

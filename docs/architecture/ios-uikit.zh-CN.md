@@ -1,9 +1,11 @@
 # Codex Micro iOS：UIKit 架构与 UML
 
-> 状态：设计提案，尚未创建 iOS 工程或网络 Host
+> 状态：历史 iOS 原型；当前目标已改为 macOS 桌面版，见[平台方向](platform-direction.zh-CN.md)。下文保留旧实现与提案，不再作为当前交付计划。
 > 日期：2026-10-03
 > 范围：独立 Codex Micro；iPhone / iPad；UIKit 为主
-> 源码参考：`5a82309` 及梳理时的工作树；桌面软件控制模块正在迁移
+> 源码参考：Windows 工作树及 `virtual-micro/ios`；不依赖 AgentController 产品工程
+
+本轮已落地 [Xcode 工程与运行说明](../../apps/ios/README.md)。iOS 界面按 Windows 的 4×4 实体键盘布局实现，覆盖此前的 3×2 自适应草案。图标沿用桌面语义，在 iOS 统一线宽、圆角和留白。本文第 2–3 节反映当前 UIKit 结构；后续完整 Host 协议与配对设计不代表已实现。当前网络字段以 [v0.1 子集合同](../../apps/ios/PROTOCOL.md) 为准。
 
 ## 1. 版本边界
 
@@ -12,15 +14,15 @@
 | 项目 | 首版设计 |
 | --- | --- |
 | 界面 | UIKit、Auto Layout、Core Animation；程序化视图与 scene 生命周期 |
-| 系统基线 | 暂定 iOS / iPadOS 17+，作为项目选择，后续可调整 |
+| 系统基线 | iOS / iPadOS 17+；Xcode 15+ |
 | 设备 | iPhone 优先，iPad 自适应；首版单 scene |
-| 连接 | 同一局域网中的配对 Host，WSS；Bonjour 发现、二维码配对 |
+| 连接 | 已实现手动配置 WSS 客户端；Bonjour、二维码配对待实现 |
 | Host | 独立 Codex Micro Host；现有源码可作为 Windows 适配参考，macOS 适配待实现 |
 | 产品依赖 | 不依赖 AgentController 的输入、ActionRouter、Domain、窗口或发布流程 |
 | 能力策略 | Host 按会话下发能力；iOS 根据实际能力启用操作 |
 | 首版之外 | 公网中继、后台持续监控、APNs、原生 HID 仿真、PTT、桌面空白草稿控制 |
 
-现有 Micro 软件链路使用电脑本机的 named pipe、CLI 子进程和桌面深链。这些端点不能直接作为手机网络接口；需要新增 Host 的网络协议层。本文所有 Swift 类型、网络消息和 Host 组件均为**拟增**，已有桌面能力仅作实现证据。
+现有 Micro 软件链路使用电脑本机的 named pipe、CLI 子进程和桌面深链。这些端点不能直接作为手机网络接口；需要新增 Host 的网络协议层。iOS 原型默认使用明确标记的 DEMO 数据；WSS 客户端尚未与真实 Host 联调。
 
 手机保存 `selectedThreadId`；Host 另报 `desktopVisibleThreadId`。两者分别呈现，任何命令都显式携带 `hostId + threadId`，不默认操作“电脑当前那个聊天”。
 
@@ -28,13 +30,15 @@
 
 ```mermaid
 flowchart TB
-    subgraph IOS["iPhone / iPad：Codex Micro iOS（拟增）"]
+    subgraph IOS["iPhone / iPad：Codex Micro iOS v0.1"]
         UIKit["UIKit 控制面"] --> Store["MicroStore / 单向状态更新"]
-        Store --> Session["MicroSession actor"]
-        Session --> Socket["URLSessionWebSocketTask"]
-        Pairing["PairingCoordinator"] --> Discovery["NWBrowser / Bonjour"]
-        Pairing --> Keys["Keychain / Host 身份"]
-        Pairing --> Session
+        Store --> Session["MicroTransport"]
+        Session --> Demo["DemoTransport"]
+        Session --> Live["WebSocketTransport"]
+        Live --> Socket["URLSessionWebSocketTask"]
+        Settings["ConnectionViewController"] --> Keys["HostKeychain"]
+        Settings --> Store
+        Pairing["待实现：配对与 Bonjour"] -.-> Settings
     end
     subgraph HOST["电脑：Codex Micro Host（拟增）"]
         Gateway["WSS Gateway / 配对与设备授权"] --> Commands["CommandService / RequestLedger"]
@@ -47,7 +51,7 @@ flowchart TB
         Readers["本地任务 / 未读 / rollout 观察"] --> State
     end
     Socket <-->|"Micro Remote Protocol v1 / TLS"| Gateway
-    Discovery -.->|"发现候选，不授予信任"| Gateway
+    Pairing -.->|"发现候选，不授予信任"| Gateway
     IPC <--> Codex["电脑上的 Codex"]
     Server --> Data["本地 Codex 会话与模型目录"]
     Navigation --> Codex
@@ -61,75 +65,82 @@ Host 对外只暴露有限的 Micro 业务命令；Desktop IPC 的 owner、版�
 
 | 区域 | UIKit 实现 | 交互与约束 |
 | --- | --- | --- |
-| 主控制面 | `MicroViewController` + `UICollectionView` | 六个常用任务键、命令区、旋钮区；更多任务进入列表 |
-| 任务键 | `AgentKeyCell` + 自定义 `UIControl` | 轻点选择手机目标；独立的“桌面打开”操作请求电脑导航 |
-| 任务状态 | `CALayer` / 图标 / 短状态标签 | 运行、待输入、完成未读、错误、过期；选中光效与状态光效分开 |
-| 命令键 | `CommandKeyControl` | Fast、Plan、快捷模型；能力缺失时禁用对应键 |
+| 主控制面 | `MicroViewController` + `MicroDeviceView` | 控制页六个任务键；监控页十四键；固定 590×610 坐标按比例缩放 |
+| 任务键 | `KeycapControl: UIControl` | 轻点选择手机目标；长按菜单中请求桌面打开或停止 |
+| 任务状态 | `CALayer` / 环光 / 中心点 | 沿用桌面状态颜色；VoiceOver 读出状态；过期时熄灭实时灯效 |
+| 命令键 | `KeycapControl` | Fast、批准、拒绝、分叉、Codex；能力缺失时禁用 |
 | 旋钮 | `EncoderControl: UIControl` + 手势识别 | 拖动跨过档位产生离散步进；轻点切快捷模型；取消手势清空待提交步进 |
-| 旋钮替代操作 | `UIAccessibility` adjustable + 增减按钮 | VoiceOver 和非旋转操作可调整同一语义值 |
-| 模型选择 | UIKit sheet + 模型 / effort 列表 | 来源为 Host 目录；不在手机硬编码模型或档位 |
-| 审批 | `ApprovalViewController` sheet | 展示具体请求和决定；多请求逐项选择 |
-| 连接 | `ConnectionViewController` | 主机列表、配对、重连、解除配对 |
+| 旋钮替代操作 | `UIAccessibility` adjustable | VoiceOver 增减推理强度 |
+| 模型选择 | `UIAlertController` action sheet | 来源为 Host 目录；菜单切换模型；旋钮切换 effort |
+| 审批 | `UIAlertController` alert | 展示当前审批摘要并绑定 approvalID；多审批选择待实现 |
+| 连接 | `ConnectionViewController` | DEMO、WSS 地址、令牌、可选指纹、重连、移除凭据 |
 | 触觉 | `UISelectionFeedbackGenerator` 等 | 档位反馈与结果反馈分开；触摸反馈不代表执行成功 |
-| 四向控制 | 可选 `DirectionalControl: UIControl` | 只在确有可用语义绑定时显示；首版不预留无效摇杆 |
+| 四向控制 | `JoystickControl: UIControl` | 保留 Windows 黑色摇杆；向上切 Plan，其余方向未绑定 |
+| 底部旋钮 | `QuotaControl` | 双额度环、七段数字、三灯；轻点切模型、长按菜单 |
+| 语音键 | 双宽 `KeycapControl` | 保留 Windows 位置和外形，当前禁用 |
 
-任务项使用稳定的 `(hostId, threadId)` 标识，不能以 cell 序号绑定命令。iPhone 竖屏默认 3×2 常用任务键；横屏和 iPad 按可用宽度重排，任务 ID 与选择不变。只呈现必要的标题、数值、状态与控件标签，不新增说明性文案区。
+任务项使用稳定的 `(hostID, threadID)` 标识，不能以键位序号绑定命令。控制页与 Windows 采用同一 4×4 网格，包含旋钮、摇杆、六任务键、四命令键、底部额度旋钮、双宽语音键与 Codex 键。iPhone、横屏与 iPad 保持相同键位；可用高度不足时滚动。只呈现必要的标题、数值、状态与控件标签，不新增说明性文案区。
 
-使用 compositional layout 组织区域，以 diffable data source 的 snapshot 更新任务列表；网络状态先进入 Store，再由主线程提交 UI 更新。[Apple：Compositional Layout](https://developer.apple.com/documentation/uikit/uicollectionviewcompositionallayout)、[Diffable Data Source](https://developer.apple.com/documentation/uikit/uicollectionviewdiffabledatasource)
+外层使用 Auto Layout 处理安全区，设备内部沿用桌面设计坐标；网络快照先进入 `MicroStore`，再由主线程更新固定数量的控件。当前没有 UICollectionView 或额外状态管理框架。
 
 ### UIKit 类图
 
 ```mermaid
 classDiagram
     class SceneDelegate
-    class AppCoordinator {
-        +showMicro()
-        +showConnection()
-        +showApprovals()
-    }
     class MicroViewController {
-        +render(MicroViewState)
+        +render()
+        +showConnection()
+    }
+    class MicroDeviceView {
+        +render(MicroStore)
     }
     class ConnectionViewController
-    class ApprovalViewController
-    class AgentKeyCell
-    class CommandKeyControl
-    class EncoderControl {
-        +stepChanged
-        +quickModelRequested
-        +cancelInteraction()
-    }
-    class MicroViewModel {
-        +handle(ControlIntent)
-    }
+    class KeycapControl
+    class EncoderControl
+    class JoystickControl
+    class QuotaControl
     class MicroStore {
         <<MainActor>>
-        +MicroViewState state
-        +apply(RemoteEvent)
-    }
-    class MicroSession {
-        <<actor>>
-        +connect()
-        +send(RemoteCommand)
+        +snapshot
+        +selectedID
+        +pending
+        +execute(kind, value)
+        +resume()
         +suspend()
     }
-    SceneDelegate --> AppCoordinator
-    AppCoordinator o-- MicroViewController
-    AppCoordinator o-- ConnectionViewController
-    AppCoordinator o-- ApprovalViewController
-    MicroViewController o-- AgentKeyCell
-    MicroViewController o-- CommandKeyControl
-    MicroViewController o-- EncoderControl
-    MicroViewController --> MicroViewModel
-    MicroViewModel --> MicroStore
-    MicroViewModel --> MicroSession
-    MicroSession --> MicroStore : RemoteEvent
-    MicroStore --> MicroViewController : ViewState
+    class MicroTransport {
+        <<protocol>>
+        +connect(receive)
+        +send(command)
+        +query(requestIDs)
+        +disconnect()
+    }
+    class DemoTransport
+    class WebSocketTransport
+    class HostKeychain
+    SceneDelegate --> MicroStore
+    SceneDelegate --> MicroViewController
+    MicroViewController *-- MicroDeviceView
+    MicroViewController --> ConnectionViewController
+    MicroViewController --> MicroStore
+    MicroDeviceView *-- KeycapControl
+    MicroDeviceView *-- EncoderControl
+    MicroDeviceView *-- JoystickControl
+    MicroDeviceView *-- QuotaControl
+    ConnectionViewController --> MicroStore
+    ConnectionViewController --> HostKeychain
+    MicroStore --> MicroTransport
+    DemoTransport ..|> MicroTransport
+    WebSocketTransport ..|> MicroTransport
+    MicroTransport --> MicroStore : MicroEvent
 ```
 
-View / ViewController 只处理布局和交互；ViewModel 将输入转换为语义请求；`MicroSession` actor 管理 socket、关联请求和连接世代。`MicroStore` 位于 `@MainActor`，保存已确认状态、待处理操作和过期标记。首版不引入额外状态管理框架。
+View / ViewController 处理布局和交互；`MicroStore` 在 `@MainActor` 保存已确认状态、所选目标、在途命令与 unknown 标记。两个 transport 实现共享协议；WSS 网络 I/O 通过异步 API 完成，不阻塞主线程。原型采用全局单在途命令；后续再增加独立 session actor、合并连续输入及更多任务列表。
 
 ## 4. 手机与 Host 的协议合同
+
+以下第 4–7 节保留完整 Host 设计，包含原型尚未实现的能力；线上的消息、字段与限制须参考 [v0.1 子集合同](../../apps/ios/PROTOCOL.md)。
 
 协议命名为 **Micro Remote Protocol v1**，与 Codex Desktop IPC 的版本独立。数据使用类型化 `Codable` DTO；手机不接收完整内部会话对象，只接收控制面需要的字段。
 
@@ -335,7 +346,7 @@ UIKit scene 进入后台后可能被挂起或断开，因此首版不承诺锁�
 
 ## 8. 首版能力矩阵
 
-以下等级是实施顺序，全部尚未接入 iOS。
+以下等级是完整产品的实施顺序。v0.1 已有任务键、状态灯、模型 / effort、Fast / Plan、停止、审批、分叉和桌面打开的 UIKit 入口及 DEMO 行为；真实能力均待 Host 接入。连接仅有手动 WSS，更多任务列表、Review、文字发送、未读写入仍未实现。
 
 | 能力 | iOS 语义 | Host 参考与范围 | 阶段 |
 | --- | --- | --- | --- |
@@ -356,25 +367,21 @@ UIKit scene 进入后台后可能被挂起或断开，因此首版不承诺锁�
 
 ## 9. 工程边界与落地顺序
 
-拟议结构；本轮只落文档，不创建这些 target 或代码文件：
+当前 iOS 工程已落在 `virtual-micro/ios`；Host 部分仍为拟议结构：
 
 ```text
-codex-micro-ios/
+virtual-micro/ios/
   CodexMicro.xcodeproj
-  App/                    AppDelegate、SceneDelegate、AppCoordinator
-  Features/
-    Micro/                主控制面、任务键、命令键、旋钮
-    Threads/              更多任务与选择
-    Connection/           配对与主机管理
-    Approvals/            特定请求的处理
-  Core/
-    Domain/               Thread、Command、Capability、Receipt
-    State/                MicroStore、ViewState
-    Session/              MicroSession、请求关联、连接世代
-  Infrastructure/
-    Network/              WSS、Bonjour、TLS 身份校验
-    Security/             Keychain、配对凭据
-    Persistence/          用户布局与只读缓存
+  CodexMicro/
+    App/                  AppDelegate、SceneDelegate
+    UI/                   双页设备、键帽、旋钮、摇杆、连接 sheet
+    Core/                 MicroModels、MicroStore、待确认命令记录
+    Connection/           DemoTransport、WebSocketTransport、HostKeychain
+    Assets.xcassets/      六个命令矢量图标
+    Info.plist
+  Design/                 图标预览
+  README.md
+  PROTOCOL.md             v0.1 实际字段与消息合同
 
 codex-micro-host/
   Gateway/                配对、WSS、授权
@@ -383,16 +390,15 @@ codex-micro-host/
   Codex/                  Desktop IPC、App Server、状态观察
   Platform/               Windows；macOS 后续适配
 
-protocol/
-  micro-remote-v1/        消息定义、能力语义、版本规则
+protocol/                 后续完整消息定义、能力语义、版本规则
 ```
 
-Swift Domain 不依赖 UIKit / 网络；UIKit 只通过 ViewModel 与 Store 交互。Host 使用独立合同，不引用手柄产品的动作类型。现有桌面实现可提取为 Host 内部适配代码，但当前 C# 程序集仍有其他产品依赖，不能直接等同于独立 Host。
+Swift 数据类型只依赖 Foundation；UIKit 通过 Store 交互，Store 通过 MicroTransport 使用 DEMO 或 WSS。Host 使用独立合同，不引用手柄产品的动作类型。现有桌面实现可作为 Host 内部适配参考，但当前 C# 程序集仍有其他产品依赖，不能直接等同于独立 Host。
 
 | 顺序 | 工作 | 交付边界 |
 | --- | --- | --- |
-| 1 | 冻结 v1 消息、目标与结果合同 | 手机和 Host 对 requestId、epoch、revision、能力有一致定义 |
-| 2 | UIKit 控制面原型 | 用明确标记的静态演示数据完成任务键、旋钮、sheet 与自适应，不伪装真实连接 |
+| 1 | v0.1 子集合同已随工程提供 | Host 实现前仍需联调验证 requestID、epoch、revision、能力定义 |
+| 2 | UIKit 控制面原型已创建 | Windows 布局、矢量图标、交互式 DEMO；静态检查完成，待 Mac 编译 |
 | 3 | 最小 Host 与配对 | 单机配对、设备撤销、WSS、租约、roster snapshot；先不开放写操作 |
 | 4 | 状态与设置闭环 | 任务状态、桌面打开、模型 / effort / Fast / Plan；以回读确认结果 |
 | 5 | 特定请求操作 | 账本、断线恢复后再开放停止 / 审批 / 分叉 / 文字发送 |
@@ -404,12 +410,12 @@ Swift Domain 不依赖 UIKit / 网络；UIKit 只通过 ViewModel 与 Store 交�
 
 | 内容 | 当前工作树路径 |
 | --- | --- |
-| owner 发现、设置、停止、审批、显式文本发送 | [KeypadController](../../src/AgentController.Adapters.Codex.Software/KeypadController.cs) |
-| 当前用户 named pipe 与 Desktop IPC framing | [CodexPeerClient](../../src/AgentController.Adapters.Codex.Software/DesktopIpc/CodexPeerClient.cs) |
-| 本地目录与 fork | [LocalAppServer](../../src/AgentController.Adapters.Codex.Software/AppServer/LocalAppServer.cs) |
-| Micro 控件到软件动作映射 | [SoftwareMicroTransport](../../virtual-micro/src/AgentController.MicroSurface.Wpf/SoftwareControl/SoftwareMicroTransport.cs) |
-| 模型状态与 revision 处理 | [CodexModelToggleService](../../virtual-micro/src/CodexMicro.Desktop/Services/CodexModelToggleService.cs) |
-| 问答状态订阅 | [SoftwareQuestionObserver](../../virtual-micro/src/AgentController.MicroSurface.Wpf/SoftwareControl/SoftwareQuestionObserver.cs) |
-| 桌面选择观察的局限 | [CodexSelectedThreadReader](../../virtual-micro/src/CodexMicro.Desktop/Services/CodexSelectedThreadReader.cs) |
+| owner 发现、设置、停止、审批、显式文本发送 | `codex-control` 仓库：`src/CodexControl/KeypadController.cs` |
+| 当前用户 named pipe 与 Desktop IPC framing | `codex-control` 仓库：`src/CodexControl/DesktopIpc/CodexPeerClient.cs` |
+| 本地目录与 fork | `codex-control` 仓库：`src/CodexControl/AppServer/LocalAppServer.cs` |
+| Micro 控件到软件动作映射 | [SoftwareMicroTransport](../../src/CodexMicro.Windows/SoftwareControl/SoftwareMicroTransport.cs) |
+| 模型状态与 revision 处理 | [CodexModelToggleService](../../src/CodexMicro.Windows/Services/CodexModelToggleService.cs) |
+| 问答状态订阅 | [SoftwareQuestionObserver](../../src/CodexMicro.Windows/SoftwareControl/SoftwareQuestionObserver.cs) |
+| 桌面选择观察的局限 | [CodexSelectedThreadReader](../../src/CodexMicro.Windows/Services/CodexSelectedThreadReader.cs) |
 
-本轮只完成架构与 UML，未创建 Swift 工程、启动 Host、开放网络端口、编写测试或运行 UI 验收。
+已创建 UIKit 工程、DEMO 行为与 WSS 客户端子集，并完成语法、工程引用和资源格式静态检查。当前 Windows 环境没有 Xcode，尚未编译 iOS；未启动网络 Host、编写测试代码或运行 UI / 手动测试。

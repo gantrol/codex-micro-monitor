@@ -46,6 +46,7 @@ final class EncoderControl: UIControl {
         CATransaction.begin(); CATransaction.setDisableActions(true)
         side.frame = bounds.insetBy(dx: 5, dy: 6).offsetBy(dx: 0, dy: 5)
         side.cornerRadius = side.bounds.width / 2
+        face.setAffineTransform(.identity)
         face.frame = bounds.insetBy(dx: 3, dy: 4).offsetBy(dx: 0, dy: -3)
         face.cornerRadius = face.bounds.width / 2
         marker.frame = CGRect(x: face.bounds.midX - 3.5, y: 13, width: 7, height: 31)
