@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CodexMicro.Core/CodexMicro.Core.csproj" />
+    <Project Path="src/CodexMicro.Desktop/CodexMicro.Desktop.csproj" />
+    <Project Path="src/CodexMicro.Plugin/CodexMicro.Plugin.csproj" />
+    <Project Path="src/CodexMicro.Windows/CodexMicro.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CodexMicro.Desktop.Tests/CodexMicro.Desktop.Tests.csproj" />
+    <Project Path="tests/CodexMicro.LiveSmoke/CodexMicro.LiveSmoke.csproj" />
+  </Folder>
+</Solution>

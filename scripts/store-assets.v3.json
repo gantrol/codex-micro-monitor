@@ -1,0 +1,243 @@
+{
+  "product": {
+    "name": "Codex Micro Monitor",
+    "icon": "assets/CodexMicro.png"
+  },
+  "renderScale": 3,
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "background": "#F4F6F2",
+    "ink": "#1A2926",
+    "muted": "#65726C",
+    "accent": "#197869"
+  },
+  "storePanelBox": [
+    560,
+    8,
+    800,
+    752
+  ],
+  "quota": {
+    "plan": "pro",
+    "weeklyRemaining": 77,
+    "fiveHourRemaining": null
+  },
+  "models": {
+    "astra": {
+      "id": "gpt-6-astra",
+      "label": "6 Astra",
+      "effort": "ultra"
+    },
+    "luna": {
+      "id": "gpt-5.6-luna",
+      "label": "5.6 Luna",
+      "effort": "max"
+    }
+  },
+  "stateIds": [
+    "current-running",
+    "running",
+    "input",
+    "question",
+    "unread",
+    "error",
+    "idle",
+    "current-idle"
+  ],
+  "scenes": [
+    {
+      "id": "01-controls",
+      "page": "control",
+      "model": "astra",
+      "readout": "quota",
+      "fast": "off",
+      "lights": [
+        "current-running",
+        "running",
+        "input",
+        "question",
+        "unread",
+        "error"
+      ]
+    },
+    {
+      "id": "02-monitor",
+      "page": "monitor",
+      "model": "astra",
+      "readout": "quota",
+      "fast": "off",
+      "lights": [
+        "current-running",
+        "running",
+        "input",
+        "question",
+        "unread",
+        "error",
+        "idle",
+        "running",
+        "question",
+        "unread",
+        "running",
+        "input",
+        "idle",
+        "unread"
+      ]
+    },
+    {
+      "id": "03-model-astra",
+      "page": "control",
+      "model": "astra",
+      "readout": "model",
+      "fast": "off",
+      "lights": [
+        "current-idle",
+        "running",
+        "input",
+        "question",
+        "unread",
+        "idle"
+      ]
+    },
+    {
+      "id": "04-model-luna",
+      "page": "control",
+      "model": "luna",
+      "readout": "model",
+      "fast": "off",
+      "lights": [
+        "current-idle",
+        "running",
+        "input",
+        "question",
+        "unread",
+        "idle"
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "id": "01-controls",
+      "scene": "01-controls",
+      "detail": "states",
+      "states": [
+        "running",
+        "input",
+        "question",
+        "unread",
+        "error",
+        "idle"
+      ]
+    },
+    {
+      "id": "02-monitor",
+      "scene": "02-monitor",
+      "detail": "states",
+      "states": [
+        "current-running",
+        "current-idle",
+        "error",
+        "idle"
+      ]
+    },
+    {
+      "id": "03-models",
+      "scene": "03-model-astra",
+      "detail": "models"
+    }
+  ],
+  "locales": {
+    "zh-CN": {
+      "font": "msyh.ttc",
+      "boldFont": "msyhbd.ttc",
+      "shortDescription": "用状态灯查Codex看 Codex 任务，快速切换模型、查看额度，并按需切换 Fast 模式。",
+      "description": [
+        "Codex Micro Monitor 将 Codex 任务状态放在桌面小面板里。第一屏把状态灯、模型旋钮和常用控制放在一起；第二屏可查看最多 14 个任务。通过灯光区分进行中、等待输入、待回答、未读和错误，点击进入对应会话。",
+        "快速切换配置好的常用模型，调节支持的推理强度，查看剩余额度，并在当前模型支持时切换 Fast 模式。",
+        "面板显示时，任务状态约每 2 秒读取，额度每 2 分钟自动刷新。模型、推理强度与 Fast 设置用于下一轮对话；可用性与额度消耗以 Codex 为准。配图是产品 XAML 的离线示例渲染。",
+        "Codex Micro Monitor 是独立开发的第三方辅助软件，与 OpenAI 或 Work Louder 无隶属关系，也未获得其背书。需另行安装并登录 Codex 桌面应用；无需购买 Codex Micro 硬件。"
+      ],
+      "stateLabels": {
+        "current-running": "当前 · 进行中",
+        "running": "进行中",
+        "input": "等待输入",
+        "question": "待回答",
+        "unread": "未读",
+        "error": "错误",
+        "idle": "空闲",
+        "current-idle": "当前 · 空闲"
+      },
+      "cards": {
+        "01-controls": {
+          "title": "任务状态，\n一眼可见。"
+        },
+        "02-monitor": {
+          "title": "多个任务，\n不用来回找。"
+        },
+        "03-models": {
+          "title": "模型随手换，\n思路不打断。"
+        }
+      },
+      "captions": {
+        "01-controls": "任务状态，一眼可见。",
+        "02-monitor": "多个任务，不用来回找。",
+        "03-model-astra": "模型随手换，思路不打断。",
+        "04-model-luna": "模型随手换，思路不打断。"
+      },
+      "modelActions": [
+        "点击 · 切换模型",
+        "滚轮 · 调节强度"
+      ]
+    },
+    "en-US": {
+      "font": "segoeui.ttf",
+      "boldFont": "segoeuib.ttf",
+      "shortDescription": "See Codex task status, switch models, check usage limits, and toggle Fast from a compact desktop panel.",
+      "description": [
+        "Codex Micro Monitor puts Codex task status in a compact desktop panel. The first page brings status lights, the model dial and common controls together. The second page shows up to 14 tasks. See activity, input requests, questions, unread results and errors, then click to open the chat.",
+        "Switch between configured models, adjust supported reasoning levels, check remaining usage and toggle Fast when your model supports it.",
+        "While visible, the panel checks task status approximately every 2 seconds and refreshes usage every 2 minutes. Model, reasoning and Fast settings apply to the next turn. Availability and usage consumption are determined by Codex. Images are offline renders of the product XAML using example data.",
+        "Codex Micro Monitor is an independent third-party companion, not affiliated with or endorsed by OpenAI or Work Louder. Requires a separately installed, signed-in Codex desktop app. No Codex Micro hardware is required."
+      ],
+      "stateLabels": {
+        "current-running": "Current · active",
+        "running": "In progress",
+        "input": "Needs input",
+        "question": "Question",
+        "unread": "Unread",
+        "error": "Error",
+        "idle": "Idle",
+        "current-idle": "Current · idle"
+      },
+      "cards": {
+        "01-controls": {
+          "title": "Task status,\nat a glance."
+        },
+        "02-monitor": {
+          "title": "More tasks.\nLess hunting."
+        },
+        "03-models": {
+          "title": "Switch models.\nKeep your flow."
+        }
+      },
+      "captions": {
+        "01-controls": "Task status, at a glance.",
+        "02-monitor": "More tasks. Less hunting.",
+        "03-model-astra": "Switch models. Keep your flow.",
+        "04-model-luna": "Switch models. Keep your flow."
+      },
+      "modelActions": [
+        "Click · Switch model",
+        "Scroll · Adjust reasoning"
+      ]
+    }
+  },
+  "typography": {
+    "firstLineSize": 92,
+    "secondLineSize": 114,
+    "lineGap": 26,
+    "stateLabelSize": 36,
+    "actionLabelSize": 36
+  },
+  "showAnnotations": true
+}

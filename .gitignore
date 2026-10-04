@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+.artifacts/
+dist/
+.vs/
+*.user
+*.nupkg
+*.snupkg
+**/xcuserdata/
+.DS_Store

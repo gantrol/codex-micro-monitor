@@ -1,0 +1,165 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
+using System.Windows.Controls;
+using System.Windows.Automation;
+using CodexMicro.Desktop;
+using CodexMicro.Desktop.Services;
+using Xunit;
+
+namespace CodexMicro.Desktop.Tests;
+
+[Collection(WpfUiCollection.Name)]
+public sealed class MicroLocalizationTests
+{
+    [Fact]
+    public void AutoPrefersAgentControllerThenFallsBackToWindows()
+    {
+        var sharedLanguage = MicroLanguage.ZhCn;
+        var localization = new MicroLocalization(
+            MicroLanguage.Auto,
+            () => sharedLanguage,
+            () => CultureInfo.GetCultureInfo("en-US"));
+
+        Assert.Equal(MicroLanguage.ZhCn, localization.EffectiveLanguage);
+
+        sharedLanguage = MicroLanguage.EnUs;
+        localization.RefreshAutoLanguage();
+        Assert.Equal(MicroLanguage.EnUs, localization.EffectiveLanguage);
+
+        var fallback = new MicroLocalization(
+            MicroLanguage.Auto,
+            () => null,
+            () => CultureInfo.GetCultureInfo("zh-CN"));
+        Assert.Equal(MicroLanguage.ZhCn, fallback.EffectiveLanguage);
+    }
+
+    [Fact]
+    public void WindowLanguageSwitchUpdatesMenusAndHelpImmediately()
+    {
+        Exception? error = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var localization = new MicroLocalization(
+                    MicroLanguage.ZhCn,
+                    systemCulture: () => CultureInfo.GetCultureInfo("zh-CN"));
+                var window = new MicroSurfaceWindow(localization);
+                window.ApplyQuickModel(CodexQuickModel.Sol);
+                window.ApplyQuotaSnapshot(new CodexQuotaSnapshot(
+                    new CodexQuotaWindow(
+                        UsedPercent: 24,
+                        WindowDurationMinutes: 7 * 24 * 60,
+                        ResetsAt: DateTimeOffset.Now.AddHours(3)),
+                    Secondary: null,
+                    PlanType: "pro",
+                    ReadAt: DateTimeOffset.Now));
+                Assert.Equal("窗口置顶", window.TopmostMenuItem.Header);
+
+                localization.SetLanguage(MicroLanguage.EnUs);
+
+                Assert.Equal("Always on top", window.TopmostMenuItem.Header);
+                Assert.Equal("Settings", window.SettingsMenuItem.Header);
+                Assert.Equal(
+                    "Software settings",
+                    window.OpenSoftwareSettingsMenuItem.Header);
+                Assert.Equal("Reconnect Codex", window.ReconnectMenuItem.Header);
+                Assert.Equal("Hide panel", window.HidePanelMenuItem.Header);
+                var tooltip = Assert.IsType<ToolTip>(window.ActivityLed.ToolTip);
+                var panel = Assert.IsType<StackPanel>(tooltip.Content);
+                Assert.Equal(
+                    "Activity",
+                    Assert.IsType<TextBlock>(panel.Children[0]).Text);
+                Assert.Equal(
+                    "Idle",
+                    Assert.IsType<TextBlock>(panel.Children[1]).Text);
+                Assert.Equal(CodexQuickModel.Sol.Id, window.SettingsKey.ModelId);
+                Assert.Equal(76, window.SettingsKey.WeeklyRemaining);
+                Assert.Null(window.SettingsKey.FiveHourRemaining);
+                var quotaTooltip = Assert.IsType<ToolTip>(
+                    window.SettingsKey.ToolTip);
+                var quotaPanel = Assert.IsType<StackPanel>(quotaTooltip.Content);
+                Assert.Contains(
+                    "Codex quota",
+                    Assert.IsType<TextBlock>(quotaPanel.Children[0]).Text);
+                Assert.Contains(
+                    "Weekly limit",
+                    AutomationProperties.GetHelpText(window.SettingsKey));
+                Assert.Contains(
+                    "Click switches Sol / Luna",
+                    AutomationProperties.GetHelpText(window.SettingsKey));
+                window.CloseForApplicationExit();
+            }
+            catch (Exception exception)
+            {
+                error = exception;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
+        Assert.Null(error);
+    }
+
+    [Fact]
+    public void EnglishCatalogCoversPresentationStringLiterals()
+    {
+        var localization = new MicroLocalization(MicroLanguage.EnUs);
+        var unresolved = new List<string>();
+        foreach (var relativePath in new[]
+                 {
+                     "src/CodexMicro.Windows/MainWindow.xaml.cs",
+                     "src/CodexMicro.Windows/Services/AgentLightingAppearance.cs",
+                     "src/CodexMicro.Windows/Services/CodexMenuSelectionObserver.cs",
+                 })
+        {
+            var source = File.ReadAllText(Path.Combine(
+                FindRepositoryRoot(),
+                relativePath.Replace('/', Path.DirectorySeparatorChar)));
+            foreach (Match match in Regex.Matches(
+                         source,
+                         "\\\"(?<text>(?:\\\\.|[^\\\"\\\\])*)\\\""))
+            {
+                var literal = match.Groups["text"].Value;
+                if (!ContainsChinese(literal))
+                {
+                    continue;
+                }
+
+                var text = literal
+                    .Replace("\\n", "\n", StringComparison.Ordinal)
+                    .Replace("\\\"", "\"", StringComparison.Ordinal)
+                    .Replace("\\\\", "\\", StringComparison.Ordinal);
+                if (ContainsChinese(localization.Text(text)))
+                {
+                    unresolved.Add(text);
+                }
+            }
+        }
+
+        Assert.True(
+            unresolved.Count == 0,
+            "Missing English translations:\n" +
+            string.Join("\n", unresolved.Distinct()));
+    }
+
+    private static bool ContainsChinese(string value) =>
+        Regex.IsMatch(value, "[一-龥]");
+
+    private static string FindRepositoryRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "CodexMicro.slnx")))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new InvalidOperationException("Repository root not found.");
+    }
+}

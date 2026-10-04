@@ -1,0 +1,338 @@
+<Window x:Class="CodexMicro.Desktop.MicroSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Codex Micro · Software settings"
+        Width="720" Height="760"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
+        FontFamily="{DynamicResource SettingsFont}" FontSize="14"
+        Foreground="{DynamicResource SettingsInk}"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="MicroSettingsResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="12" KeyboardNavigation.TabNavigation="Cycle">
+        <Border x:Name="SettingsChrome" Background="{DynamicResource SettingsSurface}"
+                BorderBrush="{DynamicResource SettingsLine}" BorderThickness="1" CornerRadius="8">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Border BorderBrush="{DynamicResource SettingsLine}" BorderThickness="0,0,0,1">
+                    <Grid x:Name="TitleBar" Margin="24,12,12,12" Background="Transparent"
+                          MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="WindowTitleText" FontSize="18" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" Text="Micro 软件设置" />
+                        <Button x:Name="CloseButton" Grid.Column="1" Width="36" Height="36" Padding="0"
+                                Style="{StaticResource QuietButton}" Click="CloseButton_Click"
+                                AutomationProperties.Name="关闭设置">
+                            <Path Width="12" Height="12" Data="M 1,1 L 11,11 M 11,1 L 1,11"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                        </Button>
+                    </Grid>
+                </Border>
+                <ScrollViewer x:Name="SettingsScrollViewer" Grid.Row="1" Focusable="False"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="24,12,24,24">
+                        <Grid>
+                            <TextBlock x:Name="LayoutHeadingText" Style="{StaticResource HeadingText}"
+                                       VerticalAlignment="Center" Text="布局" />
+                            <Button x:Name="ResetButton" HorizontalAlignment="Right"
+                                    Style="{StaticResource QuietButton}" Click="ResetButton_Click" Content="重置布局" />
+                        </Grid>
+                        <Border x:Name="LayoutCard" Padding="0,12,0,20"
+                                BorderBrush="{DynamicResource SettingsLine}" BorderThickness="0,0,0,1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid x:Name="LiveMicroPreview"
+                                      Width="160"
+                                      Height="166"
+                                      HorizontalAlignment="Left"
+                                      VerticalAlignment="Center"
+                                      RenderOptions.BitmapScalingMode="HighQuality"
+                                      SnapsToDevicePixels="True">
+                                    <Rectangle x:Name="LiveMicroPreviewImage"
+                                               IsHitTestVisible="False">
+                                        <Rectangle.Fill>
+                                            <VisualBrush x:Name="LiveMicroPreviewBrush"
+                                                         AlignmentX="Center"
+                                                         AlignmentY="Center"
+                                                         Stretch="Uniform" />
+                                        </Rectangle.Fill>
+                                    </Rectangle>
+                                    <Viewbox Stretch="Uniform">
+                                        <Canvas x:Name="PreviewKeyTargets" Width="590" Height="610">
+                                            <Button Width="96" Height="96" Canvas.Left="88" Canvas.Top="310"
+                                                    Tag="ACT06" Style="{StaticResource PreviewSlotButton}"
+                                                    Click="PreviewSlotButton_Click" ToolTip="Edit ACT06" />
+                                            <Button Width="96" Height="96" Canvas.Left="194" Canvas.Top="310"
+                                                    Tag="ACT07" Style="{StaticResource PreviewSlotButton}"
+                                                    Click="PreviewSlotButton_Click" ToolTip="Edit ACT07" />
+                                            <Button Width="96" Height="96" Canvas.Left="300" Canvas.Top="310"
+                                                    Tag="ACT08" Style="{StaticResource PreviewSlotButton}"
+                                                    Click="PreviewSlotButton_Click" ToolTip="Edit ACT08" />
+                                            <Button Width="96" Height="96" Canvas.Left="406" Canvas.Top="310"
+                                                    Tag="ACT09" Style="{StaticResource PreviewSlotButton}"
+                                                    Click="PreviewSlotButton_Click" ToolTip="Edit ACT09" />
+                                            <Button x:Name="EditCombinedMicrophoneButton"
+                                                    Width="202" Height="96" Canvas.Left="194" Canvas.Top="416"
+                                                    Tag="ACT10_ACT11" Style="{StaticResource PreviewSlotButton}"
+                                                    Click="PreviewSlotButton_Click" ToolTip="Edit ACT10 / ACT11" />
+                                            <Button x:Name="EditMicrophone1Button"
+                                                    Width="96" Height="96" Canvas.Left="194" Canvas.Top="416"
+                                                    Tag="ACT10" Style="{StaticResource PreviewSlotButton}"
+                                                    Click="PreviewSlotButton_Click" ToolTip="Edit ACT10"
+                                                    Visibility="Collapsed" />
+                                            <Button x:Name="EditMicrophone2Button"
+                                                    Width="96" Height="96" Canvas.Left="300" Canvas.Top="416"
+                                                    Tag="ACT11" Style="{StaticResource PreviewSlotButton}"
+                                                    Click="PreviewSlotButton_Click" ToolTip="Edit ACT11"
+                                                    Visibility="Collapsed" />
+                                            <Button Width="96" Height="96" Canvas.Left="406" Canvas.Top="416"
+                                                    Tag="ACT12" Style="{StaticResource PreviewSlotButton}"
+                                                    Click="PreviewSlotButton_Click" ToolTip="Edit ACT12" />
+                                        </Canvas>
+                                    </Viewbox>
+                                </Grid>
+                                <Grid Grid.Column="1" Margin="28,0,0,0" VerticalAlignment="Center">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="KeypadSizeTitle" Text="大小" Style="{StaticResource OptionTitle}" />
+                                    <TextBlock x:Name="KeypadSizeValue" Grid.Column="1" Text="100%"
+                                               FontFamily="Cascadia Mono, Consolas" VerticalAlignment="Center" />
+                                    <Slider x:Name="KeypadSizeSlider" Grid.Row="1" Margin="0,8,12,0"
+                                            Style="{StaticResource SettingsSlider}" Minimum="80" Maximum="140" Value="100"
+                                            TickFrequency="5" SmallChange="5" LargeChange="10" IsSnapToTickEnabled="True"
+                                            AutomationProperties.LabeledBy="{Binding ElementName=KeypadSizeTitle}"
+                                            ValueChanged="KeypadSizeSlider_ValueChanged" />
+                                    <Button x:Name="ResetSizeButton" Grid.Row="1" Grid.Column="1" Margin="0,8,0,0"
+                                            Width="36" Padding="0" Style="{StaticResource QuietButton}"
+                                            Click="ResetSizeButton_Click" AutomationProperties.Name="恢复默认大小">
+                                        <Path Width="16" Height="16" Stretch="Uniform" StrokeThickness="1.5"
+                                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                              Data="M 3,6 A 6,6 0 1 1 2,11 M 3,2 L 3,6 L 7,6" />
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        <TextBlock x:Name="OptionsHeadingText" Margin="0,24,0,8"
+                                   Style="{StaticResource HeadingText}" Text="交互" />
+                        <Border x:Name="OptionsCard">
+                            <StackPanel>
+                                <Grid x:Name="AgentKeysOptionRow" Style="{StaticResource SettingsRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="AgentKeysTitleText"
+                                               Margin="0,8,20,8" Style="{StaticResource OptionTitle}"
+                                               Text="Agent keys" />
+                                    <ComboBox x:Name="AgentSourceCombo"
+                                              AutomationProperties.LabeledBy="{Binding ElementName=AgentKeysTitleText}"
+                                              Grid.Column="1"
+                                              VerticalAlignment="Center"
+                                              Style="{StaticResource SettingsCombo}"
+                                              SelectionChanged="AgentSourceCombo_SelectionChanged" />
+                                </Grid>
+                                <Border Height="1" Background="{DynamicResource SettingsLine}" />
+                                <Grid x:Name="KnobOptionRow" Style="{StaticResource SettingsRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="KnobTitleText"
+                                               Margin="0,8,20,8" Style="{StaticResource OptionTitle}"
+                                               Text="Knob" />
+                                    <ComboBox x:Name="KnobModeCombo"
+                                              AutomationProperties.LabeledBy="{Binding ElementName=KnobTitleText}"
+                                              Grid.Column="1"
+                                              VerticalAlignment="Center"
+                                              Style="{StaticResource SettingsCombo}"
+                                              SelectionChanged="KnobModeCombo_SelectionChanged" />
+                                </Grid>
+                                <Border x:Name="InvertDialDirectionSeparator"
+                                        Height="1"
+                                        Background="{DynamicResource SettingsLine}" />
+                                <Grid x:Name="InvertDialDirectionOptionRow" Style="{StaticResource SettingsRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="InvertDialDirectionTitleText"
+                                               Margin="0,8,20,8" Style="{StaticResource OptionTitle}"
+                                               Text="Reverse dial direction" />
+                                    <CheckBox x:Name="InvertDialDirectionToggle"
+                                              AutomationProperties.LabeledBy="{Binding ElementName=InvertDialDirectionTitleText}"
+                                              Grid.Column="1"
+                                              VerticalAlignment="Center"
+                                              Style="{StaticResource SwitchToggle}"
+                                              Checked="InvertDialDirectionToggle_Changed"
+                                              Unchecked="InvertDialDirectionToggle_Changed" />
+                                </Grid>
+                                <Border Height="1" Background="{DynamicResource SettingsLine}" />
+                                <Grid x:Name="MicrophoneOptionRow" Style="{StaticResource SettingsRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="MicrophoneTitleText"
+                                               Margin="0,8,20,8" Style="{StaticResource OptionTitle}"
+                                               Text="Microphone key" />
+                                    <ComboBox x:Name="MicrophoneModeCombo"
+                                              AutomationProperties.LabeledBy="{Binding ElementName=MicrophoneTitleText}"
+                                              Grid.Column="1"
+                                              VerticalAlignment="Center"
+                                              Style="{StaticResource SettingsCombo}"
+                                              SelectionChanged="MicrophoneModeCombo_SelectionChanged" />
+                                </Grid>
+                                <Border Height="1" Background="{DynamicResource SettingsLine}"
+                                        Visibility="{Binding Visibility, ElementName=MicrophoneOptionRow}" />
+                                <Grid x:Name="SingleTapOptionRow" Style="{StaticResource SettingsRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="SingleTapTitleText"
+                                               Margin="0,8,20,8" Style="{StaticResource OptionTitle}"
+                                               Text="Focus Codex with a single tap" />
+                                    <CheckBox x:Name="SingleTapToggle"
+                                              AutomationProperties.LabeledBy="{Binding ElementName=SingleTapTitleText}"
+                                              Grid.Column="1"
+                                              VerticalAlignment="Center"
+                                              Style="{StaticResource SwitchToggle}"
+                                              Checked="SingleTapToggle_Changed"
+                                              Unchecked="SingleTapToggle_Changed" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock x:Name="ExtensionsHeadingText" Margin="0,24,0,8"
+                                   Style="{StaticResource HeadingText}" Text="快捷模型" />
+                        <Border x:Name="ExtensionsCard">
+                            <StackPanel>
+                                <Grid x:Name="QuickModelARow" Style="{StaticResource SettingsRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="QuickModelATitleText"
+                                               Margin="0,8,20,8" Style="{StaticResource OptionTitle}"
+                                               Text="Quick model A" />
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <ComboBox x:Name="QuickModelACombo"
+                                                  AutomationProperties.LabeledBy="{Binding ElementName=QuickModelATitleText}"
+                                                  Width="170"
+                                                  MinWidth="170"
+                                                  Style="{StaticResource SettingsCombo}"
+                                                  SelectionChanged="QuickModelACombo_SelectionChanged" />
+                                        <ComboBox x:Name="QuickModelAEffortCombo"
+                                                  Width="128"
+                                                  MinWidth="128"
+                                                  Margin="8,0,0,0"
+                                                  Style="{StaticResource SettingsCombo}"
+                                                  SelectionChanged="QuickModelAEffortCombo_SelectionChanged" />
+                                    </StackPanel>
+                                </Grid>
+                                <Border Height="1" Background="{DynamicResource SettingsLine}" />
+                                <Grid x:Name="QuickModelBRow" Style="{StaticResource SettingsRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="QuickModelBTitleText"
+                                               Margin="0,8,20,8" Style="{StaticResource OptionTitle}"
+                                               Text="Quick model B" />
+                                    <StackPanel Grid.Column="1"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <ComboBox x:Name="QuickModelBCombo"
+                                                  AutomationProperties.LabeledBy="{Binding ElementName=QuickModelBTitleText}"
+                                                  Width="170"
+                                                  MinWidth="170"
+                                                  Style="{StaticResource SettingsCombo}"
+                                                  SelectionChanged="QuickModelBCombo_SelectionChanged" />
+                                        <ComboBox x:Name="QuickModelBEffortCombo"
+                                                  Width="128"
+                                                  MinWidth="128"
+                                                  Margin="8,0,0,0"
+                                                  Style="{StaticResource SettingsCombo}"
+                                                  SelectionChanged="QuickModelBEffortCombo_SelectionChanged" />
+                                    </StackPanel>
+                                </Grid>
+                                <Border x:Name="AutoConfirmUltraSeparator"
+                                        Height="1"
+                                        Background="{DynamicResource SettingsLine}" />
+                                <Grid x:Name="AutoConfirmUltraRow" Style="{StaticResource SettingsRow}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="AutoConfirmUltraTitleText"
+                                               Margin="0,8,20,8"
+                                               VerticalAlignment="Center"
+                                               Style="{StaticResource OptionTitle}"
+                                               Text="Automatically choose Use Full access" />
+                                    <CheckBox x:Name="AutoConfirmUltraToggle"
+                                              AutomationProperties.LabeledBy="{Binding ElementName=AutoConfirmUltraTitleText}"
+                                              Grid.Column="1"
+                                              VerticalAlignment="Center"
+                                              Style="{StaticResource SwitchToggle}"
+                                              Checked="AutoConfirmUltraToggle_Changed"
+                                              Unchecked="AutoConfirmUltraToggle_Changed" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <TextBlock x:Name="DiagnosticsHeadingText" Margin="0,24,0,8"
+                                   Style="{StaticResource HeadingText}" Text="连接" />
+                        <Border x:Name="DiagnosticsCard" Padding="0,12,0,0"
+                                BorderBrush="{DynamicResource SettingsLine}" BorderThickness="0,1,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,16,0" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse x:Name="ConnectionStatusDot" Width="6" Height="6" Margin="0,0,8,0"
+                                                 VerticalAlignment="Center" Fill="{DynamicResource SettingsMuted}" />
+                                        <TextBlock x:Name="ConnectionStatusText" Style="{StaticResource OptionTitle}" Text="Codex Plugin" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="SaveStatusText" Margin="14,4,0,0" FontSize="12"
+                                               Foreground="{DynamicResource SettingsMuted}" AutomationProperties.LiveSetting="Polite" />
+                                </StackPanel>
+                                <WrapPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                    <Button x:Name="OpenOfficialSettingsButton" Margin="0,0,8,0"
+                                            Style="{StaticResource ActionButton}" Click="OpenOfficialSettingsButton_Click"
+                                            Content="官方 Micro 设置" />
+                                    <Button x:Name="ReconnectButton" Style="{StaticResource ActionButton}"
+                                            Click="ReconnectButton_Click" Content="重新连接" />
+                                </WrapPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
