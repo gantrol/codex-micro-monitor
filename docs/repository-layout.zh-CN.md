@@ -27,4 +27,8 @@ Micro 的键位/灯效 DTO 留在产品 `Core`，没有移入共用控制层。�
 
 ## macOS
 
-当前方向是独立 macOS 桌面产品，技术栈与平台实现尚未完成。若使用 Swift，以命令/状态 JSON 合同和 macOS 适配器或显式本机 Host 连接；NuGet 并非 Swift 运行时依赖。本轮未实现该 Host，也不恢复 Avalonia Foundation Preview。设置方案见[交互提案](architecture/settings-interaction.zh-CN.md)。
+Windows 与 macOS 在本仓库作为同一个 Micro 产品维护，平台代码、构建和安装包分别管理。共同维护动作与状态语义、配置格式、设计和可复用资源；现阶段尚无两端共同消费的运行时核心，也没有 macOS 工程。
+
+macOS 技术栈与平台实现尚未完成。若使用 Swift，以命令/状态合同和 macOS 适配器或明确需要的本机 Host 连接；NuGet 并非 Swift 运行时依赖。尚未实现该 Host，也不恢复 Avalonia Foundation Preview。设置方案见[交互提案](architecture/settings-interaction.zh-CN.md)。
+
+暂不设计 iOS 产品；`apps/ios` 仅保存历史原型。手机远程与蓝牙仅是未来连接方式的候选，不纳入本次桌面发布承诺。
