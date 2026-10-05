@@ -6,7 +6,7 @@
   "author": {
     "name": "gantrol"
   },
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "GPL-3.0-only",
   "extensions": {
     "com.openai": {
       "interface": {

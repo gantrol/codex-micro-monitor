@@ -24,8 +24,10 @@ The desktop app is available on Microsoft Store and GitHub Releases. Public plug
 
 ## Notice
 
-Codex Micro Monitor recreates the interaction and visual style of [Codex Micro](https://learn.chatgpt.com/docs/features/codex-micro) in software. No Micro hardware or virtual HID driver required. Originally maintained as part of [AgentController](https://github.com/gantrol/AgentController), it is now maintained independently in this repository.
+Codex Micro Monitor recreates [Codex Micro](https://learn.chatgpt.com/docs/features/codex-micro) in software, with some modifications to the exterior design and support for some of its interactions. No Micro hardware or virtual HID driver required. Originally maintained as part of [AgentController](https://github.com/gantrol/AgentController), it is now maintained independently in this repository.
 
 This is an independent third-party project, not affiliated with or endorsed by OpenAI or Work Louder. Product names and trademarks belong to their respective owners. Images show the software with example data; supported features differ from the hardware.
 
-[PolyForm Noncommercial 1.0.0](LICENSE).
+License: [GNU General Public License v3.0 only (GPL-3.0-only)](LICENSE). Commercial use is permitted; distribution of covered works must comply with the GPL's corresponding-source and other requirements. For use, modification and distribution that comply with this license, the author will not assert infringement claims based on rights the author can license. This statement does not waive the license's conditions.
+
+Some aspects of the exterior design, icons and other visual elements are based on or taken from third-party materials; their licensing has not been fully verified. The author's license covers only rights the author can grant and does not guarantee clearance of third-party rights or prevent their owners from asserting claims. Before commercial use, redistribution or derivative development, independently verify the necessary permissions and assess and bear the associated risks. Noncommercial use also remains subject to applicable third-party rights. This notice does not exclude any party's liability where it cannot lawfully be excluded.

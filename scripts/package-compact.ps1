@@ -30,7 +30,7 @@ This portable executable is not Authenticode-signed.
 
 Store (includes runtime): https://apps.microsoft.com/detail/9NTVMG9QNMHC
 Source and support: https://github.com/gantrol/codex-micro-monitor
-License: PolyForm Noncommercial 1.0.0. See LICENSE.
+License: GNU General Public License v3.0 only (GPL-3.0-only). See LICENSE.
 
 Windows x64 精简包不包含 .NET 运行时。需要 .NET 10 Desktop Runtime x64；
 已有兼容版本时无需重复安装。先退出已运行的 Micro，完整解压后运行 CodexMicro.exe。

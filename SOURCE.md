@@ -1,6 +1,6 @@
 # Source provenance
 
-Codex Micro Monitor was extracted from [gantrol/AgentController](https://github.com/gantrol/AgentController) on 2026-10-03, starting from commit `7d4a3382a82c94adab853a924249ed9823be28f5` and reconciled with later changes through `92c9e8a`. Its original PolyForm Noncommercial 1.0.0 license is retained.
+Codex Micro Monitor was extracted from [gantrol/AgentController](https://github.com/gantrol/AgentController) on 2026-10-03, starting from commit `7d4a3382a82c94adab853a924249ed9823be28f5` and reconciled with later changes through `92c9e8a`. The extraction initially retained PolyForm Noncommercial 1.0.0. On 2026-10-04, the author relicensed the project-owned code under [GNU General Public License v3.0 only (GPL-3.0-only)](LICENSE). Third-party materials retain their own licenses and notices; this change does not establish permission for third-party visual assets whose licensing remains unverified.
 
 The independent product contains the Windows panel, desktop and plugin hosts, product state/lighting contracts, existing tests and a historical UIKit prototype. The current Apple target is macOS; no macOS client has been implemented.
 
