@@ -29,7 +29,7 @@ internal sealed class BehaviorAcceptanceRig : IAsyncDisposable
     internal IMicroTransport Transport { get; }
     internal static bool Legacy => false;
 
-    internal BehaviorAcceptanceRig(string mode, string? binding)
+    internal BehaviorAcceptanceRig(string mode, string? binding, string slotId = "ACT06")
     {
         Directory.CreateDirectory(_directory);
         _uiController = new(_uiDesktop);
@@ -45,7 +45,7 @@ internal sealed class BehaviorAcceptanceRig : IAsyncDisposable
         }
         var slots = CodexMicroLayoutObserver.DefaultSlots.ToDictionary();
         if (binding is not null)
-            slots["ACT06"] = binding == "skill"
+            slots[slotId] = binding == "skill"
                 ? new("APPS", null, new("skill", "fixture-skill", Path.Combine(_directory, "SKILL.md")))
                 : new("DIFF", binding);
         Transport.CaptureContext = () => new(ThreadId,
@@ -58,6 +58,8 @@ internal sealed class BehaviorAcceptanceRig : IAsyncDisposable
         await File.WriteAllTextAsync(Path.Combine(_directory, "SKILL.md"), "# Fixture skill", _lifetime.Token);
         await Transport.RecoverCodexLinkAsync();
     }
+
+    internal IReadOnlyList<JsonObject> DesktopRequests => _desktopRequests.ToArray();
 
     internal bool SawControlInput(string gesture, string? binding)
     {
