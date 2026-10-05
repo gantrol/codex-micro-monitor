@@ -6,6 +6,10 @@
         </ResourceDictionary.MergedDictionaries>
         <SolidColorBrush x:Key="InkBrush" Color="#2F3438" />
         <SolidColorBrush x:Key="MutedInkBrush" Color="#737C82" />
+        <SolidColorBrush x:Key="AdjustmentBoundaryBrush" Color="#FFD66E" />
+        <SolidColorBrush x:Key="AdjustmentBoundaryKnobBrush" Color="#73501A" />
+        <SolidColorBrush x:Key="AdjustmentMaximumBrush" Color="#BE4238" />
+        <SolidColorBrush x:Key="AdjustmentMinimumBrush" Color="#2F7D46" />
         <SolidColorBrush x:Key="KeyEdgeBrush" Color="#F7FFFFFF" />
         <SolidColorBrush x:Key="CrystalShadowBrush" Color="#44343B40" />
         <LinearGradientBrush x:Key="CrystalKeySideBrush"
@@ -519,6 +523,7 @@
                                     <DropShadowEffect BlurRadius="8" Direction="285" ShadowDepth="3" Opacity="0.3" />
                                 </Ellipse.Effect>
                             </Ellipse>
+                            <Ellipse Margin="3,0,3,7" Fill="{TemplateBinding Background}" IsHitTestVisible="False" />
                             <Border x:Name="DialIndicator"
                                     Width="6"
                                     Height="30"
@@ -613,7 +618,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid Background="Transparent">
+                        <Grid Background="{TemplateBinding Background}">
                             <Grid x:Name="DirectionGlyph"
                                   Width="14"
                                   Height="10"

@@ -61,8 +61,8 @@ Windows 控制组件的 `OpenSketch` 操作观察当前前台 Codex 输入框，
 | LAB、SETUP | `settings` | 未接入 |
 | PARTY | `openSideChat` | 未接入 |
 | TIME | `manageTasks` | 未接入 |
-| MIND+ | `composer.increaseReasoningEffort` | 已识别会话 IPC；草稿原生命令快捷键 |
-| MIND- | `composer.decreaseReasoningEffort` | 已识别会话 IPC；草稿原生命令快捷键 |
+| MIND+ | `composer.increaseReasoningEffort` | 已识别会话 IPC；原生输入框推理滑块 |
+| MIND- | `composer.decreaseReasoningEffort` | 已识别会话 IPC；原生输入框推理滑块 |
 | EMPT1、EMPT2、EMPT3、EMPT4、EMPT5 | `unassigned` | 未绑定；可另选命令或技能 |
 | FOLD | `openFolder` | 未接入 |
 | UPL | `composer.addFiles` | 未接入 |
@@ -75,7 +75,9 @@ Windows 控制组件的 `OpenSketch` 操作观察当前前台 Codex 输入框，
 
 点击 Agent 时保存其会话 ID，模型、Fast、推理强度与当前键位灯光共用该目标。没有实时 Document 路由时，读取标题栏工具栏中的可见文本及页面标识，兼容标题按钮与普通文本容器；侧栏收起不会单独清空目标。在 Codex 内切换页面后，能唯一恢复新 ID 就更新；页面改变且身份不明时清除旧目标，旧的排队操作不得继续派发。已有 ID 的 IPC 设置不必等待导航确认，原生输入仍须等待。具体状态处理与验证边界见[会话定位](session-targeting.zh-CN.md)。
 
-草稿及已确认原生输入框的 Fast／Plan／MIND± 读取当前 `CODEX_HOME`（未配置时为用户目录 `.codex`）下的 `keybindings.json`，通过对应原生命令的实际快捷键切换。这些命令不预设产品快捷键；缺少绑定、显式禁用、绑定冲突、配置无效或组合不受支持时拒绝发送并显示原因，不改写用户绑定。支持 F1–F24 及带 Ctrl／Alt 的字母、数字单段快捷键，可组合 Shift；多段按键序列和直接产生文本的按键不派发。无修饰键的 F13–F24 直接向经确认的 Codex 前台焦点窗口派发按键消息，避免输入法将注入事件转换为 `VK_PROCESSKEY`；派发前再次校验窗口、焦点和物理修饰键。其他快捷键继续使用系统输入通道。
+草稿及已确认原生输入框的 Fast／Plan 读取当前 `CODEX_HOME`（未配置时为用户目录 `.codex`）下的 `keybindings.json`，通过对应原生命令的实际快捷键切换。这些命令不预设产品快捷键；缺少绑定、显式禁用、绑定冲突、配置无效或组合不受支持时拒绝发送并显示原因，不改写用户绑定。支持 F1–F24 及带 Ctrl／Alt 的字母、数字单段快捷键，可组合 Shift；多段按键序列和直接产生文本的按键不派发。无修饰键的 F13–F24 直接向经确认的 Codex 前台焦点窗口派发按键消息，避免输入法将注入事件转换为 `VK_PROCESSKEY`；派发前再次校验窗口、焦点和物理修饰键。其他快捷键继续使用系统输入通道。
+
+MIND± 的原生兜底打开已确认输入框的模型菜单，读取其中唯一、可写的推理滑块及其当前值、上下限和步长，一次设置相邻一档并读回确认。它不依赖推理命令快捷键，也不再用模型按钮名称变化判断成功。档位信息缺失、只读或不唯一时拒绝调节；已到边界时不再次写入。操作前复核输入框、模型选择器和滑块状态，目标改变则停止。遇到 Codex 确认对话框时保留对话框，不确认成功或补发关闭菜单的按键。
 
 Fast、Plan、MIND± 与推理旋钮输入共享串行执行通道，等待前序动作最多 60 秒，以容纳连续六次、每次最多十秒的原生操作。执行前重新验证会话 ID、草稿模型选择器或原生输入框身份及目标版本；目标切换后排队动作不得写入，关闭 Micro 会取消等待。发送、审批等动作不排队，忙碌时明确返回未发送。原生 UI 请求最多等待 10 秒；UIA 提供方尚未返回时继续保留原生执行锁，防止第二个原生动作越过未完成调用。超时不会自动重发。
 
@@ -88,6 +90,12 @@ Fast 按 Codex 原生命令循环速度档位，连续点击保持串行并读�
 目录位于 [CodexKeycapCatalog.cs](../../src/CodexMicro.Windows/Services/CodexKeycapCatalog.cs) 与 [CodexActionCatalog.cs](../../src/CodexMicro.Windows/Services/CodexActionCatalog.cs)，执行映射位于 [SoftwareMicroTransport.cs](../../src/CodexMicro.Windows/SoftwareControl/SoftwareMicroTransport.cs)。[官方目录](../../src/CodexMicro.Windows/Services/CodexOfficialCatalog.json) 继续由导出脚本生成，并单独记录 Micro 扩展，不能仅因出现图标或命令名称就将其列为已实现。
 
 ## 操作反馈（2026-10-04）
+
+### 调节边界（2026-10-05）
+
+MIND+ 在已到上限后继续按时，图标主色调变红；MIND− 在已到下限后继续按时，图标主色调变绿。两者只改变图标的填充、符号和配套浅色轨道，键帽底色不变。图标反馈持续 900 毫秒；重复输入延长显示，反向调节成功或切换目标后清除。推理旋钮、滚动、历史导航及活动灯在能够确认边界时保留琥珀色反馈；不把未读回的变化解释成边界。简短上下限提示通过中英文资源解析，并写入控件无障碍状态。减少动态效果时仍使用静态变色，高对比度使用系统高亮色。
+
+Fast 保留每次派发前的目标检查与操作后读回，复用当前操作已经取得的快照，移除连续重复读取；UIA 控件属性与父节点在发现时一并缓存，避免逐个跨进程查询。真实窗口的端到端延迟需另行测量，自动化回归通过不能代替性能数据。
 
 发送动作在 Codex 不处于前台时，第一次点击仅将 Codex 置前；再次点击才按当前目标与输入框状态发送。已有会话、目标未改变、唯一待审批项等执行前检查继续保留。
 

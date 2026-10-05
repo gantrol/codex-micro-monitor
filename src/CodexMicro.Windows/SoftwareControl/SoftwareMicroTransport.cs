@@ -106,7 +106,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         var context = CaptureContext?.Invoke() ?? throw new InvalidOperationException("No keypad context");
         return context.Layout.EncoderMode switch
         {
-            "reasoning" => RunAsync(() => StepReasoningAsync(context, DialDirectionSettings.ToReasoningStep(clockwise)), queue: true),
+            "reasoning" => RunReasoningAsync(context, DialDirectionSettings.ToReasoningStep(clockwise)),
             "conversation-scroll" => RunUiAsync(new(clockwise ? CodexUiOperation.ScrollUp : CodexUiOperation.ScrollDown), context),
             "composer-navigation" => RunUiAsync(new(clockwise ? CodexUiOperation.ComposerPrevious : CodexUiOperation.ComposerNext), context),
             _ => Unsupported("Unknown encoder binding"),
@@ -152,10 +152,8 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
                 new(CodexUiOperation.ToggleComposerFast, DraftModelPickerId: context.DraftModelPickerId, ComposerTarget: context.ComposerTarget), context, queue: true),
             "composer.togglePlanMode" when context.ThreadId is null => RunUiAsync(
                 new(CodexUiOperation.ToggleComposerPlan, DraftModelPickerId: context.DraftModelPickerId, ComposerTarget: context.ComposerTarget), context, queue: true),
-            "composer.increaseReasoningEffort" when context.ThreadId is null => RunUiAsync(
-                new(CodexUiOperation.IncreaseComposerReasoning, DraftModelPickerId: context.DraftModelPickerId, ComposerTarget: context.ComposerTarget), context, queue: true),
-            "composer.decreaseReasoningEffort" when context.ThreadId is null => RunUiAsync(
-                new(CodexUiOperation.DecreaseComposerReasoning, DraftModelPickerId: context.DraftModelPickerId, ComposerTarget: context.ComposerTarget), context, queue: true),
+            "composer.increaseReasoningEffort" => RunReasoningAsync(context, 1),
+            "composer.decreaseReasoningEffort" => RunReasoningAsync(context, -1),
             "composer.submit" => RunUiAsync(new(CodexUiOperation.Submit), context),
             "composer.sketch" => RunUiAsync(new(CodexUiOperation.OpenSketch), context),
             "toggleSidebar" => RunUiAsync(new(CodexUiOperation.ToggleSidebar), context),
@@ -208,8 +206,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
             ThreadOpened?.Invoke(null);
             return;
         }
-        var supported = action is "forkThread" or "composer.toggleFastMode" or "composer.togglePlanMode" or "toggleReviewTab" or "approval.approve" or "approval.decline"
-            or "composer.increaseReasoningEffort" or "composer.decreaseReasoningEffort" or "turn.cancel";
+        var supported = action is "forkThread" or "composer.toggleFastMode" or "composer.togglePlanMode" or "toggleReviewTab" or "approval.approve" or "approval.decline" or "turn.cancel";
         if (!supported) throw new NotSupportedException($"Software controls do not implement: {action}");
         var thread = RequireThread(context);
         if (action is "toggleReviewTab" or "composer.togglePlanMode")
@@ -223,11 +220,6 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
             var fork = await CallAsync(CodexOperation.ForkThread, new() { ["thread_id"] = thread }, context);
             ThreadOpened?.Invoke(fork.Required("threadId"));
             if (fork.Text("openError") is { } error) Log?.Invoke(this, error);
-            return;
-        }
-        if (action is "composer.increaseReasoningEffort" or "composer.decreaseReasoningEffort")
-        {
-            await StepReasoningAsync(context, action == "composer.increaseReasoningEffort" ? 1 : -1);
             return;
         }
         if (action == "composer.toggleFastMode")
@@ -283,7 +275,13 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         await CallAsync(CodexOperation.SetModel, args, context);
     }
 
-    private async Task StepReasoningAsync(MicroControlContext context, int direction)
+    private Task<MicroSendResult> RunReasoningAsync(MicroControlContext context, int direction) =>
+        context.ThreadId is null
+            ? RunUiAsync(new(direction > 0 ? CodexUiOperation.IncreaseComposerReasoning : CodexUiOperation.DecreaseComposerReasoning,
+                DraftModelPickerId: context.DraftModelPickerId, ComposerTarget: context.ComposerTarget), context, queue: true)
+            : RunResultAsync(() => StepReasoningAsync(context, direction), requiresIpc: true, queue: true);
+
+    private async Task<MicroSendResult> StepReasoningAsync(MicroControlContext context, int direction)
     {
         var thread = RequireThread(context);
         var state = await StateAsync(thread);
@@ -295,10 +293,14 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         var index = Array.IndexOf(supported, state.Text("effort"));
         if (index < 0 || supported.Length == 0) throw new InvalidOperationException("Current reasoning effort is unavailable");
         var next = Math.Clamp(index + direction, 0, supported.Length - 1);
-        if (next == index) return;
+        if (!IsCurrentTarget(context) || ValidateTargetAsync is not null &&
+            !await ValidateTargetAsync(context.ThreadId, _lifetime.Token) || !IsCurrentTarget(context))
+            return MicroSendResult.NotSent("ui.target.changed");
+        if (next == index) return Accepted(direction > 0 ? "ui.reasoning.maximum" : "ui.reasoning.minimum");
         var args = SettingsArguments(thread, state);
         args["effort"] = supported[next];
         await CallAsync(CodexOperation.SetReasoning, args, context);
+        return Accepted("ui.reasoning.changed");
     }
 
     private static JsonObject SettingsArguments(string thread, JsonNode state) => new()

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows.Input;
+using CodexMicro.Protocol;
 using CodexMicro.Desktop.Services;
 
 namespace CodexMicro.Desktop;
@@ -15,6 +16,7 @@ public partial class MicroSurfaceWindow
     private bool _settingsWheelDuringPress;
     private CodexModelCatalog? _reasoningCatalog;
     private int _reasoningInputGeneration;
+    private int _reasoningDirection;
     private sealed record ReasoningPreview(
         string? ThreadId, string ModelId, string? Effort, bool AwaitingObservation = false);
     private ReasoningPreview? _reasoningPreview;
@@ -157,6 +159,8 @@ public partial class MicroSurfaceWindow
             return;
         }
 
+        _reasoningDirection = Math.Sign(effortSteps);
+
         {
             var window = CodexWindowActivator.CaptureForegroundWindow();
             var threadId = _modelToggleService.CurrentForegroundVisibleThreadId(window);
@@ -248,6 +252,7 @@ public partial class MicroSurfaceWindow
         }
 
         _reasoningAdjusting = true;
+        var direction = effortStep != 0 ? Math.Sign(effortStep) : _reasoningDirection;
         var generation = _reasoningInputGeneration;
         using var cancellation = new CancellationTokenSource(TimeSpan.FromMinutes(2));
         _reasoningCancellation = cancellation;
@@ -313,13 +318,15 @@ public partial class MicroSurfaceWindow
                     feedback ??= target is null
                         ? PreviewReasoningStep(threadId, effortStep)
                         : ShowReasoningFeedback(target);
-                    var state = target is null
+                    var adjustment = target is null
                         ? await _modelToggleService.StepCurrentThreadEffortAsync(threadId!,
                             effortStep, catalog, IsCurrent, cancellation.Token)
                         : await _modelToggleService.SetCurrentThreadEffortAsync(target,
                             catalog, IsCurrent, cancellation.Token);
+                    var state = adjustment.State;
                     if (IsCurrent())
                     {
+                        PresentReasoningAdjustment(adjustment.AtBoundary, direction);
                         if (_reasoningTarget is null &&
                             ReferenceEquals(feedback, _reasoningFeedbackCancellation))
                         {
@@ -344,6 +351,7 @@ public partial class MicroSurfaceWindow
                         IsCurrent, cancellation.Token);
                 if (IsCurrent())
                 {
+                    PresentReasoningAdjustment(result.AtBoundary, direction);
                     if (softwareDraft is not null)
                     {
                         _softwareDraft = softwareDraft;
@@ -408,6 +416,7 @@ public partial class MicroSurfaceWindow
 
     private void CancelReasoningInput()
     {
+        foreach (var control in _adjustmentFeedback.Keys.ToArray()) ClearAdjustmentFeedback(control);
         _reasoningInputGeneration++;
         _reasoningTarget = null;
         ClearReasoningFeedback();
@@ -418,5 +427,12 @@ public partial class MicroSurfaceWindow
         _reasoningCancellation?.Cancel();
         _settingsPointerDownTimestamp = 0;
         _settingsWheelDuringPress = false;
+    }
+
+    private void PresentReasoningAdjustment(bool atBoundary, int direction)
+    {
+        var result = new MicroSendResult(MicroSendDisposition.Accepted, 0, 0, 0,
+            atBoundary ? direction > 0 ? "ui.reasoning.maximum" : "ui.reasoning.minimum" : "ui.reasoning.changed");
+        PresentSoftwareActionResult("reasoning", result);
     }
 }

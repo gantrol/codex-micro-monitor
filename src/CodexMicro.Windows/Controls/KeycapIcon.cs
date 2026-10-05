@@ -59,6 +59,16 @@ public sealed class KeycapIcon : FrameworkElement
                 Brushes.Black,
                 FrameworkPropertyMetadataOptions.AffectsRender));
 
+    public static readonly DependencyProperty FeedbackBrushProperty =
+        DependencyProperty.Register(nameof(FeedbackBrush), typeof(Brush), typeof(KeycapIcon),
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public Brush? FeedbackBrush
+    {
+        get => (Brush?)GetValue(FeedbackBrushProperty);
+        set => SetValue(FeedbackBrushProperty, value);
+    }
+
     private static readonly ConcurrentDictionary<string, BitmapSource?>
         LogoCache = new(StringComparer.OrdinalIgnoreCase);
 
@@ -218,7 +228,7 @@ public sealed class KeycapIcon : FrameworkElement
         drawingContext.PushTransform(new TranslateTransform(x, y));
         drawingContext.PushTransform(new ScaleTransform(scale, scale));
 
-        var brush = IconBrush;
+        var brush = FeedbackBrush ?? IconBrush;
         // FAST chooses between the local outline and the exported filled artwork below.
         if (KeycapId is not ("FAST" or "MIND+" or "MIND-") && CodexOfficialArtwork.Draw(drawingContext, KeycapId, brush))
         {
@@ -378,15 +388,22 @@ public sealed class KeycapIcon : FrameworkElement
     {
         var position = (double)GetValue(ReasoningPositionProperty);
         var highest = position >= 1;
-        var fill = highest ? ReasoningPurpleFill : ReasoningBlueFill;
+        var fill = FeedbackBrush ?? (highest ? ReasoningPurpleFill : ReasoningBlueFill);
         var thumb = 4 + 12 * position;
-        dc.DrawRoundedRectangle(new SolidColorBrush(highest
-                ? Color.FromRgb(228, 222, 245) : Color.FromRgb(223, 234, 254)), null,
-            new Rect(1, 9, 18, 6), 3, 3);
+        if (FeedbackBrush is { } feedback)
+        {
+            dc.PushOpacity(.16);
+            dc.DrawRoundedRectangle(feedback, null, new Rect(1, 9, 18, 6), 3, 3);
+            dc.Pop();
+        }
+        else
+            dc.DrawRoundedRectangle(new SolidColorBrush(highest
+                    ? Color.FromRgb(228, 222, 245) : Color.FromRgb(223, 234, 254)), null,
+                new Rect(1, 9, 18, 6), 3, 3);
         dc.DrawRoundedRectangle(fill, null, new Rect(1, 9, thumb, 6), 3, 3);
         dc.DrawEllipse(new SolidColorBrush(Color.FromArgb(32, 30, 40, 60)), null,
             new Point(thumb, 12.6), 3.5, 3.5);
-        dc.DrawEllipse(Brushes.White, CreatePen(new SolidColorBrush(highest
+        dc.DrawEllipse(Brushes.White, CreatePen(FeedbackBrush ?? new SolidColorBrush(highest
                 ? Color.FromRgb(221, 216, 233) : Color.FromRgb(206, 218, 242)), 0.5),
             new Point(thumb, 12), 3.3, 3.3);
         var sign = CreatePen(fill, 1.4);
