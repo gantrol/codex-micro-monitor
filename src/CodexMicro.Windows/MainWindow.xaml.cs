@@ -258,7 +258,13 @@ public partial class MicroSurfaceWindow : Window
     {
         _broker = transport ?? new CodexMicro.Codex.SoftwareMicroTransport();
         _activateSoftwareApplication = activateSoftwareApplication ?? (() => ActivateCodexAsync(0, launchIfMissing: true));
-        _readSoftwareSelection = readSoftwareSelection ?? _softwareSelectionReader.ReadAsync;
+        _readSoftwareSelection = readSoftwareSelection is null
+            ? _softwareSelectionReader.ReadSelectionAsync
+            : async token =>
+            {
+                var thread = await readSoftwareSelection(token);
+                return new CodexThreadSelection(thread, thread);
+            };
         _harnessRegistry = new MicroHarnessRegistry(codexOnly: true);
         _broker.CaptureContext = CaptureSoftwareContext;
         _broker.ThreadOpened = SelectSoftwareThread;

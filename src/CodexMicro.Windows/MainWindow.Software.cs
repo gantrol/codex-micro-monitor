@@ -14,9 +14,12 @@ namespace CodexMicro.Desktop;
 public partial class MicroSurfaceWindow
 {
     private readonly CodexSelectedThreadReader _softwareSelectionReader = new();
-    private bool _softwareSelectionReading;
+    private readonly SemaphoreSlim _softwareSelectionGate = new(1);
     private readonly Func<Task<bool>> _activateSoftwareApplication;
-    private readonly Func<CancellationToken, Task<string?>> _readSoftwareSelection;
+    private readonly Func<CancellationToken, Task<CodexThreadSelection>> _readSoftwareSelection;
+    private string? _softwareSelectionPageKey;
+    private CodexThreadSelection _softwareNavigationObservation;
+    private string? _softwareNavigationOriginPageKey;
     private long _softwareSelectionGeneration;
     private long _softwareNavigationVersion;
     private bool _softwareNavigationPending;
@@ -26,6 +29,7 @@ public partial class MicroSurfaceWindow
     private (string TargetKey, bool Enabled)? _softwareComposerFast;
     private long _softwareActivityVersion;
     private bool? _softwareConnected;
+    private bool SoftwareTargetPending => _softwareNavigationPending && _softwareNavigationTarget is null;
 
     private void RestoreSoftwareActivityIdle(bool preserveHelp = false)
     {
@@ -131,11 +135,18 @@ public partial class MicroSurfaceWindow
     internal void SelectSoftwareThread(string? threadId)
     {
         if ((threadId is not null && !Guid.TryParse(threadId, out _))) return;
-        // Keep the last confirmed selection while independently showing navigation progress.
+        // Agent keys already carry an ID. Save it before observing the resulting navigation.
+        _softwareDraft = null;
+        _softwareUnidentifiedComposer = null;
+        CancelReasoningInput();
+        _softwareNavigationOriginPageKey = _softwareSelectionPageKey;
+        _softwareNavigationObservation = default;
+        _softwareSelectionPageKey = null;
         _softwareNavigationPending = true;
         _softwareNavigationTarget = threadId;
         ++_softwareSelectionGeneration;
         var version = ++_softwareNavigationVersion;
+        _modelToggleService.ObserveSelectedThread(threadId);
         RefreshCurrentCodexThreadPresentation();
         _ = ConfirmSoftwareNavigationAsync(version);
     }
@@ -144,28 +155,46 @@ public partial class MicroSurfaceWindow
 
     private void RefreshSoftwareThreadSelection() => _ = ReadSoftwareThreadSelectionAsync();
 
-    private async Task ReadSoftwareThreadSelectionAsync()
+    private async Task ReadSoftwareThreadSelectionAsync(CancellationToken token = default, bool waitForRead = false)
     {
-        if (_softwareSelectionReading || _windowClosed) return;
-        _softwareSelectionReading = true;
+        if (_windowClosed) return;
+        if (waitForRead) await _softwareSelectionGate.WaitAsync(token);
+        else if (!await _softwareSelectionGate.WaitAsync(0, token)) return;
         var generation = _softwareSelectionGeneration;
         try
         {
-            var threadId = await _readSoftwareSelection(CancellationToken.None);
+            var selection = await _readSoftwareSelection(token);
             if (_windowClosed || generation != _softwareSelectionGeneration) return;
-            var changed = _modelToggleService.CurrentVisibleThreadId != threadId;
+            _softwareNavigationObservation = selection;
+            var threadId = selection.ThreadId;
+            // Ignore the old page while a Micro-initiated navigation is still settling.
+            if (_softwareNavigationPending && _softwareNavigationTarget is not null &&
+                threadId != _softwareNavigationTarget)
+            {
+                if (_softwareNavigationOriginPageKey is null || selection.PageKey is null ||
+                    selection.PageKey == _softwareNavigationOriginPageKey) return;
+                // A different page was opened in Codex before our navigation completed.
+                _softwareNavigationPending = false;
+            }
+            // Losing the sidebar is not a deselection. A changed or unreadable page is.
+            if (!_softwareNavigationPending && threadId is null && selection.PageKey is not null &&
+                selection.PageKey == _softwareSelectionPageKey)
+                threadId = _modelToggleService.CurrentVisibleThreadId;
+            var changed = _modelToggleService.CurrentVisibleThreadId != threadId ||
+                _softwareSelectionPageKey != selection.PageKey;
             var draft = threadId is null
-                ? await _draftComposerModelSelector.CaptureDraftContextAsync(_softwareDraft, CancellationToken.None)
+                ? await _draftComposerModelSelector.CaptureDraftContextAsync(_softwareDraft, token)
                 : null;
             var composer = threadId is null && draft is null
-                ? await CodexUiController.ReadComposerTargetAsync()
+                ? await CodexUiController.ReadComposerTargetAsync(token)
                 : null;
             if (_windowClosed || generation != _softwareSelectionGeneration) return;
-            if (draft?.Presentation != _softwareDraft?.Presentation) CancelReasoningInput();
+            if (changed || draft?.Presentation != _softwareDraft?.Presentation) CancelReasoningInput();
             changed |= draft != _softwareDraft;
             changed |= composer != _softwareUnidentifiedComposer;
             _softwareDraft = draft;
             _softwareUnidentifiedComposer = composer;
+            _softwareSelectionPageKey = selection.PageKey;
             if (_softwareNavigationPending && threadId == _softwareNavigationTarget && (threadId is not null || draft is not null))
             {
                 changed = true;
@@ -184,7 +213,7 @@ public partial class MicroSurfaceWindow
             }
         }
         catch (OperationCanceledException) { }
-        finally { _softwareSelectionReading = false; }
+        finally { _softwareSelectionGate.Release(); }
     }
 
     private async Task ConfirmSoftwareNavigationAsync(long version)
@@ -201,6 +230,12 @@ public partial class MicroSurfaceWindow
             if (System.Diagnostics.Stopwatch.GetElapsedTime(started) > TimeSpan.FromSeconds(4))
             {
                 _softwareNavigationPending = false;
+                // Navigation may fail or the user may navigate again. Do not bind the
+                // requested ID to a different, unidentified page just because time elapsed.
+                var observed = _softwareNavigationObservation;
+                _modelToggleService.ObserveSelectedThread(observed.ThreadId);
+                _softwareSelectionPageKey = observed.PageKey;
+                ++_softwareSelectionGeneration;
                 SetLed(ActivityLed, "#FFD66E", "Navigation unconfirmed", title: "Activity");
                 RefreshCurrentCodexThreadPresentation();
                 return;
@@ -211,7 +246,7 @@ public partial class MicroSurfaceWindow
 
     private async Task<bool> ValidateSoftwareTargetAsync(string? expectedThreadId, CancellationToken token)
     {
-        if (_windowClosed || _softwareNavigationPending) return false;
+        if (_windowClosed || SoftwareTargetPending) return false;
         var generation = _softwareSelectionGeneration;
         if (expectedThreadId is null)
         {
@@ -226,11 +261,9 @@ public partial class MicroSurfaceWindow
             return !_windowClosed && !_softwareNavigationPending && generation == _softwareSelectionGeneration &&
                 observed == composer;
         }
-        var selected = await _readSoftwareSelection(token);
-        if (_windowClosed || _softwareNavigationPending || generation != _softwareSelectionGeneration) return false;
-        _modelToggleService.ObserveSelectedThread(selected);
-        RefreshCurrentCodexThreadPresentation();
-        return selected == expectedThreadId;
+        await ReadSoftwareThreadSelectionAsync(token, waitForRead: true);
+        if (_windowClosed || SoftwareTargetPending || generation != _softwareSelectionGeneration) return false;
+        return _modelToggleService.CurrentVisibleThreadId == expectedThreadId;
     }
 
     private MicroControlContext CaptureSoftwareContext()
@@ -242,10 +275,10 @@ public partial class MicroSurfaceWindow
                 threads[$"AG{slot:00}"] = thread;
         }
         return new MicroControlContext(
-            _softwareNavigationPending ? null : CurrentCodexAgentThreadId(), threads,
+            CurrentCodexAgentThreadId(), threads,
             _layoutObserver.Current, _profileSettings.Current, _softwareSelectionGeneration,
             CaptureDraftPresentationContext() is not null ? _softwareDraft?.ModelPickerId : null,
-            CaptureUnidentifiedComposerTarget());
+            CaptureUnidentifiedComposerTarget(), _softwareNavigationPending);
     }
 
     private CodexComposerTarget? CaptureUnidentifiedComposerTarget() =>

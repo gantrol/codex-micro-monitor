@@ -13,7 +13,7 @@ public partial class MicroSurfaceWindow
 
     private async Task ToggleSoftwareQuickModelAsync()
     {
-        if (_quickModelSwitching || _reasoningAdjusting || _windowClosed || _softwareNavigationPending) return;
+        if (_quickModelSwitching || _reasoningAdjusting || _windowClosed || SoftwareTargetPending) return;
         _quickModelSwitching = true;
         using var action = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         _modelActionCancellation = action;
@@ -21,9 +21,11 @@ public partial class MicroSurfaceWindow
         try
         {
             // Re-read at dispatch; a timer's previous chat must not receive a new draft's click.
-            var selected = await _readSoftwareSelection(action.Token);
-            if (_windowClosed || _softwareNavigationPending) return;
-            _modelToggleService.ObserveSelectedThread(selected);
+            var navigation = _softwareNavigationVersion;
+            await ReadSoftwareThreadSelectionAsync(action.Token, waitForRead: true);
+            if (_windowClosed || SoftwareTargetPending) return;
+            if (navigation != _softwareNavigationVersion) return;
+            var selected = _modelToggleService.CurrentVisibleThreadId;
             if (selected is not null)
             {
                 _quickModelSwitchingThreadId = selected;

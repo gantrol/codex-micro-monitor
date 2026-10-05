@@ -152,7 +152,7 @@ public partial class MicroSurfaceWindow
     private void QueueReasoningSteps(int effortSteps, int? encoderSteps = null)
     {
         if (effortSteps == 0 || _windowClosed || _pageSwitching ||
-            _quickModelSwitching || _softwareNavigationPending)
+            _quickModelSwitching || SoftwareTargetPending)
         {
             return;
         }
@@ -273,9 +273,10 @@ public partial class MicroSurfaceWindow
 
                 var threadId = _modelToggleService.CurrentForegroundVisibleThreadId(window);
                 {
-                    if (_softwareNavigationPending) return;
-                    threadId = await _readSoftwareSelection(cancellation.Token);
-                    _modelToggleService.ObserveSelectedThread(threadId);
+                    if (SoftwareTargetPending) return;
+                    await ReadSoftwareThreadSelectionAsync(cancellation.Token, waitForRead: true);
+                    if (_windowClosed || SoftwareTargetPending) return;
+                    threadId = _modelToggleService.CurrentVisibleThreadId;
                 }
                 if (target is not null && !QuickModelThreadIdsEqual(threadId, target.ThreadId))
                 {

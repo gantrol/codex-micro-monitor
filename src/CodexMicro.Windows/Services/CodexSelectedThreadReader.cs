@@ -1,8 +1,11 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Windows.Automation;
 
 namespace CodexMicro.Desktop.Services;
+
+internal readonly record struct CodexThreadSelection(string? ThreadId, string? PageKey);
 
 internal sealed class CodexSelectedThreadReader
 {
@@ -14,37 +17,107 @@ internal sealed class CodexSelectedThreadReader
     private Dictionary<string, string> _titles = new(StringComparer.Ordinal);
     private nint _lastWindow;
 
-    internal async Task<string?> ReadAsync(CancellationToken cancellationToken = default)
+    internal async Task<CodexThreadSelection> ReadSelectionAsync(CancellationToken cancellationToken = default)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            return await Task.Run(() =>
+            return await Task.Run(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var window = CodexWindowActivator.FindSelectionWindow(_lastWindow);
                 _lastWindow = window;
-                if (window == nint.Zero) return null;
-                if (TryReadDocumentThreadId(window, cancellationToken, out var threadId)) return threadId;
-                RefreshTitles();
-                return Resolve(ReadSelectedTitles(window), _titles);
+                if (window == nint.Zero) return default;
+                if (TryReadDocumentThreadId(window, cancellationToken, out var threadId, out var route))
+                    return new CodexThreadSelection(threadId, route is null ? null : $"{window}:{route}");
+                var header = ReadHeader(window, cancellationToken);
+                var titles = ReadSelectedTitles(window);
+                if (titles.Length > 1) return default;
+                await RefreshTitlesAsync(cancellationToken).ConfigureAwait(false);
+                var sidebarThread = titles.Length == 1 ? Resolve(titles, _titles) : null;
+                var headerThread = header is { } title ? Resolve([title.Title], _titles) : null;
+                // A transitioning header and sidebar must not restore the previous target.
+                if (header is { } visible && titles.Length == 1 && visible.Title != titles[0] &&
+                    (headerThread is null || sidebarThread is null || headerThread != sidebarThread))
+                    return default;
+                return new CodexThreadSelection(headerThread ?? sidebarThread,
+                    header?.Key ?? (sidebarThread is null ? null : $"{window}:sidebar:{sidebarThread}"));
             }, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception error) when (error is COMException or IOException or
+        catch (Exception error) when (error is COMException or ElementNotAvailableException or IOException or
             UnauthorizedAccessException or InvalidOperationException or ArgumentException)
         {
-            return null;
+            return default;
         }
         finally { _gate.Release(); }
     }
+
+    internal async Task<string?> ReadAsync(CancellationToken cancellationToken = default) =>
+        (await ReadSelectionAsync(cancellationToken).ConfigureAwait(false)).ThreadId;
 
     internal static string? Resolve(IEnumerable<string> selectedTitles, IReadOnlyDictionary<string, string> titles)
     {
         var selected = selectedTitles.ToHashSet(StringComparer.Ordinal);
         var matches = titles.Where(pair => selected.Contains(pair.Value))
             .Select(pair => pair.Key).Distinct(StringComparer.Ordinal).Take(2).ToArray();
-        // Duplicate titles, a hidden sidebar, and a blank draft are unknown targets.
+        // Titles only recover an observed ID. Never choose arbitrarily among duplicates.
         return matches.Length == 1 ? matches[0] : null;
+    }
+
+    private static (string Title, string Key)? ReadHeader(nint window, CancellationToken token)
+    {
+        var root = AutomationElement.FromHandle(window);
+        var cache = new CacheRequest();
+        cache.Add(AutomationElement.NameProperty);
+        cache.Add(AutomationElement.IsOffscreenProperty);
+        AutomationElementCollection toolbars;
+        using (cache.Activate())
+            toolbars = root.FindAll(TreeScope.Descendants,
+                new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ToolBar));
+        var headers = new List<(string Title, string Key)>();
+        foreach (AutomationElement toolbar in toolbars)
+        {
+            token.ThrowIfCancellationRequested();
+            if (toolbar.Cached.IsOffscreen) continue;
+            var parent = TreeWalker.RawViewWalker.GetParent(toolbar);
+            var inHeader = false;
+            for (var depth = 0; parent is not null && depth < 10; depth++)
+            {
+                token.ThrowIfCancellationRequested();
+                if (parent.Current.ClassName.Split(' ').Contains("group/titlebar"))
+                {
+                    inHeader = true;
+                    break;
+                }
+                parent = TreeWalker.RawViewWalker.GetParent(parent);
+            }
+            if (!inHeader) continue;
+            AutomationElementCollection texts;
+            using (cache.Activate())
+                texts = toolbar.FindAll(TreeScope.Descendants,
+                    new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Text));
+            foreach (AutomationElement text in texts)
+            {
+                if (text.Cached.IsOffscreen || string.IsNullOrWhiteSpace(text.Cached.Name)) continue;
+                // Chromium can omit the title container from ControlView even though its
+                // text is visible. Only inspect raw ancestors inside this header toolbar.
+                parent = TreeWalker.RawViewWalker.GetParent(text);
+                for (var depth = 0; parent is not null && depth < 8; depth++)
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (parent.Current.ControlType == ControlType.ToolBar) break;
+                    var css = parent.Current.ClassName.Split(' ');
+                    if (css.Contains("-ms-0.5") && css.Contains("font-medium") && css.Contains("truncate"))
+                    {
+                        var key = $"{window}:{string.Join('.', toolbar.GetRuntimeId())}:{string.Join('.', parent.GetRuntimeId())}:{text.Cached.Name}";
+                        headers.Add((text.Cached.Name, key));
+                        break;
+                    }
+                    parent = TreeWalker.RawViewWalker.GetParent(parent);
+                }
+            }
+        }
+        return headers.Count == 1 ? headers[0] : null;
     }
 
     internal static string? ResolveDocumentThreadId(Uri documentUrl)
@@ -79,9 +152,10 @@ internal sealed class CodexSelectedThreadReader
          url.Query.TrimStart('?').Split('&').Any(part => part.StartsWith("initialRoute=", StringComparison.Ordinal)));
 
     private static bool TryReadDocumentThreadId(
-        nint window, CancellationToken cancellationToken, out string? threadId)
+        nint window, CancellationToken cancellationToken, out string? threadId, out string? route)
     {
         threadId = null;
+        route = null;
         IAutomation? client = null;
         IElement? root = null;
         ICondition? condition = null;
@@ -128,7 +202,11 @@ internal sealed class CodexSelectedThreadReader
 
             // A readable home/settings route is authoritative too. Do not restore a
             // sidebar title or a previous thread when this window has left that chat.
-            if (routes.Count == 1) threadId = ResolveDocumentThreadId(new Uri(routes.Single()));
+            if (routes.Count == 1)
+            {
+                route = routes.Single();
+                threadId = ResolveDocumentThreadId(new Uri(route));
+            }
             return routes.Count != 0;
         }
         finally
@@ -140,15 +218,16 @@ internal sealed class CodexSelectedThreadReader
         }
     }
 
-    private void RefreshTitles()
+    private async Task RefreshTitlesAsync(CancellationToken cancellationToken)
     {
         var file = new FileInfo(_indexPath);
         if (!file.Exists) { _titles.Clear(); return; }
         if (file.LastWriteTimeUtc == _indexModified && file.Length == _indexLength) return;
         var titles = new Dictionary<string, string>(StringComparer.Ordinal);
-        using var stream = new FileStream(_indexPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        await using var stream = new FileStream(_indexPath, FileMode.Open, FileAccess.Read,
+            FileShare.ReadWrite | FileShare.Delete, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
         using var reader = new StreamReader(stream);
-        while (reader.ReadLine() is { } line)
+        while (await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false) is { } line)
         {
             try
             {
