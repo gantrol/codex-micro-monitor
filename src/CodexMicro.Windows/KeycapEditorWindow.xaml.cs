@@ -182,11 +182,11 @@ public partial class KeycapEditorWindow : Window
         string? legacyCommandId = null)
     {
         var english = _localization.IsEnglish;
-        var originalKeycap = CodexKeycapCatalog.Get(_initialBinding?.KeycapId ?? keycap.Id);
+        var hasDefaultCommand = CodexActionCatalog.All.Any(c => c.Id == keycap.DefaultAction);
         var choices = new List<ActionChoice>();
-        if (_softwareProfile is not null || !CodexActionCatalog.All.Any(c => c.Id == originalKeycap.DefaultAction))
-            choices.Add(new("default", originalKeycap.Label, IconId: originalKeycap.Id,
-                IsAvailable: _softwareProfile is null || CodexActionCatalog.SoftwareRoute(originalKeycap.DefaultAction) is not null));
+        if (!hasDefaultCommand)
+            choices.Add(new("default", keycap.Label, IconId: keycap.Id,
+                IsAvailable: _softwareProfile is null || CodexActionCatalog.SoftwareRoute(keycap.DefaultAction) is not null));
 
         var commands = CodexActionCatalog.All
             .Where(item => _softwareProfile is null || item.Id != "codexMicroSettings")
@@ -194,7 +194,7 @@ public partial class KeycapEditorWindow : Window
             .ThenBy(item => item.Label, StringComparer.OrdinalIgnoreCase);
         choices.AddRange(commands.Select(command => new ActionChoice(
             "command",
-            english ? command.Label : command.LabelZh ?? command.Label,
+            _localization.ActionLabel(command),
             command.Id,
             IconId: command.IconId,
             IsAvailable: _softwareProfile is null || command.SoftwareSupported)));
@@ -239,7 +239,7 @@ public partial class KeycapEditorWindow : Window
                 choices.FirstOrDefault(choice =>
                     choice.Kind == "command" && choice.Id == legacyCommandId),
             _ => choices.FirstOrDefault(choice => choice.Kind == "default") ??
-                choices.First(choice => choice.Id == originalKeycap.DefaultAction),
+                choices.First(choice => choice.Id == keycap.DefaultAction),
         } ?? choices[0];
         AssignedDetailText.Text = english
             ? $"Keycap default: {keycap.Label}"
@@ -280,10 +280,17 @@ public partial class KeycapEditorWindow : Window
         }
         else
         {
-            // Appearance never changes the selected action, including a default
-            // microphone/empty key whose behavior is tied to its original keycap.
-            return;
+            // Selecting a keycap selects its action. The action dropdown can then
+            // override it; catalog refreshes preserve that explicit choice.
+            PopulateActionChoices(keycap);
         }
+    }
+
+    private void ActionCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ActionCombo.SelectedItem is not ActionChoice choice) return;
+        if (EditorStatusText is not null)
+            EditorStatusText.Text = choice.IsAvailable ? string.Empty : _localization.Text("此动作尚不支持");
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -297,7 +304,9 @@ public partial class KeycapEditorWindow : Window
         {
             CodexKeycapDefinition keycap => query.Length == 0 ||
                 keycap.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                keycap.Label.Contains(query, StringComparison.OrdinalIgnoreCase),
+                keycap.Label.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                CodexActionCatalog.All.Any(action => action.Id == keycap.DefaultAction &&
+                    _localization.ActionLabel(action).Contains(query, StringComparison.OrdinalIgnoreCase)),
             HarnessKeycap keycap => query.Length == 0 ||
                 keycap.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 keycap.Label.Contains(query, StringComparison.OrdinalIgnoreCase),
@@ -341,6 +350,12 @@ public partial class KeycapEditorWindow : Window
             return;
         }
 
+        if (!actionChoice.IsAvailable)
+        {
+            EditorStatusText.Text = _localization.Text("此动作尚不支持");
+            return;
+        }
+
         CodexMicroActionBinding? action = actionChoice.Kind switch
         {
             "default" => null,
@@ -351,27 +366,24 @@ public partial class KeycapEditorWindow : Window
                 new("skill", skillName, skillPath),
             _ => null,
         };
+        var iconSaveFailed = false;
         if (_configWriter is null ||
             !_configWriter.SetSlot(_slotId,
-                _softwareProfile is not null ? _initialBinding!.KeycapId : keycap.Id, action))
+                _softwareProfile is not null ? _initialBinding!.KeycapId : keycap.Id, action,
+                _softwareProfile is null ? null : () =>
+                {
+                    _softwareProfile.SetKeycapIcon(_slotId, keycap.Id);
+                    iconSaveFailed = !_softwareProfile.LastSaveSucceeded;
+                    return !iconSaveFailed;
+                }))
         {
-            EditorStatusText.Text = _localization.IsEnglish
-                ? "Could not save the Codex configuration."
-                : "无法写入 Codex 配置。";
+            EditorStatusText.Text = _localization.Text(
+                iconSaveFailed ? "图标保存失败" : "配置保存失败");
             EditorStatusText.Foreground = new SolidColorBrush(
                 Color.FromRgb(0xB0, 0x6B, 0x4F));
             return;
         }
 
-        if (_softwareProfile is not null)
-        {
-            _softwareProfile.SetKeycapIcon(_slotId, keycap.Id);
-            if (!_softwareProfile.LastSaveSucceeded)
-            {
-                EditorStatusText.Text = _localization.IsEnglish ? "Could not save icon." : "图标保存失败。";
-                return;
-            }
-        }
         _layoutObserver?.ReloadNow();
         DialogResult = true;
     }
@@ -425,6 +437,7 @@ public partial class KeycapEditorWindow : Window
     {
         if (e.Key == Key.Escape)
         {
+            if (ActionCombo.IsDropDownOpen) return;
             e.Handled = true;
             Close();
         }

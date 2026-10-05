@@ -5,6 +5,9 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using CodexMicro.Protocol;
+using CodexMicro.Codex;
+using System.Text.Json;
+using AgentController.Adapters.Codex.Windows;
 
 namespace CodexMicro.Desktop;
 
@@ -19,23 +22,65 @@ public partial class MicroSurfaceWindow
     private bool _softwareNavigationPending;
     private string? _softwareNavigationTarget;
     private readonly Dictionary<string, int> _softwareFastPending = new(StringComparer.Ordinal);
+    private CodexComposerTarget? _softwareUnidentifiedComposer;
+    private (string TargetKey, bool Enabled)? _softwareComposerFast;
     private long _softwareActivityVersion;
     private bool? _softwareConnected;
 
-    private void RestoreSoftwareActivityIdle()
+    private void RestoreSoftwareActivityIdle(bool preserveHelp = false)
     {
+        var previousHelp = _helpContent.GetValueOrDefault(ActivityLed);
         if (_softwareConnected == true)
             SetLed(ActivityLed, "#9EBDFF", "Idle", title: "Activity");
         else
             SetLed(ActivityLed, NeutralStatusLed, "Idle", title: "Activity");
+        if (preserveHelp && previousHelp != default)
+            SetHelp(ActivityLed, previousHelp.Title, previousHelp.Detail);
     }
 
-    private async Task ClearSoftwareActivityAsync(long version)
+    private async Task ClearSoftwareActivityAsync(long version, int delayMilliseconds = 650)
     {
-        await Task.Delay(650);
+        await Task.Delay(delayMilliseconds);
         if (!_windowClosed && version == _softwareActivityVersion)
-            RestoreSoftwareActivityIdle();
+            RestoreSoftwareActivityIdle(preserveHelp: true);
     }
+
+    private void PresentSoftwareActionResult(string label, MicroSendResult result, string? transportLabel = null)
+    {
+        var detail = _localization.ActionStatus(result.Detail);
+        switch (result.Disposition)
+        {
+            case MicroSendDisposition.Accepted:
+                SetLed(ActivityLed, "#74D9A0", $"{label} 已交付\n{detail}");
+                SetStatus($"{label} 已通过 {transportLabel ?? _transportName} 交付。\n{detail}");
+                break;
+            case MicroSendDisposition.NotSent when result.Detail == "action.unassigned":
+                RestoreSoftwareActivityIdle();
+                break;
+            case MicroSendDisposition.OutcomeUnknown:
+                SetLed(ActivityLed, "#FFD66E", $"{label} 结果未知\n{detail}");
+                SetStatus($"{label} 效果未知；为避免双执行不会自动重试。\n{detail}");
+                break;
+            default:
+                var unavailable = result.Disposition == MicroSendDisposition.NotSent &&
+                    (result.Detail is "action.thread-required" or "action.target-unconfirmed" or "action.unsupported" or "action.busy" or
+                        "ui.target.unavailable" or "ui.target.changed" or "ui.menu.unrelated" or
+                        "ui.submit.unavailable" or "ui.history.unavailable");
+                SetLed(ActivityLed, unavailable ? "#FFD66E" : "#FF7994", $"{label} 未发送\n{detail}");
+                SetStatus($"{label} 未发送。\n{detail}");
+                break;
+        }
+    }
+
+    private static Task RecordSoftwareActionAsync(string label, MicroSendResult result) => Task.Run(() =>
+        // The shared diagnostic sink serializes and rotates its small local log synchronously.
+        // Keep that existing disk I/O off the surface's Dispatcher.
+        SoftwareControlDiagnostics.Write("micro-action " + JsonSerializer.Serialize(new
+        {
+            action = label,
+            disposition = result.Disposition.ToString(),
+            detail = result.Detail,
+        })));
 
     private void ApplyCoreSurface()
     {
@@ -112,11 +157,16 @@ public partial class MicroSurfaceWindow
             var draft = threadId is null
                 ? await _draftComposerModelSelector.CaptureDraftContextAsync(_softwareDraft, CancellationToken.None)
                 : null;
+            var composer = threadId is null && draft is null
+                ? await CodexUiController.ReadComposerTargetAsync()
+                : null;
             if (_windowClosed || generation != _softwareSelectionGeneration) return;
             if (draft?.Presentation != _softwareDraft?.Presentation) CancelReasoningInput();
             changed |= draft != _softwareDraft;
+            changed |= composer != _softwareUnidentifiedComposer;
             _softwareDraft = draft;
-            if (_softwareNavigationPending && threadId == _softwareNavigationTarget)
+            _softwareUnidentifiedComposer = composer;
+            if (_softwareNavigationPending && threadId == _softwareNavigationTarget && (threadId is not null || draft is not null))
             {
                 changed = true;
                 _softwareNavigationPending = false;
@@ -165,10 +215,16 @@ public partial class MicroSurfaceWindow
         var generation = _softwareSelectionGeneration;
         if (expectedThreadId is null)
         {
-            if (_softwareDraft is not { } draft) return false;
-            var current = await _draftComposerModelSelector.CaptureDraftContextAsync(draft, token);
+            if (_softwareDraft is { } draft)
+            {
+                var current = await _draftComposerModelSelector.CaptureDraftContextAsync(draft, token);
+                return !_windowClosed && !_softwareNavigationPending && generation == _softwareSelectionGeneration &&
+                    current is not null && current.Presentation == draft.Presentation;
+            }
+            if (CaptureUnidentifiedComposerTarget() is not { } composer) return false;
+            var observed = await CodexUiController.ReadComposerTargetAsync(token);
             return !_windowClosed && !_softwareNavigationPending && generation == _softwareSelectionGeneration &&
-                current is not null && current.Presentation == draft.Presentation;
+                observed == composer;
         }
         var selected = await _readSoftwareSelection(token);
         if (_windowClosed || _softwareNavigationPending || generation != _softwareSelectionGeneration) return false;
@@ -187,20 +243,60 @@ public partial class MicroSurfaceWindow
         }
         return new MicroControlContext(
             _softwareNavigationPending ? null : CurrentCodexAgentThreadId(), threads,
-            _layoutObserver.Current, _profileSettings.Current, _softwareSelectionGeneration);
+            _layoutObserver.Current, _profileSettings.Current, _softwareSelectionGeneration,
+            CaptureDraftPresentationContext() is not null ? _softwareDraft?.ModelPickerId : null,
+            CaptureUnidentifiedComposerTarget());
     }
+
+    private CodexComposerTarget? CaptureUnidentifiedComposerTarget() =>
+        !_softwareNavigationPending && CurrentCodexAgentThreadId() is null &&
+        _softwareUnidentifiedComposer is { } target && CodexWindowActivator.IsForegroundWindow(target.Window)
+            ? target : null;
+
+    private void ObserveComposerFastApplied(MicroControlContext context, bool enabled)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            _ = Dispatcher.InvokeAsync(() => ObserveComposerFastApplied(context, enabled));
+            return;
+        }
+        if (_windowClosed || context.TargetVersion != _softwareSelectionGeneration ||
+            context.ComposerTarget != CaptureUnidentifiedComposerTarget() ||
+            context.DraftModelPickerId != (CaptureDraftPresentationContext() is not null ? _softwareDraft?.ModelPickerId : null) ||
+            SoftwareFastTargetKey() is not { } key) return;
+        _softwareComposerFast = (key, enabled);
+        RefreshSoftwareFeedback();
+    }
+
+    private string? SoftwareFastTargetKey() => CurrentCodexAgentThreadId() ??
+        (CaptureDraftPresentationContext() is not null
+            ? $"draft:{_softwareSelectionGeneration}:{_softwareDraft!.ModelPickerId}"
+            : CaptureUnidentifiedComposerTarget() is { } target
+                ? $"composer:{_softwareSelectionGeneration}:{target.Window}:{target.ComposerId}:{target.ModelPickerId}" : null);
 
     private async Task HandleSoftwareKeyAsync(string key, bool agentKey)
     {
         // A single Agent tap must navigate; the old focus preference must not consume it.
         var action = agentKey ? null : _layoutObserver.Current.GetSlot(key).ResolvedAction;
-        if (action is "composer.increaseReasoningEffort" or "composer.decreaseReasoningEffort")
+        if (action is not null &&
+            _layoutObserver.Current.GetSlot(key).Action is not { Type: "skill" } &&
+            SoftwareActionUnavailableReason(action) is not null)
         {
-            QueueReasoningSteps(action == "composer.increaseReasoningEffort" ? 1 : -1);
+            RefreshSoftwareActionAvailability();
+            return;
+        }
+        if (action == "composer.submit" && !CodexWindowActivator.IsForeground())
+        {
+            // The first press only restores focus; sending still requires an explicit foreground press.
+            if (await _activateSoftwareApplication() && !_windowClosed)
+            {
+                SetLed(ActivityLed, "#9EBDFF", "Codex 已置前");
+                await ReadSoftwareThreadSelectionAsync();
+            }
             return;
         }
         var fast = action == "composer.toggleFastMode";
-        var fastThread = fast ? CurrentCodexAgentThreadId() : null;
+        var fastThread = fast ? SoftwareFastTargetKey() : null;
         if (fast)
         {
             if (_actionKeys.TryGetValue(key, out var presentation))
@@ -236,14 +332,19 @@ public partial class MicroSurfaceWindow
     {
         if (_windowClosed) return;
         ApplySoftwareConnectionState(_broker.IsReady);
+        RefreshSoftwareActionAvailability();
         var current = _modelToggleService.CurrentVisibleThreadId;
         var state = _modelToggleService.CurrentThreadState;
         var fastActive = current is not null && state?.ThreadId == current && CodexServiceTier.IsFast(state.ServiceTier);
+        var fastTarget = SoftwareFastTargetKey();
+        if (current is null && fastTarget is not null && _softwareComposerFast is { } composerFast &&
+            composerFast.TargetKey == fastTarget)
+            fastActive = composerFast.Enabled;
         foreach (var (key, presentation) in _actionKeys)
         {
             var fast = _layoutObserver.Current.GetSlot(key).ResolvedAction == "composer.toggleFastMode";
             if (!fast && !presentation.Icon.IsFastActive) continue;
-            var pending = fast && current is not null && _softwareFastPending.ContainsKey(current);
+            var pending = fast && fastTarget is not null && _softwareFastPending.ContainsKey(fastTarget);
             presentation.Icon.IsFastActive = fast && fastActive;
             presentation.Icon.IconBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(
                 pending ? "#C28B21" : presentation.Icon.IsFastActive ? "#14876D" : "#171717"));

@@ -28,8 +28,10 @@
 
 ## 声明
 
-Codex Micro Monitor 以软件形式复现 [Codex Micro](https://learn.chatgpt.com/docs/features/codex-micro) 的交互与视觉风格，无需 Micro 硬件或虚拟 HID 驱动。本项目此前在 [AgentController](https://github.com/gantrol/AgentController) 项目中维护，现已迁至本仓库独立维护。
+Codex Micro Monitor 是参考 [Codex Micro](https://learn.chatgpt.com/docs/features/codex-micro) 外形设计、略有修改的软件复刻，并复现部分交互，无需 Micro 硬件或虚拟 HID 驱动。本项目此前在 [AgentController](https://github.com/gantrol/AgentController) 项目中维护，现已迁至本仓库独立维护。
 
 本项目为独立第三方项目，与 OpenAI、Work Louder 无隶属关系，也未获得其背书。相关名称与商标归各自权利人所有。配图为软件界面及示例数据，功能范围与实体 Codex Micro 不完全相同。
 
-许可证：[PolyForm Noncommercial 1.0.0](LICENSE)。
+许可证：[GNU General Public License v3.0 only（GPL-3.0-only）](LICENSE)。允许商业使用；分发受 GPL 约束的作品时，须履行提供对应源码等许可证义务。对于遵守本许可证的使用、修改和分发，作者不会基于其有权许可的权利主张侵权责任。本声明不免除许可证规定的义务。
+
+本项目的部分外形设计、图标及其他视觉元素参考或源自第三方材料，相关授权范围尚未全部核实。作者的许可仅覆盖其有权授权的内容，不保证第三方权利已获授权，也不代表相关权利人承诺不追责。商业使用、再分发或衍生开发前，使用者应自行核实所需授权，评估并承担相应风险。非商业使用同样需要遵守适用的第三方权利要求。本声明不免除任何一方依法不得免除的责任。

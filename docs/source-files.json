@@ -1,0 +1,935 @@
+{
+  "commit": "7d4a3382a82c94adab853a924249ed9823be28f5",
+  "files": [
+    {
+      "source": "AGENTS.md",
+      "destination": "AGENTS.md",
+      "sha256": "4af071fc9997a692516810503d0236bb05c1afcfaa153e1b18ec690b96affe11"
+    },
+    {
+      "source": "Directory.Build.props",
+      "destination": "Directory.Build.props",
+      "sha256": "f99154afa034a4e316e8f2fc1d661bbf4edba0ec931d67c69a16e19c1196c5e2"
+    },
+    {
+      "source": "LICENSE",
+      "destination": "LICENSE",
+      "sha256": "f494814f246b5ffa4023d1aa303f6a7ee33144d9afdd9fc7f5a126c273763cfc"
+    },
+    {
+      "source": "app/Models/ThreadStatus.cs",
+      "destination": "src/CodexMicro.Core/Status/ThreadStatus.cs",
+      "sha256": "1b18f58fcd322ec7129e10eefe1e536951357c3fc083e05cd588ff8ccadc05ee"
+    },
+    {
+      "source": "app/Services/CodexRolloutStatusReader.cs",
+      "destination": "src/CodexMicro.Core/Status/CodexRolloutStatusReader.cs",
+      "sha256": "2a5b88ad0cafe4ce1153705e900686ac0f3ad66b324445daadc32d5824d66bc6"
+    },
+    {
+      "source": "docs/architecture/codex-micro-ios-uikit-uml.zh-CN.md",
+      "destination": "docs/architecture/ios-uikit.zh-CN.md",
+      "sha256": "5bfa75c8b48bda7fa59387ca1b8ee341ea88de17b58df68e7bc3f1e667ff9512"
+    },
+    {
+      "source": "docs/micro-behavior-acceptance.md",
+      "destination": "docs/micro-behavior-acceptance.md",
+      "sha256": "56860ee500fa716e4a748c20f8801bcdab35161483c2ec1810094b3b4be0b454"
+    },
+    {
+      "source": "global.json",
+      "destination": "global.json",
+      "sha256": "b132d105648c7dbe49f2c391fe0b9898027e470ddc7cfd4d7239af5df63401fa"
+    },
+    {
+      "source": "micro-bridge/CodexPlugin/KeypadCapabilities.cs",
+      "destination": "src/CodexMicro.Plugin/KeypadCapabilities.cs",
+      "sha256": "11d43990ddce2674692c7dbb04abbd4fd596a2125b3dc2f46274533ca4f85438"
+    },
+    {
+      "source": "micro-bridge/CodexPlugin/KeypadWindowHost.cs",
+      "destination": "src/CodexMicro.Plugin/KeypadWindowHost.cs",
+      "sha256": "c85a24e06f5ea408b068c2c88296137bd09d35345a3d5da108314f2197737189"
+    },
+    {
+      "source": "micro-bridge/CodexPlugin/McpServer.cs",
+      "destination": "src/CodexMicro.Plugin/McpServer.cs",
+      "sha256": "b2c6bee0d1d27dc6ab81184c0efe3fa77cc096b960f6e6739999cdb2766e4acb"
+    },
+    {
+      "source": "micro-bridge/CodexPlugin/Program.cs",
+      "destination": "src/CodexMicro.Plugin/Program.cs",
+      "sha256": "c492716ca941369dd3af5adf8652df5ecb7cd7e08bdf9cbf45365bae989e2e7c"
+    },
+    {
+      "source": "plugins/codex-micro-keypad/LICENSE",
+      "destination": "plugins/codex-micro-keypad/LICENSE",
+      "sha256": "acb6613bb234a80b190b373285028ec160f22ab42907a24d70127729198b8648"
+    },
+    {
+      "source": "plugins/codex-micro-keypad/mcp.json",
+      "destination": "plugins/codex-micro-keypad/mcp.json",
+      "sha256": "533a80b4f8ef5c2655c64ed3f3b9f781a12ec81b7c8740bfdb4ff131c5980ff0"
+    },
+    {
+      "source": "plugins/codex-micro-keypad/plugin.json",
+      "destination": "plugins/codex-micro-keypad/plugin.json",
+      "sha256": "8fd1bee2da97ecc738cb35a386a4bc00c909e064b55a67cd453e51577cef10d2"
+    },
+    {
+      "source": "plugins/codex-micro-keypad/skills/keypad/SKILL.md",
+      "destination": "plugins/codex-micro-keypad/skills/keypad/SKILL.md",
+      "sha256": "6f3a5df5ea0d390af55b9884ddee70f55aae4ffc91b047e860fd8d826888464b"
+    },
+    {
+      "source": "scripts/test-micro-live.ps1",
+      "destination": "scripts/test-micro-live.ps1",
+      "sha256": "5ae8e83f51e8b2239df346be8baeb94dd6f8472b20e997e0ce5d6ede27b907ee"
+    },
+    {
+      "source": "src/AgentController.Adapters.Codex.Software/AppServer/CodexExecutableResolver.cs",
+      "destination": "src/CodexMicro.Codex/AppServer/CodexExecutableResolver.cs",
+      "sha256": "5c2f323d895345ea2f70640dcd31d54527cb395d97695b959a76fc4c12f4ee0d"
+    },
+    {
+      "source": "src/AgentController.Adapters.Codex.Software/AppServer/LocalAppServer.cs",
+      "destination": "src/CodexMicro.Codex/AppServer/LocalAppServer.cs",
+      "sha256": "5c5b3c4ccc146080a4f5a712dcfbcc2d62258ce297a26171b19d35a59803e2e8"
+    },
+    {
+      "source": "src/AgentController.Adapters.Codex.Software/CodexServiceTier.cs",
+      "destination": "src/CodexMicro.Codex/CodexServiceTier.cs",
+      "sha256": "1b1c97809df122f6e3df1d0e2f2a81f05e867427c93f68fb52eb81404ded3d21"
+    },
+    {
+      "source": "src/AgentController.Adapters.Codex.Software/CodexSoftwareClient.cs",
+      "destination": "src/CodexMicro.Codex/CodexSoftwareClient.cs",
+      "sha256": "c68df434dd33fa444a897548ee64a022fba4443d5f378fc1e3c041905c6c0dc8"
+    },
+    {
+      "source": "src/AgentController.Adapters.Codex.Software/DesktopIpc/CodexPeerClient.cs",
+      "destination": "src/CodexMicro.Codex/DesktopIpc/CodexPeerClient.cs",
+      "sha256": "1299cca60758edeb906b1ed266ad444cbdcca96220f9b27a08799c4f50004440"
+    },
+    {
+      "source": "src/AgentController.Adapters.Codex.Software/JsonSupport.cs",
+      "destination": "src/CodexMicro.Codex/JsonSupport.cs",
+      "sha256": "a2eb35763cd25111ae0bc23dd3faec769a0603b59c5e6cb760da291d4af2e270"
+    },
+    {
+      "source": "src/AgentController.Adapters.Codex.Software/KeypadController.cs",
+      "destination": "src/CodexMicro.Codex/KeypadController.cs",
+      "sha256": "8cd889c859408c098efee6b67d1397bd727829f66eb8a5b0db82a1aa530fd54c"
+    },
+    {
+      "source": "src/AgentController.Adapters.Codex.Software/SoftwareControlDiagnostics.cs",
+      "destination": "src/CodexMicro.Codex/SoftwareControlDiagnostics.cs",
+      "sha256": "c1b1f931fda79d004ea22cf1e96b3f0bea44bce5276adf215ff73714dcc9f5fa"
+    },
+    {
+      "source": "src/AgentController.MicroBroker/BrokerContracts.cs",
+      "destination": "src/CodexMicro.Core/BrokerContracts.cs",
+      "sha256": "29c02e38fb70c3814aa6934c53c523b73f812623ea055cb7510ef5ac8a3ccf36"
+    },
+    {
+      "source": "src/AgentController.MicroBroker/MicroKeypadControl.cs",
+      "destination": "src/CodexMicro.Windows/Hosting/MicroKeypadControl.cs",
+      "sha256": "0f3b368fd0c86458bc60346650b3212d78257974f3d86884186e530865243525"
+    },
+    {
+      "source": "virtual-micro/Assets/CodexMicro.ico",
+      "destination": "assets/CodexMicro.ico",
+      "sha256": "76196a77f78f249b7f95849a72d5541b5b7fbab40ddb96b6aef344466e322d97"
+    },
+    {
+      "source": "virtual-micro/Assets/CodexMicro.png",
+      "destination": "assets/CodexMicro.png",
+      "sha256": "7ab7d658442c8e09bbfc7a92c07d0c789b03b7a025bb7ec9a9cb2e7127e06d2c"
+    },
+    {
+      "source": "virtual-micro/Assets/KeypadExports/codex-micro-keypad-amber.png",
+      "destination": "assets/KeypadExports/codex-micro-keypad-amber.png",
+      "sha256": "8ef171e8d914d9548691128a75818877b009b5919c8e5d4976dbeba10aa13210"
+    },
+    {
+      "source": "virtual-micro/Assets/KeypadExports/codex-micro-keypad-blue.png",
+      "destination": "assets/KeypadExports/codex-micro-keypad-blue.png",
+      "sha256": "cf768d9c40f9f79f072613c7b83285c54cff284fc3dd58cbfda8af64ed1fcb61"
+    },
+    {
+      "source": "virtual-micro/Assets/KeypadExports/codex-micro-keypad-mint.png",
+      "destination": "assets/KeypadExports/codex-micro-keypad-mint.png",
+      "sha256": "72c1bb370ceb78a929f92780722ea9d5a39598a77d0ca1a44c594d23c55c77fd"
+    },
+    {
+      "source": "virtual-micro/Assets/KeypadExports/codex-micro-keypad-pearl.png",
+      "destination": "assets/KeypadExports/codex-micro-keypad-pearl.png",
+      "sha256": "e8686ec9d92380baca9bb0ecd62d90b57737510387775a191e3a6d98d97e2f59"
+    },
+    {
+      "source": "virtual-micro/Assets/KeypadExports/codex-micro-keypad-rose.png",
+      "destination": "assets/KeypadExports/codex-micro-keypad-rose.png",
+      "sha256": "2b00db52a37fca4a4061ce683821b67c9f05875fa520a1586794dc892e4b3493"
+    },
+    {
+      "source": "virtual-micro/Assets/KeypadExports/codex-micro-keypad-six-color.png",
+      "destination": "assets/KeypadExports/codex-micro-keypad-six-color.png",
+      "sha256": "e3f4ea56fb1a19ea2353708705c394515f415c0ad12fea9600751b6941eadd16"
+    },
+    {
+      "source": "virtual-micro/Assets/KeypadExports/codex-micro-keypad-violet.png",
+      "destination": "assets/KeypadExports/codex-micro-keypad-violet.png",
+      "sha256": "a21f5365bd4b24ff72c1e74aa0244cab11caf82684b3e28ddee1c3d4f60fca0c"
+    },
+    {
+      "source": "virtual-micro/Assets/KeypadExports/manifest.json",
+      "destination": "assets/KeypadExports/manifest.json",
+      "sha256": "5b51f06b86530912bbaba31ab5eba26f124bc1ef85e23efe629a1da5255dcbdb"
+    },
+    {
+      "source": "virtual-micro/Assets/KeypadExports/palette-preview.png",
+      "destination": "assets/KeypadExports/palette-preview.png",
+      "sha256": "e2f85058abb7a06173e5881a47a13e0b04dc2cd9ad47d1885bf7d8e4fe4b08a4"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/RequestedScreens/codex-micro-first-screen-xaml.png",
+      "destination": "assets/LightingPageExports/RequestedScreens/codex-micro-first-screen-xaml.png",
+      "sha256": "6ab6720b561ebbd5a08da1c60a1a395d4c03f05f2d0895e14461e4a47e50afdb"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/RequestedScreens/codex-micro-second-screen-xaml.png",
+      "destination": "assets/LightingPageExports/RequestedScreens/codex-micro-second-screen-xaml.png",
+      "sha256": "95e0464a766e53f2d3a1428780f462d6af196277b5c00e7da28f78ed889f06fc"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/codex-micro-first-screen-xaml.png",
+      "destination": "assets/LightingPageExports/codex-micro-first-screen-xaml.png",
+      "sha256": "3346ad77011b683b5854e498e6afd824d5b7421d7049ee215d5e6def606b5df4"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/codex-micro-second-screen-xaml.png",
+      "destination": "assets/LightingPageExports/codex-micro-second-screen-xaml.png",
+      "sha256": "aab51c83c7df95c5c0a233f0dc2c38b843db7206bedabe7b58c715d48eb37462"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/selected-ring/codex-micro-first-screen-xaml.png",
+      "destination": "assets/LightingPageExports/selected-ring/codex-micro-first-screen-xaml.png",
+      "sha256": "3346ad77011b683b5854e498e6afd824d5b7421d7049ee215d5e6def606b5df4"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/selected-ring/codex-micro-second-screen-xaml.png",
+      "destination": "assets/LightingPageExports/selected-ring/codex-micro-second-screen-xaml.png",
+      "sha256": "bbe4ae6c7d07be7ee6d9aed012c2b92c6e1704b4ff9c395cdf0e59740c959108"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/selected-ring/selected-lighting-comparison.png",
+      "destination": "assets/LightingPageExports/selected-ring/selected-lighting-comparison.png",
+      "sha256": "f9dd74f018205d4835c06fd5e55b9a4afbe8ed412b5b10a2e71aab99628aec96"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/white-emission/codex-micro-first-screen-xaml.png",
+      "destination": "assets/LightingPageExports/white-emission/codex-micro-first-screen-xaml.png",
+      "sha256": "052efeb5e4f0b7c9c95f0fcef454251adbc0dbcc3f8a3d845c5860045c8669f5"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/white-emission/codex-micro-second-screen-xaml.png",
+      "destination": "assets/LightingPageExports/white-emission/codex-micro-second-screen-xaml.png",
+      "sha256": "7be9ed264eb7c529b6252183c2cadd726270c661f25e869c4f73b3854b7871ab"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/white-glow/codex-micro-first-screen-xaml.png",
+      "destination": "assets/LightingPageExports/white-glow/codex-micro-first-screen-xaml.png",
+      "sha256": "f48425372ffd351ccbfe2dfa9d5c2fa68c8e54cf8e8776410e9e6828ef364096"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingPageExports/white-glow/codex-micro-second-screen-xaml.png",
+      "destination": "assets/LightingPageExports/white-glow/codex-micro-second-screen-xaml.png",
+      "sha256": "f23960cb3342ddb304f29ea78daeabaeb9edbcfbd7b9a73aebf9d0ed29069150"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingStudies/current-keyglow.png",
+      "destination": "assets/LightingStudies/current-keyglow.png",
+      "sha256": "223bf14e8433d3361ba13dcda760b3bfe73c61879ffab2b9efadfd513d9287e9"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingStudies/mint-keyglow-center-comparison.png",
+      "destination": "assets/LightingStudies/mint-keyglow-center-comparison.png",
+      "sha256": "f6487badf92149187a9a0ac30138c6e99111f4cd3c534f575b1ff85ae3e6ade9"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingStudies/mint-keyglow-center-detail.png",
+      "destination": "assets/LightingStudies/mint-keyglow-center-detail.png",
+      "sha256": "d4eec77049ce999f959d74a424a31d0993084e12ee2cf347a4d9a54465029229"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingStudies/mint-keyglow-comparison.png",
+      "destination": "assets/LightingStudies/mint-keyglow-comparison.png",
+      "sha256": "8485c02772f942869d2a7720c4eb60f96c59dd26afca9b1075c827e69c1cb5f9"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingStudies/mint-keyglow-original-center.png",
+      "destination": "assets/LightingStudies/mint-keyglow-original-center.png",
+      "sha256": "9175c39aec195af7e07739df041d2fef2aa133e0a5d2a25758b4ca139feda6b0"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingStudies/mint-keyglow.png",
+      "destination": "assets/LightingStudies/mint-keyglow.png",
+      "sha256": "62c0b988f4891bb9c0ba276a82f6a3d13bdcb0a173ad02e50fddaebd0c561137"
+    },
+    {
+      "source": "virtual-micro/Assets/LightingStudies/mint-keyglow.xaml",
+      "destination": "assets/LightingStudies/mint-keyglow.xaml",
+      "sha256": "0aefd397ee1ef6c41118bd629c3658619bf0e3603de9b4b3f10698b529408a96"
+    },
+    {
+      "source": "virtual-micro/Directory.Packages.props",
+      "destination": "Directory.Packages.props",
+      "sha256": "9d861c1d958c33d4b554808a1f515f479951d9a296c5bb15f2a927e37d1f4f6c"
+    },
+    {
+      "source": "virtual-micro/ios/CodexMicro/App/AppDelegate.swift",
+      "destination": "apps/ios/CodexMicro/App/AppDelegate.swift",
+      "sha256": "1a137cba0594714fbb1da3ff11b276067b7d1ea408e2ba9e1c7d6e969aa43ce8"
+    },
+    {
+      "source": "virtual-micro/ios/CodexMicro/Connection/DemoTransport.swift",
+      "destination": "apps/ios/CodexMicro/Connection/DemoTransport.swift",
+      "sha256": "c08be9bef2665491a7ca088bf31ab6dc328d9cf2ccbd2a37e81b86e8fb85dd83"
+    },
+    {
+      "source": "virtual-micro/ios/CodexMicro/Core/MicroModels.swift",
+      "destination": "apps/ios/CodexMicro/Core/MicroModels.swift",
+      "sha256": "a44abbf96a0d3242d72d9cf6179097e77dfaa2357a2d5f96efb9f132a12d1389"
+    },
+    {
+      "source": "virtual-micro/ios/CodexMicro/Core/MicroStore.swift",
+      "destination": "apps/ios/CodexMicro/Core/MicroStore.swift",
+      "sha256": "202aff51a3f2908fa3689d52faf425762465d5c063823a647b235ee5a4b558d5"
+    },
+    {
+      "source": "virtual-micro/ios/CodexMicro/UI/EncoderControl.swift",
+      "destination": "apps/ios/CodexMicro/UI/EncoderControl.swift",
+      "sha256": "5896c466f01d6e63e23f8bc6930c2cc3975ef67c3f3c52562fb5f43e820f57b8"
+    },
+    {
+      "source": "virtual-micro/ios/CodexMicro/UI/KeycapControl.swift",
+      "destination": "apps/ios/CodexMicro/UI/KeycapControl.swift",
+      "sha256": "9786b219c04c7aa619b90aba4cbf243c9952693839c00d242a4dd0bc9c35cb4f"
+    },
+    {
+      "source": "virtual-micro/ios/CodexMicro/UI/MicroTheme.swift",
+      "destination": "apps/ios/CodexMicro/UI/MicroTheme.swift",
+      "sha256": "7eee4afe6614af6b6275b216acacd354032067b5a230c3fb6571cb1c19836efa"
+    },
+    {
+      "source": "virtual-micro/ios/README.md",
+      "destination": "apps/ios/README.md",
+      "sha256": "ed6204a90574cfd1a95c4fa965ce7b41f1a4dd1eb1425bcbdf0b8eb97cc569cb"
+    },
+    {
+      "source": "virtual-micro/monitor/README.md",
+      "destination": "README.md",
+      "sha256": "605907c2c545c24f6204a7dd208455997e1f9d4c0d9c26ac49f49a4c287fba71"
+    },
+    {
+      "source": "virtual-micro/monitor/README.zh-CN.md",
+      "destination": "README.zh-CN.md",
+      "sha256": "856cda1a1d2493d02a8b64cbc9ceda6c4e34b3fe13968ade1e3dc9fb9d5665f7"
+    },
+    {
+      "source": "virtual-micro/src/AgentController.MicroSurface.Wpf/.editorconfig",
+      "destination": "src/CodexMicro.Windows/.editorconfig",
+      "sha256": "4ebf93d37104ca15ba0e357231aac15c61916aa59a9bf38183ddccce1cdb4ff3"
+    },
+    {
+      "source": "virtual-micro/src/AgentController.MicroSurface.Wpf/MicroSurfaceController.cs",
+      "destination": "src/CodexMicro.Windows/MicroSurfaceController.cs",
+      "sha256": "41beede85c3256cbae7b2728b91dfc0b784cde1106b419018e789b32070a420c"
+    },
+    {
+      "source": "virtual-micro/src/AgentController.MicroSurface.Wpf/SoftwareControl/SoftwareMicroTransport.cs",
+      "destination": "src/CodexMicro.Windows/SoftwareControl/SoftwareMicroTransport.cs",
+      "sha256": "7ff45642439594d627fca4379db5d43d7742d6aec78701d152acedbbf8968102"
+    },
+    {
+      "source": "virtual-micro/src/AgentController.MicroSurface.Wpf/SoftwareControl/SoftwareQuestionObserver.cs",
+      "destination": "src/CodexMicro.Windows/SoftwareControl/SoftwareQuestionObserver.cs",
+      "sha256": "b8b1bf947d618bf4e781a1933f2b36718a23b4abb8227d61d2a051b8a4ea3594"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/App.xaml",
+      "destination": "src/CodexMicro.Windows/App.xaml",
+      "sha256": "d972c51909a8f26808174145f57b097d9353ef34ec77e709e07de882304e67df"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Controls/KeycapIcon.cs",
+      "destination": "src/CodexMicro.Windows/Controls/KeycapIcon.cs",
+      "sha256": "3b4d2d196581d9913d0f8df64a033ff1de3799bece7b25dce93ea7f2d6616492"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Controls/QuotaKnob.cs",
+      "destination": "src/CodexMicro.Windows/Controls/QuotaKnob.cs",
+      "sha256": "231e2fd247331d4866ea7e56644b5a989205613aba20363ffb11eeb5d9c20a37"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Controls/SevenSegmentReadout.cs",
+      "destination": "src/CodexMicro.Windows/Controls/SevenSegmentReadout.cs",
+      "sha256": "1b7b45289e54b6136f97aa7571caee337272132a7cb543d6882c21cef64bacbd"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/DeepSeekSetupWindow.xaml",
+      "destination": "src/CodexMicro.Windows/DeepSeekSetupWindow.xaml",
+      "sha256": "11fd7efa76dabf9e33556ed305d18cb6dc3a2beeb5e2d51392719d5cba58fe88"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/DeepSeekSetupWindow.xaml.cs",
+      "destination": "src/CodexMicro.Windows/DeepSeekSetupWindow.xaml.cs",
+      "sha256": "df29700ce15bc6cb71c140b26725bed77d0c63fc6806c8e32e303a69d7aff8e8"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/KeycapEditorWindow.xaml",
+      "destination": "src/CodexMicro.Windows/KeycapEditorWindow.xaml",
+      "sha256": "e555b5f2876daf94aca4c5704b7094a73143961fa133d2bf3848f851eb1d2435"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/KeycapEditorWindow.xaml.cs",
+      "destination": "src/CodexMicro.Windows/KeycapEditorWindow.xaml.cs",
+      "sha256": "c772cc262c12c2eca8f80c5d1dfa78dc0ff2b3a600c0b47ce1d65d8cde7f7c92"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MainWindow.Monitor.cs",
+      "destination": "src/CodexMicro.Windows/MainWindow.Monitor.cs",
+      "sha256": "90a6b9072700410239b3cf301bd229466c2ba1ab588ce597f8f8440999bd6dd1"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MainWindow.PageMotion.cs",
+      "destination": "src/CodexMicro.Windows/MainWindow.PageMotion.cs",
+      "sha256": "4bdce38dd5e1de6881e982ca08ed8f911c9eaca36bbd1e77f7b40a91360895a1"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MainWindow.Reasoning.cs",
+      "destination": "src/CodexMicro.Windows/MainWindow.Reasoning.cs",
+      "sha256": "6d4fefbfc927eab5aaade46649d9ccd27446bc0dd271fcf86d8e5c4317ba8218"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MainWindow.Software.Draft.cs",
+      "destination": "src/CodexMicro.Windows/MainWindow.Software.Draft.cs",
+      "sha256": "527984b18de9566a3cbd1de9cd5ae5cb3b2ffb51c6695628ea20d154936685a5"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MainWindow.Software.cs",
+      "destination": "src/CodexMicro.Windows/MainWindow.Software.cs",
+      "sha256": "c423bc5bdd6e10fd757cf10713973e3fd545f4cc15a43c33d8a021687b429f9e"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MainWindow.TaskMotion.cs",
+      "destination": "src/CodexMicro.Windows/MainWindow.TaskMotion.cs",
+      "sha256": "efab2e799f7b8fb365fc7e16eae15496514975f21a05b707cd56de5f63b1f99c"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MainWindow.xaml",
+      "destination": "src/CodexMicro.Windows/MainWindow.xaml",
+      "sha256": "59edba9a9412baaa0637fecb27a1c24ce59ec04f8302aaa87f2b69512f1e512f"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MainWindow.xaml.cs",
+      "destination": "src/CodexMicro.Windows/MainWindow.xaml.cs",
+      "sha256": "0752d1abe5a2e67fc6294bf117976bbdfe520c17a55d0eb788323dad4628fb27"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MicroSettingsWindow.xaml",
+      "destination": "src/CodexMicro.Windows/MicroSettingsWindow.xaml",
+      "sha256": "030fd3682d02e6b54a0982cd5bae98a935dce1a7651b54f8928a3f85868447ee"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MicroSettingsWindow.xaml.cs",
+      "destination": "src/CodexMicro.Windows/MicroSettingsWindow.xaml.cs",
+      "sha256": "7b367f3f2ac08394c40372b444f01d02955a87ebaa316a63516087dbfc914358"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MicroVoiceSettingsWindow.xaml",
+      "destination": "src/CodexMicro.Windows/MicroVoiceSettingsWindow.xaml",
+      "sha256": "c5fbfec0439bb4fb292d111ad1791e22a730115d020d47958c565a28c871e79c"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/MicroVoiceSettingsWindow.xaml.cs",
+      "destination": "src/CodexMicro.Windows/MicroVoiceSettingsWindow.xaml.cs",
+      "sha256": "49b1e169d44e011ca3c36d31574203e0e53300b268c776b9b335c5de25b13441"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/AgentLightingAppearance.cs",
+      "destination": "src/CodexMicro.Windows/Services/AgentLightingAppearance.cs",
+      "sha256": "4a5678cd0647c20a1288e57baf1f9c22c8d6837e81f4bbff9dd98b0ea77bc00a"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/BorderlessResize.cs",
+      "destination": "src/CodexMicro.Windows/Services/BorderlessResize.cs",
+      "sha256": "234614d9b7f97caa8b2a4b87d4990d3bf8617c75410a73751c06445a8ad866da"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexAgentRosterObserver.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexAgentRosterObserver.cs",
+      "sha256": "72199d96a089bf1bf482bdc7cbaf3656b02edcc8318cabb54abe980e323bb8a9"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexAppServerProcess.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexAppServerProcess.cs",
+      "sha256": "e5eeb66f95f863f23169918d12059faac73a0d5a6769a09b9e46baaf6a4c2d4a"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexDraftComposerModelSelector.Context.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexDraftComposerModelSelector.Context.cs",
+      "sha256": "0704cd9d1009db57567d8f36a512cda58464493002ed8181134e2296db83e9ac"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexDraftComposerModelSelector.Observation.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexDraftComposerModelSelector.Observation.cs",
+      "sha256": "a59ed0ec0551fdc18927042d1a1b48247c24b97b6b215e13b0eed6122aba7510"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexDraftComposerModelSelector.Reasoning.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexDraftComposerModelSelector.Reasoning.cs",
+      "sha256": "663096bdb8f0656786955f181f166a85ec0d1ccbe5070ef68f79a9bb943f1f5b"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexDraftComposerModelSelector.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexDraftComposerModelSelector.cs",
+      "sha256": "d2feace7492ccb40123dea635c812d17477492bf596699ceb6afaf3a8e8d7eb4"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexDraftModelToggleService.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexDraftModelToggleService.cs",
+      "sha256": "eb1d9e8f431452b46d3e3ef8d56a1126ff31a7d8fa3447daa9c9d36fc25ed53d"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexKeycapCatalog.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexKeycapCatalog.cs",
+      "sha256": "13701e2d06db3dc0af85d3f9141a64c9f14724cde3e1d1da30232044a66c2b9f"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexMenuSelectionObserver.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexMenuSelectionObserver.cs",
+      "sha256": "9efb27a0fff3a75167b687733b831864d1774aca1c9a854247834a2229f526fd"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexMicroConfigWriter.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexMicroConfigWriter.cs",
+      "sha256": "b0f680f99725dffbeebb8a90626d5da0019c4534ee05108a9ee676ce87064e40"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexMicroLayoutObserver.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexMicroLayoutObserver.cs",
+      "sha256": "30874c77c4d2efec20c619374a7566dbc034e94d391b62b08b2b75a351943ce8"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexModelCatalog.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexModelCatalog.cs",
+      "sha256": "07abb819f0804a40ddf5d92636cd60edf29f1d5675a301fa9f5cd9ca27ce1935"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexModelToggleDiagnostics.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexModelToggleDiagnostics.cs",
+      "sha256": "56fecd6dfcff8f075ce096bfce6f6ac7f380d5a8a8d20f932dfd397a1b8b2384"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexModelToggleService.Reasoning.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexModelToggleService.Reasoning.cs",
+      "sha256": "fb3e764817a1b47029f91516fe8a18e816288125b1fe9941030f3ff90f0313ab"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexModelToggleService.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexModelToggleService.cs",
+      "sha256": "05c803c66d2166b5e608e9803203430e12f283c2b74760a139afe91fb0c04de6"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexQuestionAnswerStream.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexQuestionAnswerStream.cs",
+      "sha256": "234e88e8512aad4a920124d14086b9691d9f3370511ac347f5430b3061d9ceab"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexQuestionSkipObserver.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexQuestionSkipObserver.cs",
+      "sha256": "e0eec1525c448657d5ada7623d840708209e90830da58bc2e360ae41427cc819"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexQuickModel.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexQuickModel.cs",
+      "sha256": "202da4f529b84aea864336bef3bd7d2a697127f284b5edfd69fd4da19ad36996"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexQuotaService.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexQuotaService.cs",
+      "sha256": "8dfd546e438c446ce372c1883fb70462984427d38eb770722ec0d49f97f7bb5e"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexRecentThreadsService.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexRecentThreadsService.cs",
+      "sha256": "3498935ff4aacb4cfbf0e97ba87ef99a6108c8e3c82c7be193fc282492c08b6d"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexRequestCardCancellation.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexRequestCardCancellation.cs",
+      "sha256": "dda04f5588289315bd794018114f10eaef87926944bbe0d02afc23b7a213d57e"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexSelectedThreadReader.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexSelectedThreadReader.cs",
+      "sha256": "244319fb4623c2c3a9d16f69e73e366eea323ab3e9f0a4efa5e0ca6bca330ea1"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexSkillCatalog.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexSkillCatalog.cs",
+      "sha256": "e6a5800eec4a541d594174460414c67e47a02fb973936a5fd4fc4cb951eda16a"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexTaskMonitorService.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexTaskMonitorService.cs",
+      "sha256": "912955c2ff02ac5f35fc94df840b5b9fe4ea819988fc69a3ec7b416ce1fdf5a8"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexThreadModelEffortStore.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexThreadModelEffortStore.cs",
+      "sha256": "70952cf3adee9965557b6a5ece96960bdf22d7e286853d38f4bdca174b38e9fd"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexUnreadStateReader.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexUnreadStateReader.cs",
+      "sha256": "2b84b15a3788faca832e2f67b95f651b06d8c7981a6f9e06e34a6fb09746f572"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexWindowActivator.cs",
+      "destination": "src/CodexMicro.Windows/Services/CodexWindowActivator.cs",
+      "sha256": "0cbdb257fdd6dba468a1c410d1b563c638194e0e8fec37ebea7ffef6e723af4a"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/DeepSeekSetupCoordinator.cs",
+      "destination": "src/CodexMicro.Windows/Services/DeepSeekSetupCoordinator.cs",
+      "sha256": "0b4d8aa0069a280f648c28ec5ec7e1d3a3bd65d731294ffc0def2f274cfcd454"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/DeepSeekSurfaceLauncher.cs",
+      "destination": "src/CodexMicro.Windows/Services/DeepSeekSurfaceLauncher.cs",
+      "sha256": "347b163cddd9278f227d47c7064909a1481a1476551b170e763c0913ee1c8256"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/DialDirectionSettings.cs",
+      "destination": "src/CodexMicro.Windows/Services/DialDirectionSettings.cs",
+      "sha256": "d22826a314039afd46d12d6d6225b313687e7670260df50e0f92cf3fe8fb7d2b"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/DialGestureTracker.cs",
+      "destination": "src/CodexMicro.Windows/Services/DialGestureTracker.cs",
+      "sha256": "52297a361242c46282ade9e2238a2619beb32e39449aafdc0bf01332372c9181"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/EncoderStepAccumulator.cs",
+      "destination": "src/CodexMicro.Windows/Services/EncoderStepAccumulator.cs",
+      "sha256": "79339f9996642f7cd5744b149ed276db9c0a3786b60b9388759f0d9ab16b41b2"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/HarnessWindowActivator.cs",
+      "destination": "src/CodexMicro.Windows/Services/HarnessWindowActivator.cs",
+      "sha256": "b6c820d7e3c835c9f1cf99d5af6d9a3406b6739adaa894e23cbc9d2541fe3c28"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/IMicroTransport.cs",
+      "destination": "src/CodexMicro.Windows/Services/IMicroTransport.cs",
+      "sha256": "29863d3bb044f2e15bb5f31f9277b7ca98bfb43edbe91ae778b17a0394728f59"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/InactiveDialInputRouter.cs",
+      "destination": "src/CodexMicro.Windows/Services/InactiveDialInputRouter.cs",
+      "sha256": "a68a5acf067d958c8dfba3d95150f0d98ed071e9a75cfceb3d0d4fcf7da21c2a"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/JoystickGeometry.cs",
+      "destination": "src/CodexMicro.Windows/Services/JoystickGeometry.cs",
+      "sha256": "ee9e8db20d59a99a2ec658385ff63c7a654a5475e6fa59963b980c475d657356"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/ManualUnreadThreadTracker.cs",
+      "destination": "src/CodexMicro.Windows/Services/ManualUnreadThreadTracker.cs",
+      "sha256": "06fcbb36415badc4183998b5a4ebcba8f45906375b46a19e000fc458606ecc37"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/MicroDistributionPreset.cs",
+      "destination": "src/CodexMicro.Windows/Services/MicroDistributionPreset.cs",
+      "sha256": "f747d4266e997db71ed8baa82fe77653dc9defcbb1059b38117ca4a710458e6c"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/MicroHarnessRegistry.cs",
+      "destination": "src/CodexMicro.Windows/Services/MicroHarnessRegistry.cs",
+      "sha256": "57c513dcac3a327d0b0ea60b906b6f7beb2c5ee0ff5f78ed1e57ee764611d7ce"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/MicroLocalVoiceRuntime.cs",
+      "destination": "src/CodexMicro.Windows/Services/MicroLocalVoiceRuntime.cs",
+      "sha256": "dea28ebd463d4b7703868426eed8bd0652aa98a624935a4c2737c9c959978bde"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/MicroLocalization.cs",
+      "destination": "src/CodexMicro.Windows/Services/MicroLocalization.cs",
+      "sha256": "1931efb81e0711a6a8add10e0a7590d96da57c53dba05b708cb63e6ade6b0718"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/MicroProfileSettings.cs",
+      "destination": "src/CodexMicro.Windows/Services/MicroProfileSettings.cs",
+      "sha256": "4bb69d59584d06ce0e3d3ee4e4ab5590b6f2d8323b5fa05ba86fb452bb3632a2"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/MicroVoiceCredentialStore.cs",
+      "destination": "src/CodexMicro.Windows/Services/MicroVoiceCredentialStore.cs",
+      "sha256": "1f63b6958da67a8b3c55a38d8c9af80022d4b1a2a4cf2f173b050bd137a12e26"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/MicroVoiceInputService.cs",
+      "destination": "src/CodexMicro.Windows/Services/MicroVoiceInputService.cs",
+      "sha256": "02793847f5f817965f19dd23683bbfba8656b6fd5032e7dd63997a77d7102d1d"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/MicroVoiceWarmUpSettingsTracker.cs",
+      "destination": "src/CodexMicro.Windows/Services/MicroVoiceWarmUpSettingsTracker.cs",
+      "sha256": "585687528c76ec537579e3462f019ad744df21e399000e2835cd9a17a63c3183"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/NonActivatingWindow.cs",
+      "destination": "src/CodexMicro.Windows/Services/NonActivatingWindow.cs",
+      "sha256": "ffebbb279a8e13766fafef6a819cb5f5a9c7acb1c171cdd5b280291b24f9bfb3"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/VoiceGesturePolicy.cs",
+      "destination": "src/CodexMicro.Windows/Services/VoiceGesturePolicy.cs",
+      "sha256": "cc2bd477022e2256a35ccfacab6e8321764f9fa6556924b417e9d4daa13ae85e"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Desktop/Services/WindowsProcessImage.cs",
+      "destination": "src/CodexMicro.Windows/Services/WindowsProcessImage.cs",
+      "sha256": "884483d008cdb1ff8c41de8dc5fee376e1af3b03094afe32d6177693957b0ff2"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.DesktopHost/App.xaml",
+      "destination": "src/CodexMicro.Desktop/App.xaml",
+      "sha256": "711c6161ac38d3fe4570ef056ea2ed774fde7435de587785206c2c52cb48d27c"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.DesktopHost/App.xaml.cs",
+      "destination": "src/CodexMicro.Desktop/App.xaml.cs",
+      "sha256": "8df041cbf7a64f693210a14ac694b6438799248c6b75f8d8abede4434669789b"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.DesktopHost/MicroLanguageSettings.cs",
+      "destination": "src/CodexMicro.Windows/Hosting/MicroLanguageSettings.cs",
+      "sha256": "e0976d7a43b8e9e0349c788dadfa99d2333525baefa5628485994fb00682bd19"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.DesktopHost/MicroStartupRegistration.cs",
+      "destination": "src/CodexMicro.Windows/Hosting/MicroStartupRegistration.cs",
+      "sha256": "1a8dda6083209a5488aec80d49ffde9cc61b88db6eaa5ff20e695ea73c91d3c5"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.DesktopHost/MicroTrayIcon.cs",
+      "destination": "src/CodexMicro.Windows/Hosting/MicroTrayIcon.cs",
+      "sha256": "572731f678e19b444996ba9cf123b7c02b2d929a9dba87b581aecca1caf21d2d"
+    },
+    {
+      "source": "virtual-micro/src/CodexMicro.Protocol/MicroProtocol.cs",
+      "destination": "src/CodexMicro.Core/MicroProtocol.cs",
+      "sha256": "32e8f1f11189b34de11ab504079c18cd13627cc1869d998a484726db2d20270b"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/AgentLightingAppearanceTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/AgentLightingAppearanceTests.cs",
+      "sha256": "c8be307874ceed3abdce3ebfa1e1758cb4723d2f96c3029a337993799bf1ae27"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/AgentLightingVisualTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/AgentLightingVisualTests.cs",
+      "sha256": "8eebd369308168f95fd1804219b6feecc2396abd52d5ee4f4e4447589f469904"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/BehaviorAcceptanceRig.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/BehaviorAcceptanceRig.cs",
+      "sha256": "6ed149876e270e87f78239d423bfbbe2a99bf76688d95d6d1c2908f4f1a6d7bb"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/BehaviorAcceptanceTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/BehaviorAcceptanceTests.cs",
+      "sha256": "9bd3c2a64776f2943bc6134ecfcabcfdd72a2d125e5070d65df514bbf87ddf89"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/BorderlessResizeTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/BorderlessResizeTests.cs",
+      "sha256": "67552ab6ee474bd1a7fbd4b29a0e4315914a206e0a840cc9893e446b1cd711f0"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/CodexAgentRosterObserverTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/CodexAgentRosterObserverTests.cs",
+      "sha256": "6580bbbb3214f428cefa150632367461a5f1729463448b15737751b8829d6aa0"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/CodexDraftModelToggleServiceTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/CodexDraftModelToggleServiceTests.cs",
+      "sha256": "2be8b6962875a83528468c83764239930c304decdc4156f1df8fa91e8a6a0157"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/CodexMenuSelectionObserverTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/CodexMenuSelectionObserverTests.cs",
+      "sha256": "a4407cf5366a707dca8b4a042dd632026190fd33c9da8e173fb73aa38554cf5f"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/CodexMicroConfigWriterTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/CodexMicroConfigWriterTests.cs",
+      "sha256": "06f3b004e693d505076536345447bebc064b97a62212abf5f4bc16f5555f85af"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/CodexMicroLayoutObserverTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/CodexMicroLayoutObserverTests.cs",
+      "sha256": "25078a04907487a35ac86112057e4568e803ce799e557aed8e5ce19401b4a3ae"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/CodexModelToggleServiceTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/CodexModelToggleServiceTests.cs",
+      "sha256": "af6358b3cdac432fb2da2e2e265dc57ba53cd10b5eba878c485bf8785b18d423"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/CodexQuotaServiceTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/CodexQuotaServiceTests.cs",
+      "sha256": "ca13dc487b5bb60cedaa6c22f5d713d024312838e977a8b42dee9d01101ffe3f"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/CodexRequestCardCancellationTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/CodexRequestCardCancellationTests.cs",
+      "sha256": "0374aff381ac37cc744ea224526a380ce0136e1100c321bcd291d0491c43eeb5"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/DeepSeekSetupCoordinatorTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/DeepSeekSetupCoordinatorTests.cs",
+      "sha256": "c34a769bcf886031f095f5402def5edc4a4f5c6c9e3175403a7b9451f994bc6b"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/DeepSeekSurfaceLauncherTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/DeepSeekSurfaceLauncherTests.cs",
+      "sha256": "39807fd81ad109acdd40110349ad5bd813cbd601505b69a6b9b2b69903ad2577"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/DialDirectionSettingsTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/DialDirectionSettingsTests.cs",
+      "sha256": "0400b53cb0fb1a28984068695be89e3484dc156fc4dcd8a0ebf877d4e80fee5b"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/DialGestureTrackerTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/DialGestureTrackerTests.cs",
+      "sha256": "835a5b1d88e0bb20ffd7784adbb260aa2b7fe13bdfeed849ea89b1f1f067fa71"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/EncoderStepAccumulatorTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/EncoderStepAccumulatorTests.cs",
+      "sha256": "533a90b4217026c09feecc35837a1249cf36125c8206f51d1e44b03dd0bdcf7d"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/HarnessWindowActivatorTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/HarnessWindowActivatorTests.cs",
+      "sha256": "fd442ec1b44484412175d2d40dcaa3a55333bf1f20c409e68ee8c7513927df2b"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/InputRoutingPolicyTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/InputRoutingPolicyTests.cs",
+      "sha256": "730723bf05ffbf5672f5b3cb835476e7531c44f0ee2b5b64d574a01773c3dd89"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/JoystickGeometryTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/JoystickGeometryTests.cs",
+      "sha256": "942b373c34b1cb0f2def986f035d721735e3113ec8826e4bb8b9ef80ae7c0174"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/MicroDistributionPresetTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/MicroDistributionPresetTests.cs",
+      "sha256": "c353f31df34357142895c7d12beb71af9fa89540f9ed97922f6a4c4f1a5df4ca"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/MicroHarnessRegistryTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/MicroHarnessRegistryTests.cs",
+      "sha256": "85f06a9d8df06938c85af013f9741a63c69497d7e85044ef1e3d8086755f0d29"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/MicroLocalizationTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/MicroLocalizationTests.cs",
+      "sha256": "5f0c73422e46455f515cccd63f93183644b0d6c27dfc516ff7f9ffc5ee4135ae"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/MicroProfileSettingsTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/MicroProfileSettingsTests.cs",
+      "sha256": "c6be288ca0024edf8bf1c36a65b99e6b72776afd4db6cd3a69e781419c1dadf9"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/MicroVoiceInputServiceTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/MicroVoiceInputServiceTests.cs",
+      "sha256": "b21a9f7459a7df8de31ed64b1f6d4b50c531b0d43a721ec942986de81381fc58"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/MonitorFeedbackTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/MonitorFeedbackTests.cs",
+      "sha256": "a3342ed3d21f9e2920a23fbdaa026385c03b7df955ea9d1e1c6058dd0e60dd6b"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/NonActivatingWindowTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/NonActivatingWindowTests.cs",
+      "sha256": "b4b401a736d1714f15e8c941dac9e4b6024e5506f959b059aad3106e6c339ed9"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/PanelAcceptanceTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/PanelAcceptanceTests.cs",
+      "sha256": "d8f3458942fe8c1ae5da881fe5957c794a4d4f9d2acd1b6789241ac948eebb38"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/SettingsWindowDesignTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/SettingsWindowDesignTests.cs",
+      "sha256": "dfd173349392dd517baa176544a89b4554056c34efc3b6235b16723973a33fb0"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/SoftwareControlRegressionTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/SoftwareControlRegressionTests.cs",
+      "sha256": "1e8423c96274cf9c7a459f9c1e5a5679872ceb9a32cfce9a0f6897b15692e7bf"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/SoftwarePresentationTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/SoftwarePresentationTests.cs",
+      "sha256": "ae738d609db6319841d325180c43a649dd61533da19a1beaf4fd88c0c3fe9a4c"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/VoiceGesturePolicyTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/VoiceGesturePolicyTests.cs",
+      "sha256": "ac2b43684ac3dbc4d28ea20617303686fc1f0ddfb16c294d65a3784fc9255ffd"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/WindowDesignTests.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/WindowDesignTests.cs",
+      "sha256": "74582092d0a18cfc2a9d12a97dbb093467f0e1f2ce88d1aa2f31998c0bb433b4"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.Desktop.Tests/WpfUiCollection.cs",
+      "destination": "tests/CodexMicro.Desktop.Tests/WpfUiCollection.cs",
+      "sha256": "a233fa5f50df314cc13ea1781f9999a56a00a7c592a66307194673b5a248d633"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.LiveSmoke/DraftVerification.cs",
+      "destination": "tests/CodexMicro.LiveSmoke/DraftVerification.cs",
+      "sha256": "02dbf049e76f3edba9eff635817ae5208304aee6772baf999773683db628237a"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.LiveSmoke/LightVerification.cs",
+      "destination": "tests/CodexMicro.LiveSmoke/LightVerification.cs",
+      "sha256": "c742fc5ffe088832332d51d493376a36cfdbbde425722bbafa9e78ebcbbf32f9"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.LiveSmoke/Program.cs",
+      "destination": "tests/CodexMicro.LiveSmoke/Program.cs",
+      "sha256": "b8ac5dee056c5636aef6713604ba1eac95b608b6989197642aab6c93f7fd602b"
+    },
+    {
+      "source": "virtual-micro/tests/CodexMicro.LiveSmoke/ReversibleVerification.cs",
+      "destination": "tests/CodexMicro.LiveSmoke/ReversibleVerification.cs",
+      "sha256": "b51d067cb0699a6d6bf0de647e851a76fd3523ceec7ef317912b695dcc9a6fc8"
+    }
+  ]
+}

@@ -6,12 +6,13 @@
 
     <Style x:Key="MicroMenuFace" TargetType="ContentControl">
         <Setter Property="Background" Value="{StaticResource MicroPopupFace}" />
-        <Setter Property="BorderBrush" Value="{StaticResource MicroPopupEdge}" />
+        <Setter Property="BorderBrush" Value="{StaticResource MicroPopupLine}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Padding" Value="6" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
@@ -28,7 +29,8 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 Padding="{TemplateBinding Padding}" CornerRadius="8">
-                            <ContentPresenter />
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                         </Border>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -73,8 +75,9 @@
                             <Grid VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="MenuHeader" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="MenuGesture" />
                                     <ColumnDefinition Width="12" />
                                 </Grid.ColumnDefinitions>
                                 <ContentPresenter x:Name="Icon" ContentSource="Icon"
@@ -87,15 +90,15 @@
                                 <ContentPresenter Grid.Column="1" ContentSource="Header"
                                                   Margin="8,0,12,0" RecognizesAccessKey="True"
                                                   VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}"
+                                <TextBlock Grid.Column="3" Text="{TemplateBinding InputGestureText}"
                                            Margin="0,0,8,0" VerticalAlignment="Center" />
-                                <Path x:Name="Arrow" Grid.Column="3" Width="4" Height="8"
+                                <Path x:Name="Arrow" Grid.Column="4" Width="4" Height="8"
                                       Visibility="Collapsed" Data="M 0,0 L 4,4 L 0,8"
                                       Stroke="{TemplateBinding Foreground}" StrokeThickness="1.4"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                             </Grid>
                         </Border>
-                        <Popup x:Name="PART_Popup" Placement="Right" Focusable="False"
+                        <Popup x:Name="PART_Popup" Placement="Right" VerticalOffset="-14" Focusable="False"
                                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
                                PlacementTarget="{Binding ElementName=ItemFace}"
                                AllowsTransparency="True" PopupAnimation="None">
@@ -191,7 +194,7 @@
             <Style TargetType="MenuItem" BasedOn="{StaticResource MicroMenuItem}" />
             <Style TargetType="Separator" BasedOn="{StaticResource MicroMenuSeparator}" />
         </Style.Resources>
-        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI" />
+        <Setter Property="FontFamily" Value="{DynamicResource {x:Static SystemFonts.MenuFontFamilyKey}}" />
         <Setter Property="FontSize" Value="{DynamicResource {x:Static SystemFonts.MenuFontSizeKey}}" />
         <Setter Property="MinWidth" Value="196" />
         <Setter Property="HasDropShadow" Value="False" />

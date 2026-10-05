@@ -7,6 +7,21 @@ namespace CodexMicro.Desktop.Tests;
 [Trait("Category", "BehaviorAcceptance")]
 public sealed class BehaviorAcceptanceTests
 {
+    [Theory, MemberData(nameof(KeycapCases.SlotCases), MemberType = typeof(KeycapCases))]
+    [Trait("Scope", "Keycaps"), Trait("Layer", "L2"), Trait("Boundary", "NamedPipe"), Trait("Case", "A10")]
+    public async Task RemappedStopUsesTheRealWireProtocolAtEverySlot(string slot)
+    {
+        await using var rig = new BehaviorAcceptanceRig("composer-navigation", "turn.cancel", slot);
+        await rig.ConnectAsync();
+        var result = await rig.Transport.TapKeyAsync(slot);
+        Assert.Equal(MicroSendDisposition.Accepted, result.Disposition);
+        var request = Assert.Single(rig.DesktopRequests);
+        Assert.Equal("thread-follower-interrupt-turn", request["method"]!.GetValue<string>());
+        Assert.Equal("01000000-0000-0000-0000-000000000001", request["params"]!["conversationId"]!.GetValue<string>());
+        Assert.Equal("fixture-turn", request["params"]!["expectedTurnId"]!.GetValue<string>());
+        Assert.Equal("user-stop", request["params"]!["mode"]!.GetValue<string>());
+    }
+
     // The same input and minimum outcome apply to both transports.
     [Theory]
     [InlineData("submit", "ACT12", "composer-navigation", null)]

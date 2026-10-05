@@ -71,6 +71,45 @@ public sealed class MicroLocalization
         ? MicroEnglishTranslations.Translate(value)
         : value;
 
+    internal string ActionLabel(CodexActionDefinition action) => action.Id switch
+    {
+        "composer.sketch" => Text("绘图"),
+        "turn.cancel" => Text("停止"),
+        _ => IsEnglish ? action.Label : action.LabelZh ?? action.Label,
+    };
+
+    internal string? ActionStatus(string? status) => status switch
+    {
+        "action.unassigned" => Text("未分配"),
+        "action.unsupported" => Text("此动作尚不支持"),
+        "action.thread-required" => Text("请先选择会话"),
+        "action.target-unconfirmed" => Text("尚未确认当前会话或草稿"),
+        "action.busy" or "ui.busy" => Text("上一操作尚未完成"),
+        "ui.target.unavailable" => Text("请先将 Codex 置前"),
+        "ui.target.changed" => Text("操作目标已改变"),
+        "ui.menu.unrelated" => Text("请先关闭当前菜单"),
+        "ui.submit.unavailable" => Text("当前无法发送"),
+        "ui.history.unavailable" => Text("没有可切换的历史页面"),
+        "ui.sidebar.unavailable" => Text("侧栏控件不可用"),
+        "ui.scroll.unavailable" => Text("滚动区域不可用"),
+        "ui.not-sent" => Text("操作未发送"),
+        "ui.outcome-unknown" => Text("操作结果未确认"),
+        "ui.sketch.observed" or "ui.sketch.already-open" => Text("绘图已打开"),
+        "ui.sketch.unavailable" => Text("绘图暂不可用"),
+        "ui.fast.enabled" => Text("Fast 已开启"),
+        "ui.fast.disabled" => Text("Fast 已关闭"),
+        "ui.fast.unavailable" => Text("Fast 暂不可用"),
+        "ui.plan.enabled" => Text("Plan 已开启"),
+        "ui.plan.disabled" => Text("Plan 已关闭"),
+        "ui.plan.unavailable" => Text("Plan 暂不可用"),
+        "ui.shortcut.missing" => Text("请在 Codex 中设置此命令的快捷键"),
+        "ui.shortcut.conflict" => Text("Codex 快捷键冲突"),
+        "ui.shortcut.invalid" => Text("无法读取 Codex 快捷键配置"),
+        "ui.shortcut.unsupported" => Text("暂不支持此快捷键组合"),
+        "ui.change-unconfirmed" => Text("操作结果未确认"),
+        _ => status,
+    };
+
     public static MicroLanguage Parse(string? value) =>
         value?.Trim().Replace('_', '-').ToLowerInvariant() switch
         {
@@ -151,6 +190,19 @@ internal static class MicroEnglishTranslations
     // Exact labels must not replace fragments inside longer presentation text.
     private static readonly Dictionary<string, string> SettingsLabels = new(StringComparer.Ordinal)
     {
+        ["完成"] = "Done",
+        ["返回键盘"] = "Back to keypad",
+        ["缩小键盘"] = "Decrease keypad size",
+        ["放大键盘"] = "Increase keypad size",
+        ["大小"] = "Size",
+        ["连接"] = "Connection",
+        ["旋钮"] = "Knob",
+        ["上"] = "Up",
+        ["右"] = "Right",
+        ["下"] = "Down",
+        ["左"] = "Left",
+        ["无法打开 {0} 编辑器：{1}"] = "Could not open the {0} editor: {1}",
+        ["设置已保存，但 Codex 尚未重新加载；请重新连接或重启 Codex。"] = "Saved, but Codex has not reloaded the setting. Reconnect or restart Codex.",
         ["快捷模型 A 思考强度"] = "Quick model A reasoning effort",
         ["快捷模型 B 思考强度"] = "Quick model B reasoning effort",
         ["恢复默认大小"] = "Reset size",
@@ -158,11 +210,42 @@ internal static class MicroEnglishTranslations
         ["Codex Plugin · 已连接"] = "Codex Plugin · Connected",
         ["Codex Plugin · 未连接"] = "Codex Plugin · Disconnected",
         ["保存失败，改动仅本次有效"] = "Save failed; changes apply to this session only",
+        ["图标保存失败"] = "Could not save icon",
+        ["配置保存失败"] = "Could not save configuration",
         ["已保存"] = "Saved",
         ["快捷模型"] = "Quick models",
         ["任务按键"] = "Agent keys",
         ["布局"] = "Layout",
         ["交互"] = "Interaction",
+        ["拆分语音键"] = "Split voice key",
+        ["停止"] = "Stop",
+        ["绘图"] = "Sketch",
+        ["绘图已打开"] = "Sketch opened",
+        ["绘图暂不可用"] = "Sketch unavailable",
+        ["此动作尚不支持"] = "Action not supported",
+        ["请先选择会话"] = "Select a chat first",
+        ["尚未确认当前会话或草稿"] = "Current chat or draft unconfirmed",
+        ["Fast 已开启"] = "Fast enabled",
+        ["Fast 已关闭"] = "Fast disabled",
+        ["Fast 暂不可用"] = "Fast unavailable",
+        ["Plan 已开启"] = "Plan enabled",
+        ["Plan 已关闭"] = "Plan disabled",
+        ["Plan 暂不可用"] = "Plan unavailable",
+        ["请在 Codex 中设置此命令的快捷键"] = "Set this command's shortcut in Codex",
+        ["Codex 快捷键冲突"] = "Conflicting Codex shortcuts",
+        ["无法读取 Codex 快捷键配置"] = "Cannot read Codex keyboard shortcuts",
+        ["暂不支持此快捷键组合"] = "Unsupported shortcut combination",
+        ["上一操作尚未完成"] = "An action is still pending",
+        ["请先将 Codex 置前"] = "Bring Codex to the foreground first",
+        ["Codex 已置前"] = "Codex is in the foreground",
+        ["操作目标已改变"] = "The action target changed",
+        ["请先关闭当前菜单"] = "Close the current menu first",
+        ["当前无法发送"] = "Sending is unavailable",
+        ["没有可切换的历史页面"] = "No history page available",
+        ["侧栏控件不可用"] = "Sidebar control unavailable",
+        ["滚动区域不可用"] = "Scroll area unavailable",
+        ["操作未发送"] = "Action not sent",
+        ["操作结果未确认"] = "Action outcome unconfirmed",
     };
 
     private static readonly (string Chinese, string English)[] Replacements =

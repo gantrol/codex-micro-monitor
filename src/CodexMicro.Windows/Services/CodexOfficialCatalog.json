@@ -2780,6 +2780,10 @@
     {
       "id": "turn.cancel",
       "softwareRoute": "ipc"
+    },
+    {
+      "id": "composer.sketch",
+      "softwareRoute": "native-ui"
     }
   ]
 }

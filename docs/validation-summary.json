@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-03",
+  "sourceCommit": "7d4a3382a82c94adab853a924249ed9823be28f5",
+  "total": 288,
+  "passed": 272,
+  "failed": 16,
+  "additionalFailingCases": [],
+  "knownFailures": [
+    "CodexMicro.Desktop.Tests.MicroProfileSettingsTests.MissingModelCacheDoesNotDiscardARecognizedEffort",
+    "CodexMicro.Desktop.Tests.AgentLightingVisualTests.RealXamlAgentKeysMatchTheScriptedColorMatrix",
+    "CodexMicro.Desktop.Tests.BehaviorAcceptanceTests.ConfiguredControlMustReachTheExternalControlBoundary(scenario: \"sidebar\", gesture: \"down\", mode: \"composer-navigation\", binding: null)",
+    "CodexMicro.Desktop.Tests.BehaviorAcceptanceTests.ConfiguredControlMustReachTheExternalControlBoundary(scenario: \"scroll-backward\", gesture: \"wheel-\", mode: \"conversation-scroll\", binding: null)",
+    "CodexMicro.Desktop.Tests.CodexDraftModelToggleServiceTests.UnknownConfigValuesDoNotInventASelection",
+    "CodexMicro.Desktop.Tests.BehaviorAcceptanceTests.ConfiguredControlMustReachTheExternalControlBoundary(scenario: \"submit\", gesture: \"ACT12\", mode: \"composer-navigation\", binding: null)",
+    "CodexMicro.Desktop.Tests.BehaviorAcceptanceTests.ConfiguredControlMustReachTheExternalControlBoundary(scenario: \"composer-choice\", gesture: \"ENC\", mode: \"composer-navigation\", binding: null)",
+    "CodexMicro.Desktop.Tests.BehaviorAcceptanceTests.ConfiguredControlMustReachTheExternalControlBoundary(scenario: \"history-back\", gesture: \"left\", mode: \"composer-navigation\", binding: null)",
+    "CodexMicro.Desktop.Tests.MicroLocalizationTests.WindowLanguageSwitchUpdatesMenusAndHelpImmediately",
+    "CodexMicro.Desktop.Tests.BehaviorAcceptanceTests.ConfiguredControlMustReachTheExternalControlBoundary(scenario: \"scroll-forward\", gesture: \"wheel+\", mode: \"conversation-scroll\", binding: null)",
+    "CodexMicro.Desktop.Tests.MicroProfileSettingsTests.SavesAndReloadsTheConfiguredPair",
+    "CodexMicro.Desktop.Tests.MicroLocalizationTests.EnglishCatalogCoversPresentationStringLiterals",
+    "CodexMicro.Desktop.Tests.BehaviorAcceptanceTests.ConfiguredControlMustReachTheExternalControlBoundary(scenario: \"history-forward\", gesture: \"right\", mode: \"composer-navigation\", binding: null)",
+    "CodexMicro.Desktop.Tests.BehaviorAcceptanceTests.ConfiguredControlMustReachTheExternalControlBoundary(scenario: \"insert-skill\", gesture: \"ACT06\", mode: \"composer-navigation\", binding: \"skill\")",
+    "CodexMicro.Desktop.Tests.WindowDesignTests.KeyboardLayoutRendersOffscreenWithSquareKeycaps",
+    "CodexMicro.Desktop.Tests.MicroProfileSettingsTests.ModelCacheLimitsReasoningEffortsForEachModel"
+  ],
+  "targetedPassed": 38,
+  "nativeLightsPassed": 4,
+  "nativeLightsRestored": true,
+  "integrationArchitecturePassed": 12,
+  "agentIntegrationCommit": "a2eeade"
+}

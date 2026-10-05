@@ -13,10 +13,13 @@ using CodexMicro.Desktop.Services;
 namespace CodexMicro.Desktop.Controls;
 
 /// <summary>
-/// Official vector keycap artwork with local FAST, reasoning-slider and Harness glyphs.
+/// Official vector keycap artwork with local FAST, Sketch, reasoning-slider and Harness glyphs.
 /// </summary>
 public sealed class KeycapIcon : FrameworkElement
 {
+    private static readonly Geometry SketchGeometry = CreateGeometry(
+        "M2 13 C5 8 10 2 12 3 C15 5 3 14 6 16 C8 18 15 8 16 10 C17 12 10 18 14 18 L18 14")[0];
+
     public static readonly DependencyProperty PreserveMinimumSizeProperty =
         DependencyProperty.Register(nameof(PreserveMinimumSize), typeof(bool), typeof(KeycapIcon),
             new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -312,6 +315,9 @@ public sealed class KeycapIcon : FrameworkElement
                 break;
             case "PAINT":
                 DrawPalette(drawingContext, pen, brush);
+                break;
+            case "SKETCH":
+                drawingContext.DrawGeometry(null, pen, SketchGeometry);
                 break;
             case "LAB":
                 DrawFlask(drawingContext, pen);

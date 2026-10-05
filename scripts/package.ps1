@@ -1,4 +1,7 @@
-param([ValidateSet('win-x64')][string]$Runtime = 'win-x64')
+param(
+    [ValidateSet('win-x64')][string]$Runtime = 'win-x64',
+    [string]$OutputDirectory
+)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
@@ -11,11 +14,16 @@ $controlPackages = foreach ($id in @('CodexControl', 'CodexControl.Windows')) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Import the pinned control packages first: $path" }
     $path
 }
-$destination = Join-Path $root "dist/$version"
+$destination = if ($OutputDirectory) {
+    [IO.Path]::GetFullPath($OutputDirectory)
+} else {
+    Join-Path $root "dist/$version"
+}
+if ($destination -match '(?i)trash') { throw 'Unsupported output path.' }
 $desktop = Join-Path $destination $Runtime
 $plugin = Join-Path $destination 'plugins/codex-micro-keypad'
 if (Test-Path -LiteralPath $destination) {
-    throw "Package directory already exists: $destination. Move it aside before rebuilding this version."
+    throw "Package directory already exists: $destination. Use a new -OutputDirectory for another candidate."
 }
 New-Item -ItemType Directory -Force $desktop, $plugin | Out-Null
 foreach ($entry in @(
