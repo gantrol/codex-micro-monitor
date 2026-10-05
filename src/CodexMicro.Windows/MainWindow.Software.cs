@@ -29,7 +29,7 @@ public partial class MicroSurfaceWindow
     private (string TargetKey, bool Enabled)? _softwareComposerFast;
     private long _softwareActivityVersion;
     private bool? _softwareConnected;
-    private bool SoftwareTargetPending => _softwareNavigationPending && _softwareNavigationTarget is null;
+    private bool SoftwareTargetPending => _softwareNavigationPending;
 
     private void RestoreSoftwareActivityIdle(bool preserveHelp = false)
     {
@@ -135,7 +135,7 @@ public partial class MicroSurfaceWindow
     internal void SelectSoftwareThread(string? threadId)
     {
         if ((threadId is not null && !Guid.TryParse(threadId, out _))) return;
-        // Agent keys already carry an ID. Save it before observing the resulting navigation.
+        // Keep navigation intent separate from the confirmed current page.
         _softwareDraft = null;
         _softwareUnidentifiedComposer = null;
         CancelReasoningInput();
@@ -146,7 +146,7 @@ public partial class MicroSurfaceWindow
         _softwareNavigationTarget = threadId;
         ++_softwareSelectionGeneration;
         var version = ++_softwareNavigationVersion;
-        _modelToggleService.ObserveSelectedThread(threadId);
+        _modelToggleService.ObserveSelectedThread(null);
         RefreshCurrentCodexThreadPresentation();
         _ = ConfirmSoftwareNavigationAsync(version);
     }
@@ -167,6 +167,10 @@ public partial class MicroSurfaceWindow
             if (_windowClosed || generation != _softwareSelectionGeneration) return;
             _softwareNavigationObservation = selection;
             var threadId = selection.ThreadId;
+            // A new-chat request can still show the previous chat for a moment.
+            // It can also reach a real chat before we ever observe the empty draft.
+            if (_softwareNavigationPending && _softwareNavigationTarget is null && threadId is not null &&
+                (selection.PageKey is null || selection.PageKey == _softwareNavigationOriginPageKey)) return;
             // Ignore the old page while a Micro-initiated navigation is still settling.
             if (_softwareNavigationPending && _softwareNavigationTarget is not null &&
                 threadId != _softwareNavigationTarget)
@@ -177,7 +181,7 @@ public partial class MicroSurfaceWindow
                 _softwareNavigationPending = false;
             }
             // Losing the sidebar is not a deselection. A changed or unreadable page is.
-            if (!_softwareNavigationPending && threadId is null && selection.PageKey is not null &&
+            if (!_softwareNavigationPending && selection.CanRetainThreadId && threadId is null && selection.PageKey is not null &&
                 selection.PageKey == _softwareSelectionPageKey)
                 threadId = _modelToggleService.CurrentVisibleThreadId;
             var changed = _modelToggleService.CurrentVisibleThreadId != threadId ||
@@ -195,7 +199,9 @@ public partial class MicroSurfaceWindow
             _softwareDraft = draft;
             _softwareUnidentifiedComposer = composer;
             _softwareSelectionPageKey = selection.PageKey;
-            if (_softwareNavigationPending && threadId == _softwareNavigationTarget && (threadId is not null || draft is not null))
+            if (_softwareNavigationPending &&
+                (_softwareNavigationTarget is null ? threadId is not null || draft is not null :
+                    threadId == _softwareNavigationTarget))
             {
                 changed = true;
                 _softwareNavigationPending = false;
@@ -311,6 +317,8 @@ public partial class MicroSurfaceWindow
     {
         // A single Agent tap must navigate; the old focus preference must not consume it.
         var action = agentKey ? null : _layoutObserver.Current.GetSlot(key).ResolvedAction;
+        if (action == "composer.toggleFastMode")
+            await ReadSoftwareThreadSelectionAsync(waitForRead: true);
         if (action is not null &&
             _layoutObserver.Current.GetSlot(key).Action is not { Type: "skill" } &&
             SoftwareActionUnavailableReason(action) is not null)

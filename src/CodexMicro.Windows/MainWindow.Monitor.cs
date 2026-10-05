@@ -262,7 +262,9 @@ public partial class MicroSurfaceWindow
                 return;
             }
 
+            var selectionMetadataChanged = _softwareSelectionReader.ObserveRecentThreads(_taskMonitor.RecentThreads);
             ApplyMonitorSnapshot(snapshot);
+            if (selectionMetadataChanged) RefreshSoftwareThreadSelection();
         }
         catch (OperationCanceledException)
         {
@@ -270,6 +272,7 @@ public partial class MicroSurfaceWindow
         catch (Exception exception)
         {
             Debug.WriteLine($"Codex task monitor: {exception.Message}");
+            _softwareSelectionReader.ObserveRecentThreads(null);
             ApplyMonitorSnapshot(null);
         }
         finally
