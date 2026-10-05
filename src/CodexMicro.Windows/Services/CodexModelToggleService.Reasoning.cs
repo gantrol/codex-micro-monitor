@@ -2,17 +2,17 @@ namespace CodexMicro.Desktop.Services;
 
 internal sealed partial class CodexModelToggleService
 {
-    internal Task<CodexThreadModelState> StepCurrentThreadEffortAsync(
+    internal Task<(CodexThreadModelState State, bool AtBoundary)> StepCurrentThreadEffortAsync(
         string threadId, int direction, CodexModelCatalog catalog,
         Func<bool> isCurrent, CancellationToken cancellationToken) =>
         ChangeCurrentThreadEffortAsync(threadId, direction, null, catalog, isCurrent, cancellationToken);
 
-    internal Task<CodexThreadModelState> SetCurrentThreadEffortAsync(
+    internal Task<(CodexThreadModelState State, bool AtBoundary)> SetCurrentThreadEffortAsync(
         CodexThreadModelState target, CodexModelCatalog catalog,
         Func<bool> isCurrent, CancellationToken cancellationToken) =>
         ChangeCurrentThreadEffortAsync(target.ThreadId, 0, target, catalog, isCurrent, cancellationToken);
 
-    private async Task<CodexThreadModelState> ChangeCurrentThreadEffortAsync(
+    private async Task<(CodexThreadModelState State, bool AtBoundary)> ChangeCurrentThreadEffortAsync(
         string threadId, int direction, CodexThreadModelState? requested,
         CodexModelCatalog catalog, Func<bool> isCurrent, CancellationToken cancellationToken)
     {
@@ -64,7 +64,7 @@ internal sealed partial class CodexModelToggleService
             }
             if (target == state.Effort)
             {
-                return state;
+                return (state, efforts.Count > 0 && (target == efforts[0] || target == efforts[^1]));
             }
 
             var result = await UpdateThreadSettingsWithRetryAsync(threadId,
@@ -77,7 +77,7 @@ internal sealed partial class CodexModelToggleService
             RememberEffort(threadId, state.ModelId, target);
             ConfirmSuccessfulToggleState(threadId, result.OwnerClientId ?? context.OwnerClientId,
                 state.ModelId, target);
-            return new(threadId, state.ModelId, target);
+            return (new(threadId, state.ModelId, target), false);
         }
         finally
         {

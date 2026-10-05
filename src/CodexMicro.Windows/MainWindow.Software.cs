@@ -52,8 +52,13 @@ public partial class MicroSurfaceWindow
     private void PresentSoftwareActionResult(string label, MicroSendResult result, string? transportLabel = null)
     {
         var detail = _localization.ActionStatus(result.Detail);
+        PresentAdjustmentFeedback(label, result);
         switch (result.Disposition)
         {
+            case MicroSendDisposition.Accepted when result.IsBoundary:
+                SetLed(ActivityLed, "#FFD66E", detail ?? string.Empty);
+                SetStatus(detail ?? string.Empty);
+                break;
             case MicroSendDisposition.Accepted:
                 SetLed(ActivityLed, "#74D9A0", $"{label} 已交付\n{detail}");
                 SetStatus($"{label} 已通过 {transportLabel ?? _transportName} 交付。\n{detail}");
@@ -340,7 +345,8 @@ public partial class MicroSurfaceWindow
         var fastThread = fast ? SoftwareFastTargetKey() : null;
         if (fast)
         {
-            if (_actionKeys.TryGetValue(key, out var presentation))
+            if (SystemParameters.ClientAreaAnimation && !SystemParameters.HighContrast &&
+                _actionKeys.TryGetValue(key, out var presentation))
             {
                 var scale = new ScaleTransform(1, 1);
                 presentation.Icon.RenderTransformOrigin = new Point(.5, .5);

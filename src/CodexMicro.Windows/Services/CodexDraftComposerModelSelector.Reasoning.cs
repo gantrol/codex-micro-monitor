@@ -28,7 +28,7 @@ internal sealed partial class CodexDraftComposerModelSelector
             return true;
         }, cancellationToken);
 
-    internal Task<(CodexQuickModel Model, string Effort)> StepReasoningAsync(
+    internal Task<(CodexQuickModel Model, string Effort, bool AtBoundary)> StepReasoningAsync(
         IntPtr foregroundWindow,
         int direction,
         bool autoConfirmUltraFullAccess,
@@ -37,14 +37,14 @@ internal sealed partial class CodexDraftComposerModelSelector
         ChangeReasoningAsync(foregroundWindow, direction, null,
             autoConfirmUltraFullAccess, isCurrent, cancellationToken);
 
-    internal Task<(CodexQuickModel Model, string Effort)> SetReasoningAsync(
+    internal Task<(CodexQuickModel Model, string Effort, bool AtBoundary)> SetReasoningAsync(
         IntPtr foregroundWindow, CodexThreadModelState target,
         bool autoConfirmUltraFullAccess, Func<bool> isCurrent,
         CancellationToken cancellationToken) =>
         ChangeReasoningAsync(foregroundWindow, 0, target,
             autoConfirmUltraFullAccess, isCurrent, cancellationToken);
 
-    private async Task<(CodexQuickModel Model, string Effort)> ChangeReasoningAsync(
+    private async Task<(CodexQuickModel Model, string Effort, bool AtBoundary)> ChangeReasoningAsync(
         IntPtr foregroundWindow, int direction, CodexThreadModelState? requested,
         bool autoConfirmUltraFullAccess, Func<bool> isCurrent,
         CancellationToken cancellationToken)
@@ -90,7 +90,8 @@ internal sealed partial class CodexDraftComposerModelSelector
                         autoConfirmUltraFullAccess, isCurrent, cancellationToken);
                 }
 
-                return (current.Model, target);
+                return (current.Model, target, string.Equals(target, current.Effort, StringComparison.OrdinalIgnoreCase) &&
+                    efforts.Count > 0 && (target == efforts[0] || target == efforts[^1]));
             }
             finally
             {

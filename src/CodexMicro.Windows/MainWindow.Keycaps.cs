@@ -15,7 +15,7 @@ public partial class MicroSurfaceWindow
             : binding.Action is not null || binding.CommandId is not null ? binding.ResolvedAction
             : CodexKeycapCatalog.Get(binding.KeycapId).Label;
         var reason = skill ? null : SoftwareActionUnavailableReason(binding.ResolvedAction);
-        var status = _localization.ActionStatus(reason) ?? string.Empty;
+        var status = (reason is null ? AdjustmentStatus(button) : null) ?? _localization.ActionStatus(reason) ?? string.Empty;
         button.IsEnabled = reason is null;
         ToolTipService.SetShowOnDisabled(button, true);
         ContextMenuService.SetShowOnDisabled(button, true);
@@ -57,7 +57,7 @@ public partial class MicroSurfaceWindow
             var action = SoftwareJoystickAction(direction);
             var command = CodexActionCatalog.All.FirstOrDefault(item => item.Id == action);
             var label = command is null ? action : _localization.ActionLabel(command);
-            var status = _localization.ActionStatus(reason) ?? string.Empty;
+            var status = (reason is null ? AdjustmentStatus(button) : null) ?? _localization.ActionStatus(reason) ?? string.Empty;
             button.IsEnabled = reason is null;
             ToolTipService.SetShowOnDisabled(button, true);
             if (!_helpContent.TryGetValue(button, out var help) || help != (label, status))

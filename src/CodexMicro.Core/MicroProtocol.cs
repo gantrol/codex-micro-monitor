@@ -15,6 +15,9 @@ public readonly record struct MicroSendResult(
     int NativeStatus,
     string Detail)
 {
+    public bool IsBoundary => Disposition == MicroSendDisposition.Accepted &&
+        Detail is "ui.reasoning.maximum" or "ui.reasoning.minimum" or "ui.scroll.boundary" or "ui.history.boundary";
+
     public bool WasPossiblySent =>
         Disposition is MicroSendDisposition.Accepted or
             MicroSendDisposition.OutcomeUnknown;

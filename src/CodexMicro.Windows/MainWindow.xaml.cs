@@ -2865,7 +2865,7 @@ public partial class MicroSurfaceWindow : Window
                     break;
                 }
 
-                if (result.Disposition == MicroSendDisposition.OutcomeUnknown)
+                if (result.Disposition == MicroSendDisposition.OutcomeUnknown || result.IsBoundary)
                 {
                     PresentSoftwareActionResult($"analog {report.Label}", result);
                     await RecordSoftwareActionAsync($"analog {report.Label}", result);
