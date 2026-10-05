@@ -1,0 +1,19 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Shared by hover help, WPF menus and the native tray menu renderer. -->
+    <LinearGradientBrush x:Key="MicroPopupFace" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFFFFF" Offset="0" />
+        <GradientStop Color="#F8FBFA" Offset="0.3" />
+        <GradientStop Color="#EEF4F1" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="MicroPopupEdge" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFFFF" Offset="0" />
+        <GradientStop Color="#D9FFFFFF" Offset="0.48" />
+        <GradientStop Color="#9AA4BDB2" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="MicroPopupLine" Color="#D4E0D9" />
+    <SolidColorBrush x:Key="MicroPopupInk" Color="#2F3438" />
+    <SolidColorBrush x:Key="MicroPopupMutedInk" Color="#737C82" />
+    <SolidColorBrush x:Key="MicroPopupHover" Color="#E6EBE6" />
+    <SolidColorBrush x:Key="MicroPopupAccent" Color="#53675A" />
+</ResourceDictionary>

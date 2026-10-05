@@ -37,6 +37,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
     public Func<MicroControlContext>? CaptureContext { private get; set; }
     public Action<string?>? ThreadOpened { private get; set; }
     public Action<string, string?>? ServiceTierApplied { private get; set; }
+    public Action<MicroControlContext, bool>? ComposerFastApplied { private get; set; }
     public Func<string?, CancellationToken, Task<bool>>? ValidateTargetAsync { private get; set; }
 
     public void StartConnecting() => _ = Task.Run(ConnectInBackgroundAsync);
@@ -105,7 +106,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         var context = CaptureContext?.Invoke() ?? throw new InvalidOperationException("No keypad context");
         return context.Layout.EncoderMode switch
         {
-            "reasoning" => RunAsync(() => StepReasoningAsync(context, DialDirectionSettings.ToReasoningStep(clockwise))),
+            "reasoning" => RunAsync(() => StepReasoningAsync(context, DialDirectionSettings.ToReasoningStep(clockwise)), queue: true),
             "conversation-scroll" => RunUiAsync(new(clockwise ? CodexUiOperation.ScrollUp : CodexUiOperation.ScrollDown), context),
             "composer-navigation" => RunUiAsync(new(clockwise ? CodexUiOperation.ComposerPrevious : CodexUiOperation.ComposerNext), context),
             _ => Unsupported("Unknown encoder binding"),
@@ -140,35 +141,55 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         return DispatchActionAsync(action, context);
     }
 
-    private Task<MicroSendResult> DispatchActionAsync(string action, MicroControlContext context) => action switch
+    private Task<MicroSendResult> DispatchActionAsync(string action, MicroControlContext context)
     {
-        "composer.submit" => RunUiAsync(new(CodexUiOperation.Submit), context),
-        "toggleSidebar" => RunUiAsync(new(CodexUiOperation.ToggleSidebar), context),
-        "navigateBack" => RunUiAsync(new(CodexUiOperation.Back), context),
-        "navigateForward" => RunUiAsync(new(CodexUiOperation.Forward), context),
-        _ => RunAsync(() => ExecuteActionAsync(action, context), queue: action == "composer.toggleFastMode"),
-    };
+        if (CodexActionCatalog.SoftwareUnavailableReason(action, context.ThreadId is not null,
+            context.DraftModelPickerId is not null, context.ComposerTarget is not null) is { } reason)
+            return Unsupported(reason);
+        return action switch
+        {
+            "composer.toggleFastMode" when context.ThreadId is null => RunUiAsync(
+                new(CodexUiOperation.ToggleComposerFast, DraftModelPickerId: context.DraftModelPickerId, ComposerTarget: context.ComposerTarget), context, queue: true),
+            "composer.togglePlanMode" when context.ThreadId is null => RunUiAsync(
+                new(CodexUiOperation.ToggleComposerPlan, DraftModelPickerId: context.DraftModelPickerId, ComposerTarget: context.ComposerTarget), context, queue: true),
+            "composer.increaseReasoningEffort" when context.ThreadId is null => RunUiAsync(
+                new(CodexUiOperation.IncreaseComposerReasoning, DraftModelPickerId: context.DraftModelPickerId, ComposerTarget: context.ComposerTarget), context, queue: true),
+            "composer.decreaseReasoningEffort" when context.ThreadId is null => RunUiAsync(
+                new(CodexUiOperation.DecreaseComposerReasoning, DraftModelPickerId: context.DraftModelPickerId, ComposerTarget: context.ComposerTarget), context, queue: true),
+            "composer.submit" => RunUiAsync(new(CodexUiOperation.Submit), context),
+            "composer.sketch" => RunUiAsync(new(CodexUiOperation.OpenSketch), context),
+            "toggleSidebar" => RunUiAsync(new(CodexUiOperation.ToggleSidebar), context),
+            "navigateBack" => RunUiAsync(new(CodexUiOperation.Back), context),
+            "navigateForward" => RunUiAsync(new(CodexUiOperation.Forward), context),
+            _ => RunAsync(() => ExecuteActionAsync(action, context), queue: CodexActionCatalog.IsComposerSetting(action)),
+        };
+    }
 
-    private Task<MicroSendResult> RunUiAsync(CodexUiRequest request, MicroControlContext context) => RunResultAsync(async () =>
+    private bool IsCurrentTarget(MicroControlContext context) => !_disposed && CaptureContext?.Invoke() is { } current &&
+        current.TargetVersion == context.TargetVersion && current.ThreadId == context.ThreadId &&
+        current.DraftModelPickerId == context.DraftModelPickerId && current.ComposerTarget == context.ComposerTarget;
+
+    private Task<MicroSendResult> RunUiAsync(CodexUiRequest request, MicroControlContext context, bool queue = false) => RunResultAsync(async () =>
     {
         if (_ui is null) return MicroSendResult.NotSent("Codex UI adapter is unavailable");
         async Task<bool> Guard(CancellationToken token)
         {
-            if (_disposed || CaptureContext?.Invoke() is not { } current || current.TargetVersion != context.TargetVersion ||
-                current.ThreadId != context.ThreadId) return false;
+            if (!IsCurrentTarget(context)) return false;
             if (request.Operation is CodexUiOperation.Back or CodexUiOperation.Forward or CodexUiOperation.ToggleSidebar) return true;
             if (ValidateTargetAsync is not null && !await ValidateTargetAsync(context.ThreadId, token)) return false;
             token.ThrowIfCancellationRequested();
-            return !_disposed && CaptureContext?.Invoke() is { } after && after.TargetVersion == context.TargetVersion && after.ThreadId == context.ThreadId;
+            return IsCurrentTarget(context);
         }
         var result = await _ui.ExecuteAsync(request, Guard, _lifetime.Token);
+        if (result.Disposition == CodexUiDisposition.Confirmed && result.FastEnabled is { } fast && IsCurrentTarget(context))
+            ComposerFastApplied?.Invoke(context, fast);
         return new(result.Disposition switch
         {
             CodexUiDisposition.Confirmed => MicroSendDisposition.Accepted,
             CodexUiDisposition.OutcomeUnknown => MicroSendDisposition.OutcomeUnknown,
             _ => MicroSendDisposition.NotSent,
         }, 0, 0, 0, result.Code);
-    }, requiresIpc: false);
+    }, requiresIpc: false, queue);
 
     private async Task OpenThreadAsync(string thread)
     {
@@ -289,10 +310,10 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
     private async Task<JsonNode> CallAsync(CodexOperation tool, JsonObject args, MicroControlContext? context = null)
     {
         var result = await _controller.ExecuteAsync(tool, args, _lifetime.Token,
-            context is null ? null : async () => !_disposed &&
+            context is null ? null : async () => IsCurrentTarget(context) &&
                 (ValidateTargetAsync is not null
                     ? await ValidateTargetAsync(context.ThreadId, _lifetime.Token)
-                    : CaptureContext?.Invoke().ThreadId == context.ThreadId));
+                    : true) && IsCurrentTarget(context));
         if (result["ok"] is JsonValue value && value.TryGetValue<bool>(out var ok) && !ok)
             throw new InvalidOperationException("Codex did not acknowledge the keypad action");
         return result;
@@ -309,12 +330,19 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
     private async Task<MicroSendResult> RunResultAsync(Func<Task<MicroSendResult>> action, bool requiresIpc, bool queue = false)
     {
         if (_disposed) return MicroSendResult.NotSent("The keypad is closed");
-        // Reversible Fast presses retain their order; approval and other actions never queue.
-        if (!await _actions.WaitAsync(queue ? 6000 : 0))
+        // Reversible setting changes wait for earlier input. Sending and approvals never queue.
+        // Cancel waiting input on shutdown, before it acquires the action lease.
+        try
         {
-            SoftwareControlDiagnostics.Write("action-skipped busy");
-            return MicroSendResult.NotSent("A keypad action is already pending");
+            // Native settings can take up to ten seconds each. Allow a six-input burst
+            // to drain; every queued input still revalidates its captured target.
+            if (!await _actions.WaitAsync(queue ? 60000 : 0, _lifetime.Token))
+            {
+                SoftwareControlDiagnostics.Write("action-skipped busy");
+                return MicroSendResult.NotSent("action.busy");
+            }
         }
+        catch (OperationCanceledException) { return MicroSendResult.NotSent("The keypad is closed"); }
         try
         {
             if (_disposed) return MicroSendResult.NotSent("Keypad is closed");

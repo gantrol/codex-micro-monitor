@@ -2,6 +2,8 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Tomlyn;
+using Tomlyn.Syntax;
 
 namespace CodexMicro.Desktop.Services;
 
@@ -28,6 +30,7 @@ internal sealed class CodexMicroConfigWriter
         StringComparer.Ordinal);
 
     private readonly string _configPath;
+    private readonly SemaphoreSlim _updates = new(1, 1);
 
     internal CodexMicroConfigWriter(string configPath)
     {
@@ -40,14 +43,17 @@ internal sealed class CodexMicroConfigWriter
     internal bool SetSlot(
         string slotId,
         string keycapId,
-        CodexMicroActionBinding? action)
+        CodexMicroActionBinding? action,
+        Func<bool>? saveIcon = null)
         => SetSlotBinding(
             slotId,
-            new CodexMicroSlotBinding(keycapId, null, action));
+            new CodexMicroSlotBinding(keycapId, null, action),
+            saveIcon);
 
     internal bool SetSlotBinding(
         string slotId,
-        CodexMicroSlotBinding binding)
+        CodexMicroSlotBinding binding,
+        Func<bool>? saveIcon = null)
     {
         if (!SlotIds.Contains(slotId))
         {
@@ -82,7 +88,7 @@ internal sealed class CodexMicroConfigWriter
                     ? null
                     : TomlString(binding.CommandId),
                 ["action"] = actionValue,
-            }));
+            }), saveIcon);
     }
 
     internal bool SetEncoderMode(string mode)
@@ -112,7 +118,38 @@ internal sealed class CodexMicroConfigWriter
     internal bool SetSeparateMicrophoneKeys(bool value) =>
         SetLayoutValue("separateMicrophoneKeys", value ? "true" : "false");
 
+    internal Task<bool> SetSeparateMicrophoneKeysAsync(bool value, CancellationToken cancellationToken = default) =>
+        UpdateAsync(text => UpsertTable(text, LayoutTable,
+            new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["separateMicrophoneKeys"] = value ? "true" : "false",
+            }), cancellationToken);
+
     internal bool ResetLayout() => Update(RemoveAndAppendDefaultLayout);
+
+    internal Task<bool> ResetLayoutAsync(CancellationToken cancellationToken) =>
+        UpdateAsync(RemoveAndAppendDefaultLayout, cancellationToken);
+
+    internal Task<bool> SetEncoderModeAsync(string mode, CancellationToken cancellationToken)
+    {
+        if (mode is not ("composer-navigation" or "reasoning" or "conversation-scroll" or "custom"))
+            throw new ArgumentOutOfRangeException(nameof(mode));
+        return UpdateAsync(text => UpsertTable(text, LayoutTable,
+            new Dictionary<string, string?> { ["encoderMode"] = TomlString(mode) }), cancellationToken);
+    }
+
+    internal Task<bool> SetAnalogActionAsync(string direction, string action, CancellationToken cancellationToken)
+    {
+        if (direction is not ("up" or "right" or "down" or "left"))
+            throw new ArgumentOutOfRangeException(nameof(direction));
+        if (action != "unassigned" && !CodexActionCatalog.All.Any(item => item.Id == action && item.SoftwareSupported))
+            throw new ArgumentOutOfRangeException(nameof(action));
+        return UpdateAsync(text => UpsertTable(text, $"{LayoutTable}.analogStick.{direction}",
+            new Dictionary<string, string?>
+            {
+                ["commandId"] = TomlString(action), ["skillName"] = null, ["skillPath"] = null,
+            }), cancellationToken);
+    }
 
     private bool SetLayoutValue(string key, string value) =>
         Update(text => UpsertTable(
@@ -123,27 +160,43 @@ internal sealed class CodexMicroConfigWriter
                 [key] = value,
             }));
 
-    private bool Update(Func<string, string> update)
+    private bool Update(Func<string, string> update, Func<bool>? completeSave = null)
     {
+        if (!_updates.Wait(0)) return false;
+        var temporaryPath = _configPath + ".micro." + Guid.NewGuid().ToString("N") + ".tmp";
+        var backupPath = temporaryPath + ".bak";
+        var hadOriginal = false;
+        var committed = false;
+        var completed = false;
+        var rollbackFailed = false;
+        string? committedText = null;
         try
         {
-            var source = File.Exists(_configPath)
+            hadOriginal = File.Exists(_configPath);
+            var source = hadOriginal
                 ? File.ReadAllText(_configPath)
                 : string.Empty;
+            if (Toml.Parse(source).HasErrors) return false;
             var next = update(source);
+            if (Toml.Parse(next).HasErrors) return false;
             var directory = Path.GetDirectoryName(_configPath);
             if (!string.IsNullOrWhiteSpace(directory))
             {
                 Directory.CreateDirectory(directory);
             }
 
-            var temporaryPath = _configPath + ".micro.tmp";
             File.WriteAllText(
                 temporaryPath,
                 next,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            File.Move(temporaryPath, _configPath, overwrite: true);
-            return true;
+            if (completeSave is not null && hadOriginal)
+                File.Replace(temporaryPath, _configPath, backupPath);
+            else
+                File.Move(temporaryPath, _configPath, overwrite: true);
+            committed = true;
+            committedText = next;
+            completed = completeSave?.Invoke() ?? true;
+            return completed;
         }
         catch (Exception exception) when (
             exception is IOException or
@@ -152,6 +205,69 @@ internal sealed class CodexMicroConfigWriter
         {
             return false;
         }
+        finally
+        {
+            if (committed && !completed)
+            {
+                try
+                {
+                    // Restore the original bytes, including encoding and comments.
+                    if (File.ReadAllText(_configPath) != committedText)
+                        rollbackFailed = true;
+                    else if (hadOriginal) File.Move(backupPath, _configPath, overwrite: true);
+                    else File.Delete(_configPath);
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    // Leave the backup available if another process prevents recovery.
+                    rollbackFailed = true;
+                }
+            }
+            DeleteTemporaryFile(temporaryPath);
+            if (!rollbackFailed) DeleteTemporaryFile(backupPath);
+            _updates.Release();
+        }
+    }
+
+    private async Task<bool> UpdateAsync(Func<string, string> update, CancellationToken cancellationToken)
+    {
+        await _updates.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var temporaryPath = _configPath + ".micro." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            var source = File.Exists(_configPath)
+                ? await File.ReadAllTextAsync(_configPath, cancellationToken).ConfigureAwait(false)
+                : string.Empty;
+            if (Toml.Parse(source).HasErrors) return false;
+            var next = update(source);
+            if (Toml.Parse(next).HasErrors) return false;
+            var directory = Path.GetDirectoryName(_configPath);
+            if (!string.IsNullOrWhiteSpace(directory)) Directory.CreateDirectory(directory);
+            await File.WriteAllTextAsync(temporaryPath, next, new UTF8Encoding(false), cancellationToken).ConfigureAwait(false);
+            // Preserve a configuration edited externally while the asynchronous write was pending.
+            var current = File.Exists(_configPath)
+                ? await File.ReadAllTextAsync(_configPath, cancellationToken).ConfigureAwait(false)
+                : string.Empty;
+            if (current != source) return false;
+            cancellationToken.ThrowIfCancellationRequested();
+            File.Move(temporaryPath, _configPath, overwrite: true);
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return false;
+        }
+        finally
+        {
+            DeleteTemporaryFile(temporaryPath);
+            _updates.Release();
+        }
+    }
+
+    private static void DeleteTemporaryFile(string path)
+    {
+        try { File.Delete(path); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
     }
 
     private static string UpsertTable(
@@ -159,6 +275,7 @@ internal sealed class CodexMicroConfigWriter
         string tableName,
         IReadOnlyDictionary<string, string?> updates)
     {
+        source = ExpandInlineAncestor(source, tableName);
         var newline = source.Contains("\r\n", StringComparison.Ordinal)
             ? "\r\n"
             : "\n";
@@ -223,8 +340,72 @@ internal sealed class CodexMicroConfigWriter
         return JoinLines(lines, newline);
     }
 
+    // Inline tables are closed to later table declarations. Expand only the
+    // ancestor containing this edit; retain all unrelated text and inline values.
+    private static string ExpandInlineAncestor(string source, string tableName)
+    {
+        var document = Toml.Parse(source);
+        // Update and UpdateAsync only call this with a validated syntax tree.
+        var target = tableName.Split('.');
+        var candidates = document.KeyValues.Select(item => (Path: ReadKey(item.Key!), Item: item))
+            .Concat(document.Tables.OfType<TableSyntax>().SelectMany(table =>
+                table.Items.Select(item => (Path: ReadKey(table.Name!).Concat(ReadKey(item.Key!)).ToArray(), Item: item))));
+        foreach (var (path, item) in candidates)
+        {
+            if (item.Value is not InlineTableSyntax inline || !IsAncestor(path, target)) continue;
+            var newline = source.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+            var tables = new StringBuilder();
+            AppendExpandedTable(tables, source, path, target, inline, newline);
+            // Leave the original trailing comment in place rather than deleting it.
+            var start = item.Key!.Span.Start.Offset;
+            var end = inline.CloseBrace!.Span.End.Offset + 1;
+            return source.Remove(start, end - start).TrimEnd('\r', '\n') + newline + newline + tables;
+        }
+        return source;
+    }
+
+    private static void AppendExpandedTable(
+        StringBuilder output, string source, string[] path, string[] target,
+        InlineTableSyntax inline, string newline)
+    {
+        output.Append('[').AppendJoin('.', path).Append(']').Append(newline);
+        var children = new List<(string[] Path, InlineTableSyntax Table)>();
+        foreach (var item in inline.Items)
+        {
+            var entry = item.KeyValue!;
+            var childPath = path.Concat(ReadKey(entry.Key!)).ToArray();
+            if (entry.Value is InlineTableSyntax child && IsAncestor(childPath, target))
+            {
+                children.Add((childPath, child));
+                continue;
+            }
+            output.Append(source.AsSpan(entry.Key!.Span.Start.Offset, entry.Key.Span.Length))
+                .Append(" = ")
+                .Append(source.AsSpan(entry.Value!.Span.Start.Offset, entry.Value.Span.Length))
+                .Append(newline);
+        }
+        foreach (var child in children)
+        {
+            output.Append(newline);
+            AppendExpandedTable(output, source, child.Path, target, child.Table, newline);
+        }
+    }
+
+    private static bool IsAncestor(string[] path, string[] target) =>
+        path.Length <= target.Length && path.SequenceEqual(target.Take(path.Length));
+
+    private static string[] ReadKey(KeySyntax key) =>
+        new[] { key.Key }.Concat(key.DotKeys.Select(part => part.Key))
+            .Select(part => part switch
+            {
+                BareKeySyntax bare => bare.Key!.Text!,
+                StringValueSyntax quoted => quoted.Value!,
+                _ => throw new InvalidOperationException("Invalid TOML key."),
+            }).ToArray();
+
     private static string RemoveAndAppendDefaultLayout(string source)
     {
+        source = ExpandInlineAncestor(source, LayoutTable);
         var newline = source.Contains("\r\n", StringComparison.Ordinal)
             ? "\r\n"
             : "\n";

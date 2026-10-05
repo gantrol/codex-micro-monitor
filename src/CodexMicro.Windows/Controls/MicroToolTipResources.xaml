@@ -2,20 +2,12 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="clr-namespace:CodexMicro.Desktop.Controls"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
-        <!-- The tooltip owns its optics; text sits on an opaque inner face. -->
-        <LinearGradientBrush x:Key="MicroHelpFace" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#FFFFFF" Offset="0" />
-            <GradientStop Color="#F8FBFA" Offset="0.3" />
-            <GradientStop Color="#EEF4F1" Offset="1" />
-        </LinearGradientBrush>
-        <LinearGradientBrush x:Key="MicroHelpEdge" StartPoint="0,0" EndPoint="1,1">
-            <GradientStop Color="#FFFFFFFF" Offset="0" />
-            <GradientStop Color="#D9FFFFFF" Offset="0.48" />
-            <GradientStop Color="#9AA4BDB2" Offset="1" />
-        </LinearGradientBrush>
-        <SolidColorBrush x:Key="MicroHelpLine" Color="#D4E0D9" />
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="MicroPopupPalette.xaml" />
+        </ResourceDictionary.MergedDictionaries>
+        <SolidColorBrush x:Key="MicroHelpFace" Color="#FCFDFC" />
+        <SolidColorBrush x:Key="MicroHelpRim" Color="#F3F7F5" />
         <SolidColorBrush x:Key="MicroHelpTrack" Color="#DEE7E1" />
-        <SolidColorBrush x:Key="MicroHelpAccent" Color="#53675A" />
         <!-- The custom entrance replaces the native popup animation. -->
         <PopupAnimation x:Key="{x:Static SystemParameters.ToolTipPopupAnimationKey}">None</PopupAnimation>
 
@@ -54,7 +46,7 @@
         <Style x:Key="MicroHelpDivider" TargetType="Border">
             <Setter Property="Height" Value="1" />
             <Setter Property="Margin" Value="0,12" />
-            <Setter Property="Background" Value="{StaticResource MicroHelpLine}" />
+            <Setter Property="Background" Value="{StaticResource MicroPopupLine}" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding Source={x:Static SystemParameters.HighContrast}}" Value="True">
                     <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}" />
@@ -64,7 +56,7 @@
         <Style x:Key="MicroHelpProgress" TargetType="ProgressBar">
             <Setter Property="Height" Value="4" />
             <Setter Property="Margin" Value="0,6,0,6" />
-            <Setter Property="Foreground" Value="{StaticResource MicroHelpAccent}" />
+            <Setter Property="Foreground" Value="{StaticResource MicroPopupAccent}" />
             <Setter Property="Background" Value="{StaticResource MicroHelpTrack}" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -89,7 +81,7 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Background" Value="{StaticResource MicroHelpFace}" />
             <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource MicroHelpEdge}" />
+            <Setter Property="BorderBrush" Value="{StaticResource MicroPopupEdge}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="16,14" />
             <Setter Property="MaxWidth" Value="380" />
@@ -111,13 +103,13 @@
                         <Grid x:Name="CrystalRoot" Margin="10,8,10,16">
                             <Grid x:Name="CrystalSurface" RenderTransformOrigin="0.5,0">
                                 <Border x:Name="CrystalShadow" Margin="1,2,1,0"
-                                        Background="#EFF4F2" CornerRadius="12">
+                                        Background="{StaticResource MicroHelpRim}" CornerRadius="12">
                                     <Border.Effect>
                                         <DropShadowEffect Color="#3A5049" BlurRadius="14"
                                                           ShadowDepth="3" Opacity="0.14" />
                                     </Border.Effect>
                                 </Border>
-                                <Border x:Name="CrystalRim" Background="{DynamicResource CrystalKeySideBrush}"
+                                <Border x:Name="CrystalRim" Background="{StaticResource MicroHelpRim}"
                                         BorderBrush="{TemplateBinding BorderBrush}"
                                         BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" />
                                 <Border Margin="5,4,5,6" Background="{TemplateBinding Background}"
@@ -126,7 +118,7 @@
                                 <Border x:Name="CrystalHighlight" Height="1" Margin="12,1,12,0"
                                         VerticalAlignment="Top" Background="#F2FFFFFF" />
                                 <Border x:Name="CrystalRefraction" Height="2" Margin="14,0,14,2"
-                                        VerticalAlignment="Bottom" Background="#628CA69B" CornerRadius="1" />
+                                        VerticalAlignment="Bottom" Background="#50B9CCC2" CornerRadius="1" />
                             </Grid>
                             <Border x:Name="CrystalContent" Margin="5,4,5,6" Padding="{TemplateBinding Padding}">
                                 <ContentPresenter>

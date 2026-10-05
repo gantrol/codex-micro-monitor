@@ -263,6 +263,7 @@ public partial class MicroSurfaceWindow : Window
         _broker.CaptureContext = CaptureSoftwareContext;
         _broker.ThreadOpened = SelectSoftwareThread;
         _broker.ServiceTierApplied = _modelToggleService.ObserveServiceTierAcknowledged;
+        _broker.ComposerFastApplied = ObserveComposerFastApplied;
         _broker.ValidateTargetAsync = ValidateSoftwareTargetAsync;
         _modelToggleService.ObserveSelectedThread(null);
         _status = _transportName = "Codex IPC";
@@ -725,6 +726,22 @@ public partial class MicroSurfaceWindow : Window
         _quotaRefreshCancellation = refresh;
         try
         {
+            if (_reasoningCatalog is not { IsFresh: true })
+            {
+                // The catalog loader reads a small local cache synchronously.
+                // Keep that I/O off the UI thread and preserve newer action results.
+                var catalog = await Task.Run(() => CodexModelCatalog.Load());
+                if (refresh.IsCancellationRequested || _windowClosed)
+                {
+                    return;
+                }
+                if (_reasoningCatalog is not { IsFresh: true })
+                {
+                    _reasoningCatalog = catalog;
+                }
+                UpdateQuotaPresentation();
+            }
+
             var snapshot = await _quotaService.ReadAsync(refresh.Token);
             if (refresh.IsCancellationRequested || _windowClosed)
             {
@@ -2224,6 +2241,14 @@ public partial class MicroSurfaceWindow : Window
                 confirmsReasoning = true;
             }
 
+            // The collapsed picker can expose only the model. Missing effort is
+            // a partial observation, not a reset of this draft's confirmed value.
+            if (observed.Effort is null &&
+                _draftQuickModelSelection is { } confirmed && confirmed.Model == observed.Model)
+            {
+                observed.Effort = confirmed.Effort;
+            }
+
             if (confirmsReasoning || _draftQuickModelSelection != observed)
             {
                 _draftQuickModelSelection = observed;
@@ -2374,7 +2399,11 @@ public partial class MicroSurfaceWindow : Window
         QuickModelPresentationState state,
         string? effort = null)
     {
-        _quickModelPresentationRevision++;
+        if (CurrentQuickModelPresentationState != state ||
+            !string.Equals(_quickModelEffort, effort, StringComparison.Ordinal))
+        {
+            _quickModelPresentationRevision++;
+        }
         if (state.Model != CodexQuickModel.Unknown &&
             _draftQuickModelContext is { } draft &&
             QuickModelThreadIdsEqual(state.ThreadId, draft.VisibleThreadId) &&
@@ -2825,14 +2854,15 @@ public partial class MicroSurfaceWindow : Window
                     MicroSendDisposition.Rejected)
                 {
                     _joystickReportQueue.Clear();
-                    SetLed(ActivityLed, "#FF7994", "摇杆事件未发送");
-                    SetStatus(result.Detail);
+                    PresentSoftwareActionResult($"analog {report.Label}", result);
+                    await RecordSoftwareActionAsync($"analog {report.Label}", result);
                     break;
                 }
 
                 if (result.Disposition == MicroSendDisposition.OutcomeUnknown)
                 {
-                    SetLed(ActivityLed, "#FFD66E", "摇杆事件结果未知");
+                    PresentSoftwareActionResult($"analog {report.Label}", result);
+                    await RecordSoftwareActionAsync($"analog {report.Label}", result);
                 }
             }
         }
@@ -2843,8 +2873,9 @@ public partial class MicroSurfaceWindow : Window
                 InvalidDataException)
         {
             _joystickReportQueue.Clear();
-            SetLed(ActivityLed, "#FF7994", "摇杆事件发送失败");
-            SetStatus(exception.Message);
+            var result = MicroSendResult.NotSent(exception.Message);
+            PresentSoftwareActionResult("analog", result);
+            await RecordSoftwareActionAsync("analog", result);
         }
         finally
         {
@@ -2862,22 +2893,8 @@ public partial class MicroSurfaceWindow : Window
         try
         {
             var result = await action();
-            switch (result.Disposition)
-            {
-                case MicroSendDisposition.Accepted:
-                    SetLed(ActivityLed, "#74D9A0", $"{label} 已交付");
-                    SetStatus($"{label} 已通过 {transportLabel ?? _transportName} 交付。\n{result.Detail}");
-                    break;
-                case MicroSendDisposition.OutcomeUnknown:
-                    SetLed(ActivityLed, "#FFD66E", $"{label} 结果未知");
-                    SetStatus($"{label} 效果未知；为避免双执行不会自动重试。\n{result.Detail}");
-                    break;
-                default:
-                    SetLed(ActivityLed, "#FF7994", $"{label} 未发送");
-                    SetStatus($"{label} 未发送。\n{result.Detail}");
-                    break;
-            }
-
+            PresentSoftwareActionResult(label, result, transportLabel);
+            await RecordSoftwareActionAsync(label, result);
             return result;
         }
         catch (Exception exception) when (
@@ -2886,8 +2903,9 @@ public partial class MicroSurfaceWindow : Window
                 Win32Exception or
                 InvalidDataException)
         {
-            SetLed(ActivityLed, "#FF7994", "事件发送失败");
-            SetStatus(exception.Message);
+            var result = MicroSendResult.NotSent(exception.Message);
+            PresentSoftwareActionResult(label, result, transportLabel);
+            await RecordSoftwareActionAsync(label, result);
             return null;
         }
     }
@@ -3493,20 +3511,9 @@ public partial class MicroSurfaceWindow : Window
         foreach (var (slotId, presentation) in _actionKeys)
         {
             var binding = snapshot.GetSlot(slotId);
-            var definition = CodexKeycapCatalog.Get(binding.KeycapId);
             presentation.Icon.KeycapId = _broker.UsesSoftwareControl
                 ? _profileSettings.ResolveKeycapIcon(slotId, binding.KeycapId) : binding.KeycapId;
-            var action = binding.ResolvedAction;
-            var physicalKeys = slotId == "ACT10_ACT11"
-                ? "ACT10 / ACT11"
-                : slotId;
-            var gesture = slotId == "ACT10_ACT11"
-                ? "按住说话，松开结束。"
-                : "单击执行。";
-            SetHelp(
-                presentation.Button,
-                definition.Label,
-                $"{physicalKeys} · {action}\n{gesture}键帽图标随 Codex Micro 设置同步。");
+            SetActionKeyHelp(presentation.Button, binding);
         }
 
         RefreshDialHelp(snapshot);
@@ -3647,8 +3654,7 @@ public partial class MicroSurfaceWindow : Window
             ActionSendBadge.Visibility = _actionTargetIsForeground &&
                 _layoutObserver.Current.GetSlot("ACT12").ResolvedAction == "composer.submit"
                     ? Visibility.Visible : Visibility.Collapsed;
-            SetHelp(ActionKey12, "Codex", string.Empty);
-            AutomationProperties.SetItemStatus(ActionKey12, string.Empty);
+            SetActionKeyHelp(ActionKey12, _layoutObserver.Current.GetSlot("ACT12"));
             return;
         }
         var english = _localization.IsEnglish;
@@ -3740,35 +3746,13 @@ public partial class MicroSurfaceWindow : Window
         MicroHarnessDefinition harness)
     {
         var snapshot = _layoutObserver.Current;
-        foreach (var presentation in _actionKeys.Values)
-        {
-            presentation.Button.IsEnabled = true;
-            ToolTipService.SetShowOnDisabled(presentation.Button, true);
-        }
-
-        foreach (var button in _joystickButtons.Values)
-        {
-            button.IsEnabled = true;
-            ToolTipService.SetShowOnDisabled(button, true);
-        }
-
         {
             foreach (var (slotId, presentation) in _actionKeys)
             {
                 var binding = snapshot.GetSlot(slotId);
                 presentation.Icon.KeycapId = _broker.UsesSoftwareControl
                     ? _profileSettings.ResolveKeycapIcon(slotId, binding.KeycapId) : binding.KeycapId;
-                var physicalKeys = slotId == "ACT10_ACT11"
-                    ? "ACT10 / ACT11"
-                    : slotId;
-                var gesture = slotId == "ACT10_ACT11"
-                    ? "按住说话，松开结束。"
-                    : "单击执行。";
-                SetHelp(
-                    presentation.Button,
-                    CodexKeycapCatalog.Get(binding.KeycapId).Label,
-                    $"{physicalKeys} · {binding.ResolvedAction}\n" +
-                    $"{gesture}键帽图标随 Codex Micro 设置同步。");
+                SetActionKeyHelp(presentation.Button, binding);
             }
 
             var defaults = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -3791,6 +3775,7 @@ public partial class MicroSurfaceWindow : Window
                     $"{action} · 单击触发并自动回中。");
             }
 
+            RefreshSoftwareActionAvailability();
             return;
         }
     }
@@ -3896,6 +3881,9 @@ public partial class MicroSurfaceWindow : Window
             ? QuotaKnobDisplayMode.Model
             : QuotaKnobDisplayMode.Auto;
         SettingsKey.ReasoningEffort = _reasoningPreview?.Effort ?? _quickModelEffort ?? string.Empty;
+        SettingsKey.MaximumReasoningEffort = _reasoningCatalog is { IsFresh: true } catalog
+            ? catalog.Find(_quickModel.Id)?.SupportedEfforts.LastOrDefault() ?? "ultra"
+            : "ultra";
         SettingsKey.IsUpdating = quickModelSwitching || (_reasoningAdjusting);
         SettingsKey.HasFiveHourWindow = _quotaSnapshot?.FiveHourWindow is not null;
         SettingsKey.HasWeeklyWindow = _quotaSnapshot?.WeeklyWindow is not null;
@@ -4363,6 +4351,8 @@ public partial class MicroSurfaceWindow : Window
             var version = ++_softwareActivityVersion;
             if (color == (Color)ColorConverter.ConvertFromString("#74D9A0"))
                 _ = ClearSoftwareActivityAsync(version);
+            else if (color == ErrorStatusLed.Color || color == (Color)ColorConverter.ConvertFromString("#FFD66E"))
+                _ = ClearSoftwareActivityAsync(version, delayMilliseconds: 5000);
         }
         led.Effect = glow
             ? new DropShadowEffect

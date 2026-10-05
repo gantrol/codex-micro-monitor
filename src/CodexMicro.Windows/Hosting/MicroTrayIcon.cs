@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 using CodexMicro.Windows;
+using CodexMicro.Desktop.Controls;
 using CodexMicro.Desktop.Services;
 
 namespace CodexMicro.DesktopHost;
@@ -41,12 +42,12 @@ internal sealed class MicroTrayIcon : IDisposable
         _setLanguage = setLanguage;
         _restart = restart;
         _exit = exit;
-        _menu = new ContextMenuStrip();
+        _menu = new MicroTrayMenu();
         _toggleItem = new ToolStripMenuItem(
             string.Empty,
             image: null,
             (_, _) => Toggle());
-        _languageItem = new ToolStripMenuItem();
+        _languageItem = new ToolStripMenuItem { DropDown = new MicroTrayMenu() };
         _startupItem = new ToolStripMenuItem(
             string.Empty,
             image: null,

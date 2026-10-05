@@ -49,9 +49,15 @@ internal sealed partial class CodexModelToggleService
             var target = requested is null
                 ? efforts[Math.Clamp(index + Math.Sign(direction), 0, efforts.Count - 1)]
                 : catalog.ResolveEffort(state.ModelId, requested.Effort);
-            bool TargetIsCurrent() => isCurrent() &&
-                CurrentThreadState is { } latest && latest.ThreadId == threadId &&
-                latest.ModelId == state.ModelId;
+            // ResolveToggleThreadContextAsync can obtain a fresh snapshot before
+            // the presentation subscription catches up. That is still a valid
+            // baseline; reject a conflicting observation, not a missing one.
+            bool TargetIsCurrent()
+            {
+                if (!isCurrent()) return false;
+                var latest = CurrentThreadState;
+                return latest is null || latest.ThreadId == threadId && latest.ModelId == state.ModelId;
+            }
             if (!TargetIsCurrent())
             {
                 throw new InvalidOperationException("visible-thread-changed");

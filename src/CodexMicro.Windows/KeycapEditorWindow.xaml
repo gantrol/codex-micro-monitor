@@ -14,80 +14,85 @@
         UseLayoutRounding="True"
         PreviewKeyDown="Window_PreviewKeyDown">
     <Window.Resources>
-        <SolidColorBrush x:Key="EditorLine" Color="#FFE4E2DE" />
-        <SolidColorBrush x:Key="EditorMuted" Color="#FF8B8E91" />
-        <Style x:Key="EditorQuietButton" TargetType="Button">
-            <Setter Property="Padding" Value="16,10" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Surface"
-                                Padding="{TemplateBinding Padding}"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="11">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Surface" Property="Background" Value="#0D202224" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="EditorPrimaryButton" TargetType="Button"
-               BasedOn="{StaticResource EditorQuietButton}">
-            <Setter Property="MinWidth" Value="104" />
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#FF1E2022" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-        </Style>
-        <Style x:Key="KeycapItem" TargetType="ListBoxItem">
-            <Setter Property="Height" Value="88" />
-            <Setter Property="Margin" Value="5" />
-            <Setter Property="Padding" Value="8" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="VerticalContentAlignment" Value="Stretch" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="KeySurface"
-                                Padding="{TemplateBinding Padding}"
-                                Background="#FFF7F5F1"
-                                BorderBrush="#FFFFFFFF"
-                                BorderThickness="1.2"
-                                CornerRadius="15">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="7"
-                                                  Direction="270"
-                                                  ShadowDepth="2"
-                                                  Opacity="0.19"
-                                                  Color="#FF5A5E61" />
-                            </Border.Effect>
-                            <ContentPresenter />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="KeySurface" Property="BorderBrush" Value="#FFB8D4FF" />
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="KeySurface" Property="Background" Value="#FFEAF2FF" />
-                                <Setter TargetName="KeySurface" Property="BorderBrush" Value="#FF88B9FF" />
-                                <Setter TargetName="KeySurface" Property="BorderThickness" Value="1.6" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Controls/MicroComboResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <SolidColorBrush x:Key="EditorLine" Color="#FFE4E2DE" />
+            <SolidColorBrush x:Key="EditorMuted" Color="#FF8B8E91" />
+            <Style x:Key="EditorQuietButton" TargetType="Button">
+                <Setter Property="Padding" Value="16,10" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Surface"
+                                    Padding="{TemplateBinding Padding}"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="11">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Surface" Property="Background" Value="#0D202224" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="EditorPrimaryButton" TargetType="Button"
+                   BasedOn="{StaticResource EditorQuietButton}">
+                <Setter Property="MinWidth" Value="104" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Background" Value="#FF1E2022" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+            <Style x:Key="KeycapItem" TargetType="ListBoxItem">
+                <Setter Property="Height" Value="88" />
+                <Setter Property="Margin" Value="5" />
+                <Setter Property="Padding" Value="8" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <Border x:Name="KeySurface"
+                                    Padding="{TemplateBinding Padding}"
+                                    Background="#FFF7F5F1"
+                                    BorderBrush="#FFFFFFFF"
+                                    BorderThickness="1.2"
+                                    CornerRadius="15">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="7"
+                                                      Direction="270"
+                                                      ShadowDepth="2"
+                                                      Opacity="0.19"
+                                                      Color="#FF5A5E61" />
+                                </Border.Effect>
+                                <ContentPresenter />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="KeySurface" Property="BorderBrush" Value="#FFB8D4FF" />
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="KeySurface" Property="Background" Value="#FFEAF2FF" />
+                                    <Setter TargetName="KeySurface" Property="BorderBrush" Value="#FF88B9FF" />
+                                    <Setter TargetName="KeySurface" Property="BorderThickness" Value="1.6" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Margin="14">
@@ -239,33 +244,33 @@
                                        Text="Keycap default: Approve" />
                         </StackPanel>
                         <ComboBox x:Name="ActionCombo"
+                                  Style="{StaticResource MicroCombo}"
+                                  SelectionChanged="ActionCombo_SelectionChanged"
                                   Grid.Column="1"
-                                  Height="44"
+                                  MinHeight="44"
                                   Margin="24,0,0,0"
-                                  Padding="12,0"
+                                  Padding="12,7,30,7"
                                   VerticalContentAlignment="Center"
-                                  Background="#FFFAF9F7"
-                                  BorderBrush="{StaticResource EditorLine}"
                                   MaxDropDownHeight="330"
                                   FontSize="13">
                             <ComboBox.ItemContainerStyle>
-                                <Style TargetType="ComboBoxItem">
+                                <Style TargetType="ComboBoxItem" BasedOn="{StaticResource MicroComboItem}">
                                     <Setter Property="IsEnabled" Value="{Binding IsAvailable}" />
-                                    <Setter Property="Padding" Value="8" />
-                                    <Style.Triggers>
-                                        <Trigger Property="IsEnabled" Value="False">
-                                            <Setter Property="Opacity" Value="0.4" />
-                                        </Trigger>
-                                    </Style.Triggers>
+                                    <Setter Property="ToolTip" Value="{Binding DisplayName}" />
                                 </Style>
                             </ComboBox.ItemContainerStyle>
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <controls:KeycapIcon Width="20" Height="20" Margin="0,0,10,0"
-                                                             KeycapId="{Binding IconId}" />
-                                        <TextBlock VerticalAlignment="Center" Text="{Binding DisplayName}" />
-                                    </StackPanel>
+                                    <Grid ToolTip="{Binding DisplayName}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="20" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <controls:KeycapIcon Width="20" Height="20" KeycapId="{Binding IconId}"
+                                                             IconBrush="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Control}}" />
+                                        <TextBlock Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                   Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                                    </Grid>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
@@ -287,6 +292,7 @@
                                 Click="CancelButton_Click" />
                         <Button x:Name="SaveButton"
                                 Style="{StaticResource EditorPrimaryButton}"
+                                IsEnabled="{Binding SelectedItem.IsAvailable, ElementName=ActionCombo, FallbackValue=False, TargetNullValue=False}"
                                 Content="Save"
                                 Click="SaveButton_Click" />
                     </StackPanel>

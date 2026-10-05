@@ -355,10 +355,20 @@ internal sealed class MicroProfileSettings
     {
         var icons = new Dictionary<string, string>(Current.KeycapIcons ?? new Dictionary<string, string>());
         icons[slot] = icon;
-        Update(Current with { KeycapIcons = icons });
+        UpdateKeycapIcons(icons);
     }
 
-    internal void ResetKeycapIcons() => Update(Current with { KeycapIcons = null });
+    internal void ResetKeycapIcons() => UpdateKeycapIcons(null);
+
+    private void UpdateKeycapIcons(IReadOnlyDictionary<string, string>? icons)
+    {
+        var next = Normalize(Current with { KeycapIcons = icons });
+        if (next == Current && LastSaveSucceeded) return;
+        LastSaveSucceeded = Persist(next);
+        if (!LastSaveSucceeded) return;
+        Current = next;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 
     internal bool DeletePersistentKeypad()
     {
@@ -404,34 +414,12 @@ internal sealed class MicroProfileSettings
             return true;
         }
 
+        var temporaryPath = _settingsPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
             var directory = Path.GetDirectoryName(_settingsPath)!;
             Directory.CreateDirectory(directory);
-            var json = JsonSerializer.Serialize(
-                new StoredSettings
-                {
-                    QuickModelA = ToSettingValue(snapshot.QuickModelA),
-                    QuickModelB = ToSettingValue(snapshot.QuickModelB),
-                    QuickModelAEffort = snapshot.QuickModelAEffort,
-                    QuickModelBEffort = snapshot.QuickModelBEffort,
-                    AutoConfirmUltraFullAccess =
-                        snapshot.AutoConfirmUltraFullAccess,
-                    ActiveHarnessId = snapshot.ActiveHarnessId,
-                    AgentSource = snapshot.AgentSource,
-                    SingleTapAgentKeys = snapshot.SingleTapAgentKeys,
-                    KeypadName = snapshot.KeypadName,
-                    WindowLeft = snapshot.WindowLeft,
-                    WindowTop = snapshot.WindowTop,
-                    WindowTopmost = snapshot.WindowTopmost,
-                    WindowScale = snapshot.WindowScale,
-                    KeycapIcons = snapshot.KeycapIcons,
-                    TapToToggleVoice = snapshot.TapToToggleVoice,
-                    InvertDialDirection = snapshot.InvertDialDirection,
-                    Voice = StoredVoice.From(snapshot.VoiceSettings),
-                },
-                new JsonSerializerOptions { WriteIndented = true });
-            var temporaryPath = _settingsPath + ".tmp";
+            var json = Serialize(snapshot);
             File.WriteAllText(temporaryPath, json);
             File.Move(temporaryPath, _settingsPath, overwrite: true);
             return true;
@@ -440,7 +428,71 @@ internal sealed class MicroProfileSettings
         {
             return false;
         }
+        finally
+        {
+            try { File.Delete(temporaryPath); }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+        }
     }
+
+    // A resize previews without touching the profile; persist once after the gesture.
+    // Resume on the caller's Dispatcher before replacing the file so a newer UI edit
+    // cannot be overwritten by this asynchronous save.
+    internal async Task SetWindowScaleAsync(double value)
+    {
+        var snapshot = Normalize(Current with { WindowScale = MicroWindowLayout.NormalizeScale(value) });
+        if (snapshot == Current && LastSaveSucceeded) return;
+        Current = snapshot;
+        Changed?.Invoke(this, EventArgs.Empty);
+        if (_settingsPath is null) return;
+        var temporaryPath = _settingsPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        var saved = false;
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_settingsPath)!);
+            await File.WriteAllTextAsync(temporaryPath, Serialize(snapshot));
+            if (Current != snapshot) return;
+            File.Move(temporaryPath, _settingsPath, overwrite: true);
+            saved = true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+        }
+        finally
+        {
+            try { File.Delete(temporaryPath); }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+            if (Current == snapshot)
+            {
+                LastSaveSucceeded = saved;
+                Changed?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+
+    private static string Serialize(MicroProfileSnapshot snapshot) => JsonSerializer.Serialize(
+        new StoredSettings
+        {
+            QuickModelA = ToSettingValue(snapshot.QuickModelA),
+            QuickModelB = ToSettingValue(snapshot.QuickModelB),
+            QuickModelAEffort = snapshot.QuickModelAEffort,
+            QuickModelBEffort = snapshot.QuickModelBEffort,
+            AutoConfirmUltraFullAccess =
+                snapshot.AutoConfirmUltraFullAccess,
+            ActiveHarnessId = snapshot.ActiveHarnessId,
+            AgentSource = snapshot.AgentSource,
+            SingleTapAgentKeys = snapshot.SingleTapAgentKeys,
+            KeypadName = snapshot.KeypadName,
+            WindowLeft = snapshot.WindowLeft,
+            WindowTop = snapshot.WindowTop,
+            WindowTopmost = snapshot.WindowTopmost,
+            WindowScale = snapshot.WindowScale,
+            KeycapIcons = snapshot.KeycapIcons,
+            TapToToggleVoice = snapshot.TapToToggleVoice,
+            InvertDialDirection = snapshot.InvertDialDirection,
+            Voice = StoredVoice.From(snapshot.VoiceSettings),
+        },
+        new JsonSerializerOptions { WriteIndented = true });
 
     private MicroProfileSnapshot? Read(string path)
     {

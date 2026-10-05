@@ -25,6 +25,7 @@ internal sealed class CodexSelectedThreadReader
                 var window = CodexWindowActivator.FindSelectionWindow(_lastWindow);
                 _lastWindow = window;
                 if (window == nint.Zero) return null;
+                if (TryReadDocumentThreadId(window, cancellationToken, out var threadId)) return threadId;
                 RefreshTitles();
                 return Resolve(ReadSelectedTitles(window), _titles);
             }, cancellationToken).ConfigureAwait(false);
@@ -44,6 +45,99 @@ internal sealed class CodexSelectedThreadReader
             .Select(pair => pair.Key).Distinct(StringComparer.Ordinal).Take(2).ToArray();
         // Duplicate titles, a hidden sidebar, and a blank draft are unknown targets.
         return matches.Length == 1 ? matches[0] : null;
+    }
+
+    internal static string? ResolveDocumentThreadId(Uri documentUrl)
+    {
+        if (!IsCodexDocument(documentUrl)) return null;
+
+        var path = documentUrl.AbsolutePath;
+        // Some desktop builds retain the bootstrap URL after client-side navigation.
+        if (path is "/index.html" or "/detached-window.html")
+        {
+            var routes = documentUrl.Query.TrimStart('?').Split('&')
+                .Select(part => part.Split('=', 2))
+                .Where(parts => parts.Length == 2 && parts[0] == "initialRoute")
+                .Select(parts => Uri.UnescapeDataString(parts[1])).ToArray();
+            if (routes.Length != 1) return null;
+            path = routes[0];
+        }
+
+        var segments = path.Split(['?', '#'], 2)[0].Split('/');
+        return segments.Length == 3 && segments[0].Length == 0 && segments[1] == "local" &&
+            Guid.TryParseExact(Uri.UnescapeDataString(segments[2]), "D", out var threadId)
+                ? threadId.ToString("D") : null;
+    }
+
+    private static bool IsCodexDocument(Uri url) =>
+        url.IsAbsoluteUri && url.Scheme == "app" && url.Host == "-";
+
+    // A bare bootstrap URL contains no selection evidence; allow the sidebar
+    // fallback instead of interpreting it as an authoritative home/settings route.
+    internal static bool HasDocumentRoute(Uri url) => IsCodexDocument(url) &&
+        (url.AbsolutePath is not ("/index.html" or "/detached-window.html") ||
+         url.Query.TrimStart('?').Split('&').Any(part => part.StartsWith("initialRoute=", StringComparison.Ordinal)));
+
+    private static bool TryReadDocumentThreadId(
+        nint window, CancellationToken cancellationToken, out string? threadId)
+    {
+        threadId = null;
+        IAutomation? client = null;
+        IElement? root = null;
+        ICondition? condition = null;
+        IElements? documents = null;
+        try
+        {
+            client = (IAutomation)Activator.CreateInstance(Type.GetTypeFromCLSID(
+                new Guid("ff48dba4-60ef-4201-aa87-54103eef594e"))!)!;
+            root = client.ElementFromHandle(window);
+            condition = client.CreatePropertyConditionEx(30003, 50030, 0); // Document control type.
+            documents = root.FindAll(4, condition);
+            var routes = new HashSet<string>(StringComparer.Ordinal);
+            for (var index = 0; index < documents.Length; index++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var document = documents.GetElement(index);
+                object? pattern = null;
+                try
+                {
+                    if (document.GetCurrentPropertyValue(30022) is not false) continue; // IsOffscreen.
+                    // Chromium exposes the document URL through IValueProvider.get_Value.
+                    // Read the pattern, not the element's ValueValue property: the latter
+                    // only exposes an explicit DOM value and may be empty for documents.
+                    pattern = document.GetCurrentPattern(10002); // Value pattern.
+                    if (pattern is IValuePattern value &&
+                        Uri.TryCreate(value.CurrentValue, UriKind.Absolute, out var url) && HasDocumentRoute(url))
+                    {
+                        // initialRoute describes window startup, not subsequent client-side
+                        // navigation. Only a live route can authorize IPC for a thread ID.
+                        if (url.AbsolutePath is "/index.html" or "/detached-window.html") continue;
+                        routes.Add(url.AbsoluteUri);
+                    }
+                }
+                catch (COMException)
+                {
+                    // Embedded documents (for example PDFs) need not support Value.
+                }
+                finally
+                {
+                    if (pattern is not null) Marshal.ReleaseComObject(pattern);
+                    Marshal.ReleaseComObject(document);
+                }
+            }
+
+            // A readable home/settings route is authoritative too. Do not restore a
+            // sidebar title or a previous thread when this window has left that chat.
+            if (routes.Count == 1) threadId = ResolveDocumentThreadId(new Uri(routes.Single()));
+            return routes.Count != 0;
+        }
+        finally
+        {
+            if (documents is not null) Marshal.ReleaseComObject(documents);
+            if (condition is not null) Marshal.ReleaseComObject(condition);
+            if (root is not null) Marshal.ReleaseComObject(root);
+            if (client is not null) Marshal.ReleaseComObject(client);
+        }
     }
 
     private void RefreshTitles()
@@ -127,6 +221,14 @@ internal sealed class CodexSelectedThreadReader
         IElements FindAll(int scope, ICondition condition);
         void Slot4(); void Slot5(); void Slot6();
         [return: MarshalAs(UnmanagedType.Struct)] object GetCurrentPropertyValue(int property);
+        void Slot8(); void Slot9(); void Slot10(); void Slot11(); void Slot12();
+        [return: MarshalAs(UnmanagedType.IUnknown)] object? GetCurrentPattern(int patternId);
+    }
+    [ComImport, Guid("a94cd8b1-0844-4cd6-9d2d-640537ab39e9"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IValuePattern
+    {
+        void Slot0();
+        string CurrentValue { [return: MarshalAs(UnmanagedType.BStr)] get; }
     }
     [ComImport, Guid("352ffba8-0973-437c-a61f-f64cafd81df9"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface ICondition { }

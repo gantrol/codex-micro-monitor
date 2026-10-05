@@ -1,17 +1,46 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <SolidColorBrush x:Key="MicroMenuSurface" Color="#FAFBFB" />
-    <SolidColorBrush x:Key="MicroMenuBorder" Color="#D4DDD7" />
-    <SolidColorBrush x:Key="MicroMenuHover" Color="#E6EBE6" />
-    <SolidColorBrush x:Key="MicroMenuAccent" Color="#53675A" />
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="MicroPopupPalette.xaml" />
+    </ResourceDictionary.MergedDictionaries>
 
-    <Style x:Key="MicroMenuFace" TargetType="Border">
-        <Setter Property="Background" Value="{StaticResource MicroMenuSurface}" />
-        <Setter Property="BorderBrush" Value="{StaticResource MicroMenuBorder}" />
+    <Style x:Key="MicroMenuFace" TargetType="ContentControl">
+        <Setter Property="Background" Value="{StaticResource MicroPopupFace}" />
+        <Setter Property="BorderBrush" Value="{StaticResource MicroPopupLine}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="Padding" Value="5" />
+        <Setter Property="Padding" Value="6" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Grid Margin="7,6,7,10">
+                        <Border x:Name="Shadow" Background="#EFF4F2" CornerRadius="8"
+                                IsHitTestVisible="False">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#3A5049" BlurRadius="10"
+                                                  ShadowDepth="2" Opacity="0.12" />
+                            </Border.Effect>
+                        </Border>
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding Source={x:Static SystemParameters.HighContrast}}" Value="True">
+                            <Setter TargetName="Shadow" Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
             <DataTrigger Binding="{Binding Source={x:Static SystemParameters.HighContrast}}" Value="True">
                 <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.MenuBrushKey}}" />
@@ -21,7 +50,7 @@
     </Style>
 
     <Style x:Key="MicroMenuItem" TargetType="MenuItem">
-        <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource MicroPopupInk}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="1" />
@@ -46,8 +75,9 @@
                             <Grid VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="MenuHeader" />
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="MenuGesture" />
                                     <ColumnDefinition Width="12" />
                                 </Grid.ColumnDefinitions>
                                 <ContentPresenter x:Name="Icon" ContentSource="Icon"
@@ -60,26 +90,26 @@
                                 <ContentPresenter Grid.Column="1" ContentSource="Header"
                                                   Margin="8,0,12,0" RecognizesAccessKey="True"
                                                   VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}"
+                                <TextBlock Grid.Column="3" Text="{TemplateBinding InputGestureText}"
                                            Margin="0,0,8,0" VerticalAlignment="Center" />
-                                <Path x:Name="Arrow" Grid.Column="3" Width="4" Height="8"
+                                <Path x:Name="Arrow" Grid.Column="4" Width="4" Height="8"
                                       Visibility="Collapsed" Data="M 0,0 L 4,4 L 0,8"
                                       Stroke="{TemplateBinding Foreground}" StrokeThickness="1.4"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                             </Grid>
                         </Border>
-                        <Popup x:Name="PART_Popup" Placement="Right" Focusable="False"
+                        <Popup x:Name="PART_Popup" Placement="Right" VerticalOffset="-14" Focusable="False"
                                IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
                                PlacementTarget="{Binding ElementName=ItemFace}"
                                AllowsTransparency="True" PopupAnimation="None">
-                            <Border Style="{StaticResource MicroMenuFace}">
+                            <ContentControl Style="{StaticResource MicroMenuFace}">
                                 <ScrollViewer CanContentScroll="True" HorizontalScrollBarVisibility="Disabled"
                                               VerticalScrollBarVisibility="Auto">
                                     <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
                                                     KeyboardNavigation.TabNavigation="Cycle"
                                                     Grid.IsSharedSizeScope="True" />
                                 </ScrollViewer>
-                            </Border>
+                            </ContentControl>
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -96,13 +126,13 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsHighlighted" Value="True">
-                <Setter Property="Background" Value="{StaticResource MicroMenuHover}" />
+                <Setter Property="Background" Value="{StaticResource MicroPopupHover}" />
             </Trigger>
             <Trigger Property="IsSubmenuOpen" Value="True">
-                <Setter Property="Background" Value="{StaticResource MicroMenuHover}" />
+                <Setter Property="Background" Value="{StaticResource MicroPopupHover}" />
             </Trigger>
             <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter Property="BorderBrush" Value="{StaticResource MicroMenuAccent}" />
+                <Setter Property="BorderBrush" Value="{StaticResource MicroPopupAccent}" />
             </Trigger>
             <DataTrigger Binding="{Binding Source={x:Static SystemParameters.HighContrast}}" Value="True">
                 <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}" />
@@ -131,7 +161,7 @@
                 <Setter Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.MenuTextBrushKey}}" />
             </MultiDataTrigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{DynamicResource MutedInkBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource MicroPopupMutedInk}" />
             </Trigger>
             <MultiDataTrigger>
                 <MultiDataTrigger.Conditions>
@@ -144,7 +174,7 @@
     </Style>
 
     <Style x:Key="MicroMenuSeparator" TargetType="Separator">
-        <Setter Property="Background" Value="{StaticResource MicroMenuBorder}" />
+        <Setter Property="Background" Value="{StaticResource MicroPopupLine}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Separator">
@@ -164,7 +194,7 @@
             <Style TargetType="MenuItem" BasedOn="{StaticResource MicroMenuItem}" />
             <Style TargetType="Separator" BasedOn="{StaticResource MicroMenuSeparator}" />
         </Style.Resources>
-        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI" />
+        <Setter Property="FontFamily" Value="{DynamicResource {x:Static SystemFonts.MenuFontFamilyKey}}" />
         <Setter Property="FontSize" Value="{DynamicResource {x:Static SystemFonts.MenuFontSizeKey}}" />
         <Setter Property="MinWidth" Value="196" />
         <Setter Property="HasDropShadow" Value="False" />
@@ -173,14 +203,14 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ContextMenu">
-                    <Border Style="{StaticResource MicroMenuFace}">
+                    <ContentControl Style="{StaticResource MicroMenuFace}">
                         <ScrollViewer CanContentScroll="True" HorizontalScrollBarVisibility="Disabled"
                                       VerticalScrollBarVisibility="Auto">
                             <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
                                             KeyboardNavigation.TabNavigation="Cycle"
                                             Grid.IsSharedSizeScope="True" />
                         </ScrollViewer>
-                    </Border>
+                    </ContentControl>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

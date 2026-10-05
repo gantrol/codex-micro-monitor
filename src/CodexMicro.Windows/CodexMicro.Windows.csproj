@@ -10,8 +10,7 @@
     <Using Include="System"/><Using Include="System.Collections.Generic"/><Using Include="System.Linq"/>
     <Using Include="System.Threading"/><Using Include="System.Threading.Tasks"/>
     <ProjectReference Include="../CodexMicro.Core/CodexMicro.Core.csproj" />
-    <PackageReference Include="CodexControl" />
-    <PackageReference Include="CodexControl.Windows" />
+    <PackageReference Include="Tomlyn" />
     <InternalsVisibleTo Include="CodexMicro" />
     <InternalsVisibleTo Include="CodexMicro.Plugin" />
     <InternalsVisibleTo Include="CodexMicro.Desktop.Tests" />
@@ -19,5 +18,13 @@
     <AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatformAttribute">
       <_Parameter1>windows10.0.19041.0</_Parameter1>
     </AssemblyAttribute>
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseLocalCodexControl)' != 'true'">
+    <PackageReference Include="CodexControl" />
+    <PackageReference Include="CodexControl.Windows" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseLocalCodexControl)' == 'true'">
+    <ProjectReference Include="../../../codex-control/src/CodexControl/CodexControl.csproj" />
+    <ProjectReference Include="../../../codex-control/src/CodexControl.Windows/CodexControl.Windows.csproj" />
   </ItemGroup>
 </Project>

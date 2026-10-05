@@ -634,8 +634,10 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
     {
         lock (_stateSync)
         {
+            if (_useObservedSelection && _observedSelection == threadId) return;
             _useObservedSelection = true;
             _observedSelection = threadId;
+            PulseVisibleThreadChangedLocked();
         }
         RefreshCurrentThreadTracking();
     }
@@ -687,9 +689,8 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
         {
             lock (_stateSync)
             {
-                if (_useObservedSelection) return _observedSelection;
                 return ResolveVisibleThreadSelection(
-                    _visibleThreadByClient.Values).VisibleThreadId;
+                    CurrentVisibleThreadIdsLocked()).VisibleThreadId;
             }
         }
     }
@@ -720,6 +721,10 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
 
         lock (_stateSync)
         {
+            if (_useObservedSelection)
+            {
+                return ResolveVisibleThreadSelection(CurrentVisibleThreadIdsLocked());
+            }
             return ResolveForegroundVisibleThreadSelectionLocked(
                 foregroundWindow);
         }
@@ -817,6 +822,10 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
             VisibilityRefreshState refresh;
             lock (_stateSync)
             {
+                if (_useObservedSelection)
+                {
+                    return ResolveVisibleThreadSelection(CurrentVisibleThreadIdsLocked());
+                }
                 var requestedThreadIds = _visibleThreadByClient.Values
                     .Where(value => !string.IsNullOrWhiteSpace(value))
                     .Distinct(StringComparer.Ordinal)
@@ -824,7 +833,7 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
                 if (requestedThreadIds.Length == 0)
                 {
                     return ResolveVisibleThreadSelection(
-                        _visibleThreadByClient.Values);
+                        CurrentVisibleThreadIdsLocked());
                 }
 
                 refresh = new(requestedThreadIds);
@@ -874,7 +883,7 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
                 if (!ReferenceEquals(_visibilityRefresh, refresh))
                 {
                     return ResolveVisibleThreadSelection(
-                        _visibleThreadByClient.Values);
+                        CurrentVisibleThreadIdsLocked());
                 }
 
                 changed = ReplaceVisibleThreadMap(
@@ -888,7 +897,7 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
                 }
 
                 selection = ResolveVisibleThreadSelection(
-                    _visibleThreadByClient.Values);
+                    CurrentVisibleThreadIdsLocked());
             }
 
             if (changed)
@@ -3018,9 +3027,7 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
             }
 
             var selection = ResolveVisibleThreadSelection(
-                _useObservedSelection
-                    ? _observedSelection is null ? [] : [_observedSelection]
-                    : _visibleThreadByClient.Values);
+                CurrentVisibleThreadIdsLocked());
             nextVisibleThreadId = selection.VisibleThreadId;
             nextThreadId = selection.SemanticThreadId;
             if (nextVisibleThreadId == _selectedVisibleThreadId &&
@@ -3297,7 +3304,7 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
             TimeSpan nextWake;
             lock (_stateSync)
             {
-                var threadIds = _visibleThreadByClient.Values
+                var threadIds = CurrentVisibleThreadIdsLocked()
                     .Distinct(StringComparer.Ordinal)
                     .ToArray();
                 if (threadIds.Length == 1)
@@ -3369,7 +3376,7 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
             TimeSpan nextWake;
             lock (_stateSync)
             {
-                var visibleThreadIds = _visibleThreadByClient.Values
+                var visibleThreadIds = CurrentVisibleThreadIdsLocked()
                     .Where(value => !string.IsNullOrWhiteSpace(value))
                     .Distinct(StringComparer.Ordinal)
                     .ToArray();
@@ -3449,7 +3456,7 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
         string[] visibleThreadIds;
         lock (_stateSync)
         {
-            visibleThreadIds = _visibleThreadByClient.Values.ToArray();
+            visibleThreadIds = CurrentVisibleThreadIdsLocked().ToArray();
         }
 
         return allowOtherVisibleThreads
@@ -3481,12 +3488,19 @@ internal sealed partial class CodexModelToggleService : IAsyncDisposable
                 : "visible-thread-changed";
     }
 
+    // Software selection is the command target. Stream subscriptions also contain
+    // background chats and must not override it, including an unknown selection.
+    private IEnumerable<string> CurrentVisibleThreadIdsLocked() =>
+        _useObservedSelection
+            ? _observedSelection is null ? [] : [_observedSelection]
+            : _visibleThreadByClient.Values;
+
     private VisibleThreadSelection CaptureVisibleThreadSelection()
     {
         lock (_stateSync)
         {
             return ResolveVisibleThreadSelection(
-                _visibleThreadByClient.Values);
+                CurrentVisibleThreadIdsLocked());
         }
     }
 
