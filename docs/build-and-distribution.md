@@ -18,7 +18,7 @@ dotnet run --project src/CodexMicro.Desktop -c Release
 .\scripts\package-compact.ps1
 ```
 
-Quit an existing Micro window normally before running another copy. `Version.props` supplies the package version. Packaging writes desktop/plugin ZIPs, control packages and checksums to `dist/<version>/`; it refuses to overwrite an existing version directory. It does not install or publish anything. Both ZIPs require .NET 10 Desktop Runtime x64. The Store MSIX has a separate self-contained packaging path.
+Quit an existing Micro window normally before running another copy. `Version.props` supplies the package version. Packaging writes desktop/plugin ZIPs, control packages and checksums to `dist/<version>/`; it refuses to overwrite an existing version directory. Use `scripts/package.ps1 -OutputDirectory <new-directory>` to prepare another candidate without moving or replacing older artifacts. It does not install or publish anything. Both ZIPs require .NET 10 Desktop Runtime x64. The Store MSIX has a separate self-contained packaging path.
 
 `scripts/test.ps1` runs the existing unit, component and isolated control tests. Automated tests and compilation do not replace live installation acceptance. Windows is the current runnable target; macOS is not implemented and `apps/ios` is a historical prototype. Start macOS work with the [development handoff](architecture/macos-development-handoff.zh-CN.md).
 
