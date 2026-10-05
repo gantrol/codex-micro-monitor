@@ -12,7 +12,8 @@ internal sealed record MicroControlContext(
     MicroProfileSnapshot Profile,
     long TargetVersion = 0,
     string? DraftModelPickerId = null,
-    CodexComposerTarget? ComposerTarget = null);
+    CodexComposerTarget? ComposerTarget = null,
+    bool NavigationPending = false);
 
 internal interface IMicroTransport : IDisposable
 {

@@ -28,7 +28,7 @@ public partial class MicroSurfaceWindow
     {
         if (!_broker.UsesSoftwareControl) return null;
         return CodexActionCatalog.SoftwareUnavailableReason(action,
-            !_softwareNavigationPending && CurrentCodexAgentThreadId() is not null,
+            CurrentCodexAgentThreadId() is not null,
             CaptureDraftPresentationContext() is not null, CaptureUnidentifiedComposerTarget() is not null);
     }
 
@@ -36,7 +36,7 @@ public partial class MicroSurfaceWindow
     {
         var action = SoftwareJoystickAction(direction);
         return CodexActionCatalog.SoftwareUnavailableReason(action,
-            !_softwareNavigationPending && CurrentCodexAgentThreadId() is not null,
+            CurrentCodexAgentThreadId() is not null,
             CaptureDraftPresentationContext() is not null, CaptureUnidentifiedComposerTarget() is not null);
     }
 

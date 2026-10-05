@@ -176,6 +176,9 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         {
             if (!IsCurrentTarget(context)) return false;
             if (request.Operation is CodexUiOperation.Back or CodexUiOperation.Forward or CodexUiOperation.ToggleSidebar) return true;
+            // An explicit ID can receive IPC settings before navigation finishes;
+            // native input must still wait for the destination page.
+            if (context.NavigationPending) return false;
             if (ValidateTargetAsync is not null && !await ValidateTargetAsync(context.ThreadId, token)) return false;
             token.ThrowIfCancellationRequested();
             return IsCurrentTarget(context);
