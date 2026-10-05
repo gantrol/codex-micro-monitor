@@ -42,6 +42,16 @@ internal static class CodexWindowActivator
         return candidates.Length == 1 ? candidates[0].Handle : nint.Zero;
     }
 
+    internal static bool IsOnlySelectionWindow(nint expected, uint processId)
+    {
+        // Count minimized windows too: another renderer can keep logging routes
+        // while it is not in the foreground. Never infer HWND from recency.
+        var candidates = FindCandidates(null).Where(candidate => candidate.ProcessId == processId &&
+            !candidate.IsToolWindow && !candidate.HasOwner && candidate.ClassName == "Chrome_WidgetWin_1")
+            .Take(2).ToArray();
+        return candidates.Length == 1 && candidates[0].Handle == expected;
+    }
+
     internal static IntPtr CaptureForegroundWindow(
         string? packageRoot = null)
     {

@@ -2,12 +2,14 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows.Automation;
+using CodexMicro.Codex;
 
 namespace CodexMicro.Desktop.Services;
 
-internal readonly record struct CodexThreadSelection(string? ThreadId, string? PageKey);
+internal readonly record struct CodexThreadSelection(
+    string? ThreadId, string? PageKey, bool CanRetainThreadId = true);
 
-internal sealed class CodexSelectedThreadReader
+internal sealed partial class CodexSelectedThreadReader
 {
     private readonly SemaphoreSlim _gate = new(1);
     private readonly string _indexPath = Path.Combine(
@@ -15,33 +17,101 @@ internal sealed class CodexSelectedThreadReader
     private DateTime _indexModified;
     private long _indexLength = -1;
     private Dictionary<string, string> _titles = new(StringComparer.Ordinal);
+    private IReadOnlyDictionary<string, string> _recentTitles = new Dictionary<string, string>(StringComparer.Ordinal);
     private nint _lastWindow;
+    private readonly CodexDesktopRouteReader _desktopRoutes = new();
+    private (CodexThreadSelection Selection, string Source)? _lastDiagnostic;
+
+    internal bool ObserveRecentThreads(IReadOnlyList<CodexRecentThread>? threads)
+    {
+        var titles = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var thread in threads ?? [])
+        {
+            if (Guid.TryParse(thread.ThreadId, out _) && !string.IsNullOrWhiteSpace(thread.Title) &&
+                thread.RolloutPath?.Contains("trash", StringComparison.OrdinalIgnoreCase) != true)
+                titles[thread.ThreadId] = thread.Title;
+        }
+        var previous = Volatile.Read(ref _recentTitles);
+        if (previous.Count == titles.Count && titles.All(pair =>
+                previous.TryGetValue(pair.Key, out var title) && title == pair.Value)) return false;
+        Volatile.Write(ref _recentTitles, titles);
+        return true;
+    }
 
     internal async Task<CodexThreadSelection> ReadSelectionAsync(CancellationToken cancellationToken = default)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            return await Task.Run(async () =>
+            return await Task.Run<CodexThreadSelection>(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var window = CodexWindowActivator.FindSelectionWindow(_lastWindow);
-                _lastWindow = window;
-                if (window == nint.Zero) return default;
-                if (TryReadDocumentThreadId(window, cancellationToken, out var threadId, out var route))
-                    return new CodexThreadSelection(threadId, route is null ? null : $"{window}:{route}");
-                var header = ReadHeader(window, cancellationToken);
-                var titles = ReadSelectedTitles(window);
-                if (titles.Length > 1) return default;
-                await RefreshTitlesAsync(cancellationToken).ConfigureAwait(false);
-                var sidebarThread = titles.Length == 1 ? Resolve(titles, _titles) : null;
-                var headerThread = header is { } title ? Resolve([title.Title], _titles) : null;
-                // A transitioning header and sidebar must not restore the previous target.
-                if (header is { } visible && titles.Length == 1 && visible.Title != titles[0] &&
-                    (headerThread is null || sidebarThread is null || headerThread != sidebarThread))
-                    return default;
-                return new CodexThreadSelection(headerThread ?? sidebarThread,
-                    header?.Key ?? (sidebarThread is null ? null : $"{window}:sidebar:{sidebarThread}"));
+                // Finish disk I/O before observing the page. A chat switch during an
+                // index read must not make an old header authorize a new operation.
+                try { await RefreshTitlesAsync(cancellationToken).ConfigureAwait(false); }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    _titles.Clear();
+                    _indexLength = -1;
+                }
+                for (var attempt = 0; attempt < 2; attempt++)
+                {
+                    var window = CodexWindowActivator.FindSelectionWindow(_lastWindow);
+                    _lastWindow = window;
+                    if (window == nint.Zero) return RecordSelection(default, "window-unavailable");
+                    GetWindowThreadProcessId(window, out var processId);
+                    // Refresh even when no DOM identity was readable. This is the
+                    // essential draft -> real thread transition with a hidden sidebar.
+                    await _desktopRoutes.RefreshAsync(processId, cancellationToken, force: true).ConfigureAwait(false);
+                    if (CodexWindowActivator.FindSelectionWindow(window) != window) continue;
+                    if (_desktopRoutes.TryReadSingleWindow(processId, out var desktopRoute) &&
+                        CodexWindowActivator.IsOnlySelectionWindow(window, processId))
+                    {
+                        var desktopId = ResolveDocumentThreadId(new Uri("app://-" + desktopRoute.Path));
+                        return RecordSelection(new(desktopId, $"{window}:route:{desktopRoute.Path}",
+                            CanRetainThreadId: false), "desktop-window-route");
+                    }
+                    if (TryReadDocumentThreadId(window, cancellationToken, out var threadId, out var route))
+                    {
+                        var identity = route is null ? null : Uri.UnescapeDataString(new Uri(route).AbsolutePath);
+                        var clientId = identity?.StartsWith("/local/", StringComparison.Ordinal) == true ? identity[7..] : null;
+                        if (CodexDesktopRouteReader.IsClientThreadId(clientId))
+                        {
+                            // The composer can already have the formal ID while the
+                            // route still contains the frontend creation identity.
+                            if (ReadComposerSelection(window, cancellationToken) is { ThreadId: not null } boundComposer)
+                                return RecordSelection(boundComposer, "composer");
+                            threadId = _desktopRoutes.Resolve(clientId!, processId);
+                            if (threadId is null && attempt == 0)
+                            {
+                                await _desktopRoutes.RefreshAsync(processId, cancellationToken).ConfigureAwait(false);
+                                continue; // Re-observe the page after I/O, including foreground-window changes.
+                            }
+                        }
+                        return RecordSelection(new(threadId, route is null ? null : $"{window}:{route}",
+                            CanRetainThreadId: false), "document-route");
+                    }
+                    if (ReadComposerSelection(window, cancellationToken) is { } composer)
+                        return RecordSelection(composer, "composer");
+                    var header = ReadHeader(window, cancellationToken);
+                    var rows = ReadSelectedRows(window);
+                    if (rows.Length > 1) return RecordSelection(default, "sidebar-ambiguous");
+                    if (rows.Length == 0)
+                        return RecordSelection(new(null, header?.Key, CanRetainThreadId: header is not null), "header-only");
+                    var row = rows[0];
+                    var resolved = row.Identity is null ? null : _desktopRoutes.Resolve(row.Identity, processId);
+                    if (resolved is null && CodexDesktopRouteReader.IsClientThreadId(row.Identity) && attempt == 0)
+                    {
+                        await _desktopRoutes.RefreshAsync(processId, cancellationToken).ConfigureAwait(false);
+                        continue;
+                    }
+                    // A title checks consistency; it never supplies the identity.
+                    if (resolved is null || header is { } visible && visible.Title != row.Title &&
+                        Resolve([visible.Title], _titles, Volatile.Read(ref _recentTitles)) != resolved)
+                        return RecordSelection(new(null, header?.Key, CanRetainThreadId: false), "sidebar-unresolved");
+                    return RecordSelection(new(resolved, header?.Key ?? $"{window}:sidebar:{row.Identity}"), "sidebar");
+                }
+                return RecordSelection(default, "window-changed");
             }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception error) when (error is COMException or ElementNotAvailableException or IOException or
@@ -55,10 +125,26 @@ internal sealed class CodexSelectedThreadReader
     internal async Task<string?> ReadAsync(CancellationToken cancellationToken = default) =>
         (await ReadSelectionAsync(cancellationToken).ConfigureAwait(false)).ThreadId;
 
-    internal static string? Resolve(IEnumerable<string> selectedTitles, IReadOnlyDictionary<string, string> titles)
+    private CodexThreadSelection RecordSelection(CodexThreadSelection selection, string source)
+    {
+        if (_lastDiagnostic != (selection, source))
+        {
+            _lastDiagnostic = (selection, source);
+            // Existing small, synchronous diagnostic sink; called on this reader's
+            // worker task, only on transitions. Do not write titles or page contents.
+            SoftwareControlDiagnostics.Write($"selection-observed source={source} threadId={selection.ThreadId ?? "none"} retain={selection.CanRetainThreadId}");
+        }
+        return selection;
+    }
+
+    internal static string? Resolve(IEnumerable<string> selectedTitles, IReadOnlyDictionary<string, string> titles,
+        IReadOnlyDictionary<string, string>? recentTitles = null)
     {
         var selected = selectedTitles.ToHashSet(StringComparer.Ordinal);
-        var matches = titles.Where(pair => selected.Contains(pair.Value))
+        // Neither source is always newer. Retain both aliases so a stale roster
+        // cannot erase a newly indexed name and make another chat look unique.
+        var candidates = recentTitles is null ? titles : titles.Concat(recentTitles);
+        var matches = candidates.Where(pair => selected.Contains(pair.Value))
             .Select(pair => pair.Key).Distinct(StringComparer.Ordinal).Take(2).ToArray();
         // Titles only recover an observed ID. Never choose arbitrarily among duplicates.
         return matches.Length == 1 ? matches[0] : null;
@@ -123,6 +209,11 @@ internal sealed class CodexSelectedThreadReader
     internal static string? ResolveDocumentThreadId(Uri documentUrl)
     {
         if (!IsCodexDocument(documentUrl)) return null;
+        // A remote connection also uses /local/<UUID>, but is not a local IPC target.
+        if (documentUrl.Query.TrimStart('?').Split('&')
+            .Select(part => part.Split('=', 2))
+            .Any(parts => parts.Length == 2 && parts[0] == "hostId" &&
+                Uri.UnescapeDataString(parts[1]) is not ("" or "local"))) return null;
 
         var path = documentUrl.AbsolutePath;
         // Some desktop builds retain the bootstrap URL after client-side navigation.
@@ -245,7 +336,10 @@ internal sealed class CodexSelectedThreadReader
         _indexLength = file.Length;
     }
 
-    internal static string[] ReadSelectedTitles(nint window)
+    internal static string[] ReadSelectedTitles(nint window) =>
+        ReadSelectedRows(window).Select(row => row.Title).ToArray();
+
+    private static SidebarRow[] ReadSelectedRows(nint window)
     {
         IAutomation? client = null;
         IElement? root = null;
@@ -258,20 +352,21 @@ internal sealed class CodexSelectedThreadReader
             root = client.ElementFromHandle(window);
             condition = client.CreatePropertyConditionEx(30102, "current=page", 2);
             selected = root.FindAll(4, condition);
-            var titles = new List<string>();
+            var rows = new List<SidebarRow>();
             for (var index = 0; index < selected.Length; index++)
             {
                 var node = selected.GetElement(index);
                 try
                 {
-                    if (node.GetCurrentPropertyValue(30012) is string css &&
+                    if (node.GetCurrentPropertyValue(30022) is false &&
+                        node.GetCurrentPropertyValue(30012) is string css &&
                         css.Split(' ').Contains("sidebar-item", StringComparer.Ordinal) &&
                         node.GetCurrentPropertyValue(30005) is string title && title.Length > 0)
-                        titles.Add(title);
+                        rows.Add(new(title, ReadSidebarIdentity(window, node)));
                 }
                 finally { Marshal.ReleaseComObject(node); }
             }
-            return titles.ToArray();
+            return rows.ToArray();
         }
         finally
         {

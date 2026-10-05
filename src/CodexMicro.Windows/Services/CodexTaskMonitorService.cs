@@ -35,11 +35,15 @@ internal sealed class CodexTaskMonitorService
     private readonly Func<CancellationToken, Task<IReadOnlyList<CodexRecentThread>?>> _readThreads;
     private readonly Func<CancellationToken, Task<CodexUnreadStateSnapshot?>> _readUnread;
     private CodexTaskMonitorSnapshot? _snapshot;
+    private IReadOnlyList<CodexRecentThread>? _recentThreads;
     private IReadOnlyList<CodexRecentThread>? _rosterThreads;
     private string? _rosterGlobalState;
     private string? _rosterConfig;
     private long _revision;
     private long _unreadConfirmationRevision;
+
+    // Selection metadata remains useful even if unread/status observation fails.
+    internal IReadOnlyList<CodexRecentThread>? RecentThreads => Volatile.Read(ref _recentThreads);
 
     internal CodexTaskMonitorService(
         string? codexRoot = null,
@@ -75,6 +79,7 @@ internal sealed class CodexTaskMonitorService
         var unreadRead = _readUnread(cancellationToken);
         await Task.WhenAll(threadsRead, unreadRead).ConfigureAwait(false);
         var threads = await threadsRead.ConfigureAwait(false);
+        Volatile.Write(ref _recentThreads, threads);
         var unread = await unreadRead.ConfigureAwait(false);
         if (threads is null || unread is null)
         {
