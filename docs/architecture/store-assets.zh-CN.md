@@ -55,7 +55,7 @@ python scripts/render-store-assets.py --config scripts/store-assets.v3.json --ou
 
 `typography` 控制两行标题的字号与间距；其中 `stateLabelSize`、`actionLabelSize` 分别控制状态图例和操作说明字号。`stateLabels` 修改灯色状态标签，`modelActions` 修改点击与滚轮标签。图例继续使用 XAML 导出的真实控件。点击左下角 `SettingsKey` 切换快捷模型，滚轮调节推理强度；对应源码为 `MainWindow.xaml.cs` 的 `Settings_Click` 与 `MainWindow.Reasoning.cs` 的 `Settings_MouseWheel`。引线及点击光标按当前 590×610 面板中该旋钮的位置定位，面板布局变化后需重新核对位置。
 
-内置 imagegen 的标题排布提案另存为 `dist/store/listing/v3/title-concept-imagegen.png`，提示词在 `scripts/store-title-prompt.txt`。生成图用于讨论风格；脚本输出继续保留产品控件原图及真实强度圈。只改文字与排版时，上述命令追加 `--compose-only`。
+标题排布的原始讨论材料留在本地，不属于公开构建输入。脚本输出继续保留产品控件原图及真实强度圈。只改文字与排版时，上述命令追加 `--compose-only`。
 
 ## SVG 复现
 

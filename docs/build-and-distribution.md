@@ -2,7 +2,11 @@
 
 ## Build locally
 
-Requires Windows x64, .NET SDK 10.0.302 and the pinned `CodexControl` packages. Build those packages in the independent `codex-control` repository first; AgentController source is not required.
+Requires Windows x64, .NET SDK 10.0.302 and the pinned `CodexControl` packages. Build those packages in the independent [codex-control repository](https://github.com/gantrol/codex-control) first, or download the pinned packages from its [Releases](https://github.com/gantrol/codex-control/releases); AgentController source is not required.
+
+The [0.3.15 release](https://github.com/gantrol/codex-micro-monitor/releases/tag/v0.3.15) also provides the exact `CodexControl.0.1.0-local.2.nupkg` and `CodexControl.Windows.0.1.0-local.2.nupkg` dependencies. Download both into one directory and pass that directory to `scripts/import-control-packages.ps1`. A matching `codex-control-0.1.0-local.2-source.zip` is provided for source inspection. Do not rebuild and substitute different contents under an already imported package version.
+
+For local development with `codex-control` checked out beside this repository, pass `-p:UseLocalCodexControl=true` to `dotnet build`, `dotnet run`, or `dotnet test`. This builds both shared control projects from source and avoids reusing a cached package with the same version. The workspace `debug:micro`, `build:micro:debug`, `test:micro`, and `manage.ps1` Micro Debug builds enable this option. Normal builds and release packaging continue to use pinned packages; the option is explicit and requires the sibling repository.
 
 Run from this repository's root:
 
@@ -11,11 +15,18 @@ Run from this repository's root:
 dotnet build CodexMicro.slnx -c Release
 dotnet run --project src/CodexMicro.Desktop -c Release
 .\scripts\package.ps1
+.\scripts\package-compact.ps1
 ```
 
 Quit an existing Micro window normally before running another copy. `Version.props` supplies the package version. Packaging writes desktop/plugin ZIPs, control packages and checksums to `dist/<version>/`; it refuses to overwrite an existing version directory. It does not install or publish anything. Both ZIPs require .NET 10 Desktop Runtime x64. The Store MSIX has a separate self-contained packaging path.
 
-`scripts/test.ps1` runs the existing unit, component and isolated control tests. Earlier migration checks and their limitations are recorded in `docs/migration-validation-2026-10-03.md` and `docs/micro-behavior-acceptance.md`; those dated results do not describe every later revision. Automated tests and compilation do not replace live installation acceptance. Windows is the current runnable target; macOS is not implemented and `apps/ios` is a historical prototype.
+`scripts/test.ps1` runs the existing unit, component and isolated control tests. Automated tests and compilation do not replace live installation acceptance. Windows is the current runnable target; macOS is not implemented and `apps/ios` is a historical prototype. Start macOS work with the [development handoff](architecture/macos-development-handoff.zh-CN.md).
+
+## Release version
+
+The desktop app and bundled plugin use `0.3.15`; Windows assembly/file and Store package versions use `0.3.15.0`. The shared control packages retain their independently pinned `0.1.0-local.2` version. The Store catalog was checked on 2026-10-04 and served `0.3.15.0`; retain that approved package. The initially published desktop binaries carry the historical `0.3.15-local.1` informational string while their file version is `0.3.15.0`. Publishing source does not replace those binaries.
+
+For future submissions, recheck [Microsoft's package version guidance](https://learn.microsoft.com/en-us/windows/apps/publish/publish-your-app/package-version-numbering?pivots=store-installer-msix) and Partner Center validation. The published package's observed version is not a general guarantee about acceptance of other packages. Do not replace assets of an existing release with a different build under the same version.
 
 ## Codex compatibility
 
@@ -27,7 +38,7 @@ The existing `codex-micro-keypad` plugin packages the same Windows panel and con
 
 After extracting the complete plugin archive, register its root with `codex plugin marketplace add .`, restart Codex, and install from the **Codex Micro Monitor** marketplace. The repository alone has no bundled executable: build/package before installing. The marketplace workflow follows the [official package guide](https://developers.openai.com/plugins/build/plugins#add-a-marketplace-from-the-cli); full installation acceptance is still pending.
 
-Local marketplace ZIP distribution is the current route. For the universal public directory, OpenAI's guidance checked on 2026-10-04 asks MCP submissions to provide a remote HTTPS endpoint, or contact OpenAI about local MCP support. This plugin requires the user's Windows desktop and therefore needs that local-MCP route clarified before public submission. See [bundled MCP servers](https://developers.openai.com/plugins/build/plugins#bundled-mcp-servers-and-lifecycle-hooks) and [submission](https://developers.openai.com/plugins/deploy/submission). No public listing or Store release has been submitted.
+Local marketplace ZIP distribution is the current plugin route; public plugin-directory publication is still pending. For the universal public directory, OpenAI's guidance checked on 2026-10-04 asks MCP submissions to provide a remote HTTPS endpoint, or contact OpenAI about local MCP support. This plugin requires the user's Windows desktop and therefore needs that local-MCP route clarified before public submission. See [bundled MCP servers](https://developers.openai.com/plugins/build/plugins#bundled-mcp-servers-and-lifecycle-hooks) and [submission](https://developers.openai.com/plugins/deploy/submission). The desktop app is available on [Microsoft Store](https://apps.microsoft.com/detail/9NTVMG9QNMHC) with its .NET runtime included, and on [GitHub Releases](https://github.com/gantrol/codex-micro-monitor/releases/latest) as a compact ZIP requiring .NET 10 Desktop Runtime x64.
 
 ## README images
 
