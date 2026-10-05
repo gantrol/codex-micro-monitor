@@ -30,6 +30,9 @@ public sealed class QuotaKnob : Button
     public static readonly DependencyProperty ReasoningEffortProperty =
         DependencyProperty.Register(nameof(ReasoningEffort), typeof(string),
             typeof(QuotaKnob), new PropertyMetadata(string.Empty, OnReadoutChanged));
+    public static readonly DependencyProperty MaximumReasoningEffortProperty =
+        DependencyProperty.Register(nameof(MaximumReasoningEffort), typeof(string),
+            typeof(QuotaKnob), new PropertyMetadata("ultra", OnReadoutChanged));
     public static readonly DependencyProperty DisplayModeProperty =
         DependencyProperty.Register(nameof(DisplayMode), typeof(QuotaKnobDisplayMode),
             typeof(QuotaKnob), new PropertyMetadata(QuotaKnobDisplayMode.Auto, OnReadoutChanged));
@@ -50,6 +53,7 @@ public sealed class QuotaKnob : Button
             typeof(QuotaKnob), new PropertyMetadata(null, OnContentModeChanged));
 
     private readonly Viewbox _quotaContent;
+    private static readonly Color LimitColor = Color.FromRgb(0xFF, 0x9E, 0x8B);
 
     private readonly TextBlock _modelVersion = new()
     {
@@ -223,6 +227,12 @@ public sealed class QuotaKnob : Button
         set => SetValue(ReasoningEffortProperty, value);
     }
 
+    public string MaximumReasoningEffort
+    {
+        get => (string)GetValue(MaximumReasoningEffortProperty);
+        set => SetValue(MaximumReasoningEffortProperty, value);
+    }
+
     public QuotaKnobDisplayMode DisplayMode
     {
         get => (QuotaKnobDisplayMode)GetValue(DisplayModeProperty);
@@ -338,7 +348,10 @@ public sealed class QuotaKnob : Button
             var effort = ParseEffortRank(ReasoningEffort);
             var outerLevel = effort is { } rank ? Math.Min(rank + 1, 3) * (100d / 3) : (double?)null;
             var innerLevel = effort is { } innerRank ? Math.Max(0, innerRank - 2) * (100d / 3) : (double?)null;
-            var effortColor = effort switch
+            var atMaximum = !string.IsNullOrWhiteSpace(ReasoningEffort) &&
+                string.Equals(ReasoningEffort.Trim(), MaximumReasoningEffort?.Trim(),
+                    StringComparison.OrdinalIgnoreCase);
+            var effortColor = atMaximum ? LimitColor : effort switch
             {
                 <= 2 => Color.FromRgb(0xA8, 0xC7, 0xFF),
                 <= 4 => Color.FromRgb(0xCE, 0xB1, 0xFF),
@@ -401,7 +414,7 @@ public sealed class QuotaKnob : Button
             : Geometry.Empty;
         progress.Stroke = new SolidColorBrush(remaining switch
         {
-            <= 10 => Color.FromRgb(0xFF, 0x9E, 0x8B),
+            <= 10 => LimitColor,
             <= 30 => Color.FromRgb(0xFF, 0xD2, 0x7A),
             _ => accent,
         });

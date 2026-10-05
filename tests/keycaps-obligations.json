@@ -1,0 +1,42 @@
+{
+  "description": "Independent acceptance obligations for the isolated replaceable-keycap suite. Execution completeness is not product correctness or full E2E coverage.",
+  "groups": [
+    { "id": "catalog", "method": "CatalogPreservesEachIdentityDefaultActionAndWidth", "cases": 40 },
+    { "id": "command-availability", "method": "AvailabilityDistinguishesThreadDraftAndUnknown", "cases": 15 },
+    { "id": "command-routing", "method": "EveryDeclaredCommandReachesExactlyItsContract", "cases": 15 },
+    { "id": "editor-supported-actions", "method": "EverySupportedCommandCanBeSelectedOnAnUnsupportedPicture", "cases": 15 },
+    { "id": "editor-slots", "method": "EverySlotUsesTheCorrectEditorAndWidth", "cases": 8 },
+    { "id": "saved-command-slots", "method": "EverySlotPersistsItsCommandAndIconWithoutChangingOtherSlots", "cases": 8 },
+    { "id": "saved-skill-slots", "method": "SkillIdentitySurvivesAllSlotsAndIndependentParsing", "cases": 8 },
+    { "id": "wire-slots", "method": "RemappedStopUsesTheRealWireProtocolAtEverySlot", "cases": 8 },
+    { "id": "skill-dispatch-slots", "method": "SkillBindingRetainsNameAndPathWithoutSending", "cases": 8 },
+    { "id": "toml-forms", "method": "EveryReadableTomlFormRemainsValidAfterChangingAnAction", "cases": 3 },
+    { "id": "placeholder-default", "method": "PlaceholderSelectionOffersTheNewDefault", "cases": 4 },
+    { "id": "keep-saved-action", "method": "ChangingThePicturePreservesAnExistingAction", "cases": 3 },
+    { "id": "manual-choice", "method": "ExplicitSelectionSurvivesMorePicturesAndLanguageChanges", "cases": 1 },
+    { "id": "late-skills", "method": "LateSkillsCannotReplaceTheUsersCommandOrSavedSkillIdentity", "cases": 2 },
+    { "id": "cancel-editor", "method": "ClosingDuringSkillLoadCancelsAndCannotSave", "cases": 1 },
+    { "id": "failed-config-save", "method": "FailedConfigWriteKeepsBothBindingsAndTheEditableChoice", "cases": 1 },
+    { "id": "partial-save", "method": "FailedIconWriteMustNotSilentlyCommitTheNewAction", "cases": 1 },
+    { "id": "corrupt-config", "method": "MalformedExistingConfigMustNotBeReportedAsSuccessfullySaved", "cases": 1 },
+    { "id": "target-aba", "method": "TargetAbaWhileAwaitingValidationCannotMutate", "cases": 4 },
+    { "id": "no-dangerous-queue", "method": "NonReversibleActionsRejectRepeatedInputRatherThanQueue", "cases": 4 },
+    { "id": "ambiguous-approval", "method": "AmbiguousOrMissingApprovalProducesNoDecision", "cases": 4 },
+    { "id": "no-retry-on-receipt", "method": "FailedOrUnknownReceiptNeverRetriesAnApproval", "cases": 3 },
+    { "id": "native-effects", "method": "NativeCommandsRequireOneMutationAndAnObservedEffect", "cases": 5 },
+    { "id": "native-stale-target", "method": "ChangedNativeTargetOrTextBeforeDispatchProducesNoInput", "cases": 4 },
+    { "id": "native-cancel-after-dispatch", "method": "CancellationAfterMutationIsUnknownAndNeverRepeatsInput", "cases": 3 },
+    { "id": "draft-mode-roundtrips", "method": "DraftModeRoundTripsPreserveTheDraftAndAttachmentIdentity", "cases": 3 },
+    { "id": "ordered-fast-queue", "method": "SixDraftFastInputsWaitInOrderWithoutBeingDropped", "cases": 1 },
+    { "id": "cancel-stale-queue", "method": "QueuedFastInputsCannotApplyAfterTargetReplacement", "cases": 1 },
+    { "id": "dispose-pending", "method": "DisposalCancelsPendingValidationAndPreventsLaterInputs", "cases": 1 }
+  ],
+  "pending": [
+    { "id": "L1-save-close", "reason": "Successful Save sets DialogResult on a modal Window. Offscreen tests cover selection and failed saves; file tests cover durable success. No real modal window is opened." },
+    { "id": "L4-host-routing", "reason": "Real main-window activation, remapped submit, reasoning and hidden-layout input need injectable configuration/foreground boundaries. Production code is unchanged in this task." },
+    { "id": "S06-S07-concurrency", "reason": "Sequential writers are covered; deterministic external-edit and concurrent-editor interleavings need a controllable write boundary." },
+    { "id": "G07-G08-timers", "reason": "Existing green-feedback regression is retained. Complete stale-timer and red/yellow timing cases need a controllable production time boundary." },
+    { "id": "L5-process-journeys", "reason": "Isolated components and adapters do not prove an actual process edit/save/restart/execute journey." },
+    { "id": "L6-platform-package", "reason": "Real Codex UI, keyboard/IME/DPI, package installation, measured performance and mutation sampling require separate evidence." }
+  ]
+}

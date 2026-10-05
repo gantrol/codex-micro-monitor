@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using CodexMicro.Control;
 using CodexMicro.Protocol;
+using AgentController.Adapters.Codex.Windows;
 
 namespace CodexMicro.Desktop.Services;
 
@@ -9,7 +10,9 @@ internal sealed record MicroControlContext(
     IReadOnlyDictionary<string, string> AgentThreads,
     CodexMicroLayoutSnapshot Layout,
     MicroProfileSnapshot Profile,
-    long TargetVersion = 0);
+    long TargetVersion = 0,
+    string? DraftModelPickerId = null,
+    CodexComposerTarget? ComposerTarget = null);
 
 internal interface IMicroTransport : IDisposable
 {
@@ -22,6 +25,7 @@ internal interface IMicroTransport : IDisposable
     Func<MicroControlContext>? CaptureContext { set { } }
     Action<string?>? ThreadOpened { set { } }
     Action<string, string?>? ServiceTierApplied { set { } }
+    Action<MicroControlContext, bool>? ComposerFastApplied { set { } }
     Func<string?, CancellationToken, Task<bool>>? ValidateTargetAsync { set { } }
     ValueTask DisposeAsync()
     {

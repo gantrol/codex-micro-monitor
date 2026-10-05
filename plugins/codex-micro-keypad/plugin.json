@@ -1,12 +1,12 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "codex-micro-keypad",
-  "version": "0.3.15",
+  "version": "1.0.0",
   "description": "A Windows companion inspired by Codex Micro: task status, model controls and usage at a glance, without a virtual HID driver.",
   "author": {
     "name": "gantrol"
   },
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "GPL-3.0-only",
   "extensions": {
     "com.openai": {
       "interface": {

@@ -12,6 +12,7 @@ internal sealed partial class CodexDraftComposerModelSelector
     internal sealed class DraftContext(IntPtr window, AutomationElement home, AutomationElement composer, string triggerId)
     {
         private readonly object _sync = new();
+        internal string ModelPickerId => triggerId;
         internal CodexModelToggleService.ForegroundDraftPresentationContext Presentation { get; } =
             new(window, "composer:" + triggerId, 0, null);
 

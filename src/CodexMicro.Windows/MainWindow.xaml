@@ -700,11 +700,7 @@
                                     Margin="5"
                                     Tag="ACT10"
                                     Style="{StaticResource CommandKey}"
-                                    PreviewMouseLeftButtonDown="Voice_PreviewMouseLeftButtonDown"
-                                    PreviewMouseLeftButtonUp="Voice_PreviewMouseLeftButtonUp"
-                                    LostMouseCapture="Voice_LostMouseCapture"
-                                    PreviewKeyDown="Voice_PreviewKeyDown"
-                                    PreviewKeyUp="Voice_PreviewKeyUp"
+                                    Click="Key_Click"
                                     Visibility="Collapsed"
                                     ToolTip="Microphone 1 · ACT10">
                                 <controls:KeycapIcon x:Name="ActionIcon10Split"
@@ -721,11 +717,7 @@
                                     Margin="5"
                                     Tag="ACT11"
                                     Style="{StaticResource CommandKey}"
-                                    PreviewMouseLeftButtonDown="Voice_PreviewMouseLeftButtonDown"
-                                    PreviewMouseLeftButtonUp="Voice_PreviewMouseLeftButtonUp"
-                                    LostMouseCapture="Voice_LostMouseCapture"
-                                    PreviewKeyDown="Voice_PreviewKeyDown"
-                                    PreviewKeyUp="Voice_PreviewKeyUp"
+                                    Click="Key_Click"
                                     Visibility="Collapsed"
                                     ToolTip="Microphone 2 · ACT11">
                                 <controls:KeycapIcon x:Name="ActionIcon11Split"
@@ -737,94 +729,10 @@
                             <Button x:Name="ActionKey12" Grid.Row="3" Grid.Column="3" Width="96" Height="96" Margin="5" Tag="ACT12" Style="{StaticResource CommandKey}" Click="Key_Click" ToolTip="Codex · ACT12">
                                 <Button.ContextMenu>
                                     <ContextMenu x:Name="HarnessContextMenu"
+                                                 Style="{StaticResource MicroContextMenu}"
                                                  Placement="Right"
                                                  HorizontalOffset="8"
                                                  Opened="HarnessContextMenu_Opened">
-                                        <ContextMenu.Template>
-                                            <ControlTemplate TargetType="ContextMenu">
-                                                <Border Padding="5"
-                                                        Background="#FFFEFDFB"
-                                                        BorderBrush="#FFDCD9D3"
-                                                        BorderThickness="1"
-                                                        CornerRadius="15">
-                                                    <Border.Effect>
-                                                        <DropShadowEffect BlurRadius="20"
-                                                                          Direction="270"
-                                                                          ShadowDepth="5"
-                                                                          Opacity="0.23"
-                                                                          Color="#FF34383B" />
-                                                    </Border.Effect>
-                                                    <StackPanel IsItemsHost="True"
-                                                                KeyboardNavigation.DirectionalNavigation="Cycle" />
-                                                </Border>
-                                            </ControlTemplate>
-                                        </ContextMenu.Template>
-                                        <ContextMenu.Resources>
-                                            <Style TargetType="MenuItem">
-                                                <Setter Property="MinWidth" Value="58" />
-                                                <Setter Property="Width" Value="58" />
-                                                <Setter Property="Padding" Value="7" />
-                                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="MenuItem">
-                                                            <Border x:Name="ChoiceSurface"
-                                                                    Width="52"
-                                                                    Height="52"
-                                                                    Margin="2"
-                                                                    Padding="{TemplateBinding Padding}"
-                                                                    Background="Transparent"
-                                                                    BorderBrush="Transparent"
-                                                                    BorderThickness="1"
-                                                                    CornerRadius="12">
-                                                                <Grid>
-                                                                    <ContentPresenter
-                                                                                      HorizontalAlignment="Center"
-                                                                                      VerticalAlignment="Center"
-                                                                                      ContentSource="Header"
-                                                                                      RecognizesAccessKey="False" />
-                                                                    <Ellipse x:Name="ChoiceMark"
-                                                                             Width="7"
-                                                                             Height="7"
-                                                                             Margin="0,5,5,0"
-                                                                             HorizontalAlignment="Right"
-                                                                             VerticalAlignment="Top"
-                                                                             Fill="#FF7185EA"
-                                                                             Opacity="0" />
-                                                                </Grid>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
-                                                                <Trigger Property="IsHighlighted" Value="True">
-                                                                    <Setter TargetName="ChoiceSurface" Property="Background" Value="#FFF3F5FF" />
-                                                                    <Setter TargetName="ChoiceSurface" Property="BorderBrush" Value="#FFD9DFFF" />
-                                                                </Trigger>
-                                                                <Trigger Property="IsChecked" Value="True">
-                                                                    <Setter TargetName="ChoiceSurface" Property="Background" Value="#FFF6F7FF" />
-                                                                    <Setter TargetName="ChoiceSurface" Property="BorderBrush" Value="#FFC9D2FF" />
-                                                                    <Setter TargetName="ChoiceMark" Property="Opacity" Value="1" />
-                                                                </Trigger>
-                                                                <Trigger Property="IsEnabled" Value="False">
-                                                                    <Setter TargetName="ChoiceSurface" Property="Opacity" Value="0.42" />
-                                                                </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                            <Style TargetType="Separator">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Separator">
-                                                            <Border Height="1"
-                                                                    Margin="8,5"
-                                                                    Background="#FFE8E6E1" />
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </ContextMenu.Resources>
-                                        <!-- Keeps the popup measurable before Opened replaces it
-                                             with the live registry contents. -->
                                         <MenuItem Header="Codex" IsEnabled="False" />
                                     </ContextMenu>
                                 </Button.ContextMenu>

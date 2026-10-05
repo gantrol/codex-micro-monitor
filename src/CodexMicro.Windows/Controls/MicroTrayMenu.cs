@@ -25,23 +25,43 @@ internal sealed class MicroTrayMenu : ContextMenuStrip
         ShowCheckMargin = true;
     }
 
+    // ToolStripDropDownMenu restores DefaultPadding during every layout pass.
+    // Keep its check/text gutter and reserve a separate inset for the surface.
+    protected override Padding DefaultPadding
+    {
+        get
+        {
+            var native = base.DefaultPadding;
+            if (SystemInformation.HighContrast) return native;
+            var inset = LogicalToDeviceUnits(6);
+            return new Padding(native.Left + inset, inset, native.Right + inset, inset);
+        }
+    }
+
     protected override void OnOpening(CancelEventArgs e)
     {
-        var nextFont = SystemInformation.HighContrast
-            ? (Font)SystemFonts.MenuFont!.Clone()
-            : new Font("Segoe UI", Math.Max(10.5f, SystemFonts.MenuFont!.SizeInPoints));
+        var nextFont = (Font)SystemFonts.MenuFont!.Clone();
         var previousFont = _menuFont;
         Font = _menuFont = nextFont;
         previousFont?.Dispose();
-        Padding = new Padding(LogicalToDeviceUnits(6));
         MinimumSize = new Size(LogicalToDeviceUnits(196), 0);
+        var inset = SystemInformation.HighContrast ? 0 : LogicalToDeviceUnits(6);
         foreach (ToolStripItem item in Items)
         {
-            item.Padding = item is ToolStripSeparator
-                ? new Padding(0, LogicalToDeviceUnits(4), 0, LogicalToDeviceUnits(4))
-                : new Padding(
-                    LogicalToDeviceUnits(8), LogicalToDeviceUnits(6),
-                    LogicalToDeviceUnits(8), LogicalToDeviceUnits(6));
+            // Native menu items subtract the menu's left padding from their
+            // position. Margins preserve the inset without widening their text.
+            item.Margin = new Padding(inset, 0, inset, 0);
+            if (item is ToolStripSeparator)
+            {
+                // Separators ignore Padding when measuring their height.
+                item.AutoSize = SystemInformation.HighContrast;
+                if (!item.AutoSize) item.Height = LogicalToDeviceUnits(9);
+                item.Padding = Padding.Empty;
+            }
+            else
+            {
+                item.Padding = new Padding(0, inset, 0, inset);
+            }
         }
 
         Renderer = SystemInformation.HighContrast
@@ -122,8 +142,7 @@ internal sealed class MicroTrayMenu : ContextMenuStrip
         {
             var bounds = new RectangleF(0.5f, 0.5f, e.ToolStrip.Width - 1, e.ToolStrip.Height - 1);
             using var path = RoundedRectangle(bounds, 8 * e.ToolStrip.DeviceDpi / 96f);
-            using var brush = SurfaceBrush(e.ToolStrip.ClientRectangle, "MicroPopupEdge", 45);
-            using var pen = new Pen(brush, 1);
+            using var pen = new Pen(_line, 1);
             var state = e.Graphics.Save();
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             e.Graphics.DrawPath(pen, path);
@@ -132,7 +151,7 @@ internal sealed class MicroTrayMenu : ContextMenuStrip
 
         protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
         {
-            if (!e.Item.Selected || !e.Item.Enabled) return;
+            if ((!e.Item.Selected && !e.Item.Pressed) || !e.Item.Enabled) return;
             using var path = RoundedRectangle(
                 new RectangleF(1, 1, e.Item.Width - 2, e.Item.Height - 2),
                 4 * (e.ToolStrip?.DeviceDpi ?? 96) / 96f);
@@ -147,7 +166,7 @@ internal sealed class MicroTrayMenu : ContextMenuStrip
         {
             var scale = (e.ToolStrip?.DeviceDpi ?? 96) / 96f;
             var x = e.ImageRectangle.Left + e.ImageRectangle.Width / 2f;
-            var y = e.ImageRectangle.Top + e.ImageRectangle.Height / 2f;
+            var y = e.Item.Height / 2f;
             using var pen = new Pen(e.Item.Enabled ? _accent : _muted, 1.7f * scale)
             {
                 StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round,
@@ -165,19 +184,47 @@ internal sealed class MicroTrayMenu : ContextMenuStrip
 
         protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e)
         {
-            e.ArrowColor = e.Item?.Enabled == false ? _muted : _text;
-            base.OnRenderArrow(e);
+            if (e.Direction is not (ArrowDirection.Left or ArrowDirection.Right))
+            {
+                e.ArrowColor = e.Item?.Enabled == false ? _muted : _text;
+                base.OnRenderArrow(e);
+                return;
+            }
+
+            var scale = (e.Item?.Owner?.DeviceDpi ?? 96) / 96f;
+            var x = e.ArrowRectangle.Left + e.ArrowRectangle.Width / 2f;
+            var y = e.ArrowRectangle.Top + e.ArrowRectangle.Height / 2f;
+            var direction = e.Direction == ArrowDirection.Right ? 1 : -1;
+            using var pen = new Pen(e.Item?.Enabled == false ? _muted : _text, 1.4f * scale)
+            {
+                StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round,
+            };
+            var state = e.Graphics.Save();
+            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            e.Graphics.DrawLines(pen,
+            [
+                new PointF(x - direction * 2 * scale, y - 4 * scale),
+                new PointF(x + direction * 2 * scale, y),
+                new PointF(x - direction * 2 * scale, y + 4 * scale),
+            ]);
+            e.Graphics.Restore(state);
         }
 
         protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
         {
+            // Native text/check rectangles exclude item padding; the arrow
+            // already uses the full row height. Center all three on that row.
+            var bounds = e.TextRectangle;
+            e.TextRectangle = new Rectangle(bounds.X, 0, bounds.Width, e.Item.Height);
+            e.TextFormat |= TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine;
             e.TextColor = e.Item.Enabled ? _text : _muted;
             base.OnRenderItemText(e);
         }
 
         protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
         {
-            var inset = (int)Math.Round(8 * (e.ToolStrip?.DeviceDpi ?? 96) / 96d);
+            // Native separators also ignore the item margins when positioned.
+            var inset = (int)Math.Round(14 * (e.ToolStrip?.DeviceDpi ?? 96) / 96d) - e.Item.Bounds.Left;
             using var pen = new Pen(_line);
             e.Graphics.DrawLine(pen, inset, e.Item.Height / 2, e.Item.Width - inset, e.Item.Height / 2);
         }

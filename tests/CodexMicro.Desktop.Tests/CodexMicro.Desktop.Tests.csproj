@@ -8,6 +8,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="Tomlyn" VersionOverride="0.19.0" PrivateAssets="all" />
     <ProjectReference Include="../../src/CodexMicro.Windows/CodexMicro.Windows.csproj" />
   </ItemGroup>
 </Project>

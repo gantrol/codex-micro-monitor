@@ -102,6 +102,29 @@ internal sealed partial class CodexMicroLayoutObserver : IDisposable
 
     internal void ReloadNow() => Reload();
 
+    internal async Task ReloadNowAsync(CancellationToken cancellationToken = default)
+    {
+        CodexMicroLayoutSnapshot next;
+        try
+        {
+            if (!File.Exists(_configPath)) next = CreateDefault("Codex default layout");
+            else
+            {
+                await using var stream = new FileStream(_configPath, FileMode.Open, FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete, 4096, FileOptions.Asynchronous | FileOptions.SequentialScan);
+                using var reader = new StreamReader(stream, detectEncodingFromByteOrderMarks: true);
+                next = Parse(await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false), _configPath);
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            ScheduleReload();
+            return;
+        }
+        cancellationToken.ThrowIfCancellationRequested();
+        ApplySnapshot(next);
+    }
+
     public void Start()
     {
         lock (_gate)
@@ -328,7 +351,12 @@ internal sealed partial class CodexMicroLayoutObserver : IDisposable
             return;
         }
 
-        if (Equivalent(Current, next))
+        ApplySnapshot(next);
+    }
+
+    private void ApplySnapshot(CodexMicroLayoutSnapshot next)
+    {
+        if (_disposed || Equivalent(Current, next))
         {
             return;
         }

@@ -42,6 +42,7 @@ internal static class CodexKeycapCatalog
             ["MRG"] = new("MRG", "Merge pull request", "git.mergePullRequest"),
             ["PR"] = new("PR", "Create pull request", "git.createPullRequest"),
             ["PAINT"] = new("PAINT", "Add photos", "composer.addPhotos"),
+            ["SKETCH"] = new("SKETCH", "Sketch", "composer.sketch"),
             ["LAB"] = new("LAB", "Settings", "settings"),
             ["PARTY"] = new("PARTY", "Side chat", "openSideChat"),
             ["TIME"] = new("TIME", "Manage tasks", "manageTasks"),

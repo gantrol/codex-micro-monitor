@@ -1,0 +1,152 @@
+[
+  {
+    "source": "micro-bridge/CodexPlugin/KeypadCapabilities.cs",
+    "destination": "src/CodexMicro.Plugin/KeypadCapabilities.cs",
+    "sha256": "e0c9fa227f8ef18da5d41cc3e767cd1a322e67f77296c1ddfcff896b0074fa14",
+    "merge": "clean"
+  },
+  {
+    "source": "micro-bridge/CodexPlugin/KeypadWindowHost.cs",
+    "destination": "src/CodexMicro.Plugin/KeypadWindowHost.cs",
+    "sha256": "3c2d96c1c981c921b72eb3943fc1946641377175c5a47075593a9bac38e6b638",
+    "merge": "clean"
+  },
+  {
+    "source": "micro-bridge/CodexPlugin/McpServer.cs",
+    "destination": "src/CodexMicro.Plugin/McpServer.cs",
+    "sha256": "30763c559b1d264a015b80c6861f64698f900709d6f6eaaa82a2ebb29eda5a05",
+    "merge": "clean"
+  },
+  {
+    "source": "micro-bridge/CodexPlugin/Program.cs",
+    "destination": "src/CodexMicro.Plugin/Program.cs",
+    "sha256": "7532ec0bf92f16624137208ba118be7522244257fc7eeb637c1bb13df3f5eb23",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/AgentController.MicroSurface.Wpf/SoftwareControl/SoftwareMicroTransport.cs",
+    "destination": "src/CodexMicro.Windows/SoftwareControl/SoftwareMicroTransport.cs",
+    "sha256": "28f33c407839b47c244ed114c79bf00aefde99c6ae34d4a12669fcce9817f0a6",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/AgentController.MicroSurface.Wpf/SoftwareControl/SoftwareQuestionObserver.cs",
+    "destination": "src/CodexMicro.Windows/SoftwareControl/SoftwareQuestionObserver.cs",
+    "sha256": "1609936da543c9a0ae1eb31b4ef557a0e63927f7c2ee09c7fbe5c17d385bac55",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Controls/KeycapIcon.cs",
+    "destination": "src/CodexMicro.Windows/Controls/KeycapIcon.cs",
+    "sha256": "319b275a1fc862bb438b99b9128e42c414c7871e14f47316631926dee7570327",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/KeycapEditorWindow.xaml",
+    "destination": "src/CodexMicro.Windows/KeycapEditorWindow.xaml",
+    "sha256": "330e8ef3678e1a358ca5a1ed7d3750cda0fbb2722d39db3e00dded0af8bef105",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/KeycapEditorWindow.xaml.cs",
+    "destination": "src/CodexMicro.Windows/KeycapEditorWindow.xaml.cs",
+    "sha256": "721b06e84e09695bd81601eeca4c4cf04efee4ac9587f72e401f1fdfb58578d4",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/MainWindow.Software.cs",
+    "destination": "src/CodexMicro.Windows/MainWindow.Software.cs",
+    "sha256": "1dafcae78e2d131439b310c13f0eb333da441a7564ce9a1e89616a456ff669da",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/MainWindow.xaml.cs",
+    "destination": "src/CodexMicro.Windows/MainWindow.xaml.cs",
+    "sha256": "333e6db509a708700393e38eb29ff819546529f2d0cdf4ba35308abc7924cf98",
+    "merge": "resolved-preserving-standalone-scope"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/MicroSettingsWindow.xaml",
+    "destination": "src/CodexMicro.Windows/MicroSettingsWindow.xaml",
+    "sha256": "58772be8c15ac26325051bce90ccbf41d2225f5452ed7da64114ce42142f6a07",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/MicroSettingsWindow.xaml.cs",
+    "destination": "src/CodexMicro.Windows/MicroSettingsWindow.xaml.cs",
+    "sha256": "4d478b44c85c5054b90697919640a94b199d796b9a151aa2f39e1bb301c728d7",
+    "merge": "resolved-preserving-standalone-scope"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexActionCatalog.cs",
+    "destination": "src/CodexMicro.Windows/Services/CodexActionCatalog.cs",
+    "sha256": "6bfe94a16e786a9a08e6b324eda4dcceecb4cb8856a6da5738d77b4153801bd4",
+    "merge": "added"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexDraftComposerModelSelector.Observation.cs",
+    "destination": "src/CodexMicro.Windows/Services/CodexDraftComposerModelSelector.Observation.cs",
+    "sha256": "7e96150ae7540b0daa7e7542d05ad6714ff0d3b12d6d6930d1101d3fa134a35b",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexDraftComposerModelSelector.Reasoning.cs",
+    "destination": "src/CodexMicro.Windows/Services/CodexDraftComposerModelSelector.Reasoning.cs",
+    "sha256": "d7d47630765942b38c21414801651daf2d315cef0aee5e19e8406816a145fbf8",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexDraftComposerModelSelector.cs",
+    "destination": "src/CodexMicro.Windows/Services/CodexDraftComposerModelSelector.cs",
+    "sha256": "e30f8e1f78d65af6474ac4f4b2c8fd6a0b07de35816e133c79f4dd93cf1da741",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexKeycapCatalog.cs",
+    "destination": "src/CodexMicro.Windows/Services/CodexKeycapCatalog.cs",
+    "sha256": "7d89daeb334c40b80708d6dd31647ff74a04053c946b9668c379cc143c197b8a",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexOfficialArtwork.cs",
+    "destination": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.cs",
+    "sha256": "ec66a35a9d64a96479b72ab0967d06eda8618af79cb8ceea5eeb00fbfb5eb48a",
+    "merge": "added"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexOfficialArtwork.g.cs",
+    "destination": "src/CodexMicro.Windows/Services/CodexOfficialArtwork.g.cs",
+    "sha256": "ed986ea9dcc1c0ae0b08df3b419560164feb50627f3107e143e435a7a1bab875",
+    "merge": "added"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexOfficialCatalog.json",
+    "destination": "src/CodexMicro.Windows/Services/CodexOfficialCatalog.json",
+    "sha256": "9a0bd6ab3f8dc8c12088d85540fec4e8310d4e4226a0e71c943bc26937e0a151",
+    "merge": "added"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/CodexOfficialCommands.g.cs",
+    "destination": "src/CodexMicro.Windows/Services/CodexOfficialCommands.g.cs",
+    "sha256": "49d94e8c2c0f79f979a52260c376401e56a343d81064f78084289f0e3d4a02ee",
+    "merge": "added"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/IMicroTransport.cs",
+    "destination": "src/CodexMicro.Windows/Services/IMicroTransport.cs",
+    "sha256": "175e345bb5839a45a388748f73f94d894619dffc573c86dcd2cde270a2c37338",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/MicroProfileSettings.cs",
+    "destination": "src/CodexMicro.Windows/Services/MicroProfileSettings.cs",
+    "sha256": "48476070cbbc0b5e7d841fe2c04b42599aa37e1e1aa464c4fdaa00b7401f1494",
+    "merge": "clean"
+  },
+  {
+    "source": "virtual-micro/src/CodexMicro.Desktop/Services/MicroWindowLayout.cs",
+    "destination": "src/CodexMicro.Windows/Services/MicroWindowLayout.cs",
+    "sha256": "2c4c2cf58628fad1c2cdada08c7fdd16ffdc72e0f9a10eaeb239edf5b8158e2d",
+    "merge": "added"
+  }
+]
