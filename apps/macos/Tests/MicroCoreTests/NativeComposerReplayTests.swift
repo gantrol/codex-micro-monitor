@@ -19,6 +19,7 @@ private final class NativeTraceRig: @unchecked Sendable {
     var focus:String?
     var frontPID:Int32?=NSRunningApplication.current.processIdentifier
     var planList=false
+    var pickerFlowsToLabel=false
     var documentURL:String?
     var selectedLinks:[String]=[]
     var homeMarker=false
@@ -76,7 +77,8 @@ private final class NativeTraceRig: @unchecked Sendable {
     }
     func snapshot() -> MacUISnapshot {
         func node(_ id:Int,_ parent:Int?,_ role:String,_ name:String,strings:[String]=[],expanded:Bool?=nil,selected:Bool=false) -> AXNode {
-            AXNode(element:elements[id],parent:parent,role:role,name:name,identifier:"node-\(id)",strings:strings,expanded:expanded,selected:selected,focused:focus == identity(elements[id]))
+            AXNode(element:elements[id],parent:parent,role:role,name:name,identifier:"node-\(id)",strings:strings,expanded:expanded,selected:selected,focused:focus == identity(elements[id]),
+                   linkedElements:id == 3 && pickerFlowsToLabel ? [elements[23]] : [])
         }
         var nodes=[node(0,nil,"AXWindow","fixture"),node(1,0,"AXGroup","home"),
             AXNode(element:elements[2],parent:1,role:"AXTextArea",focused:focus == "editor",text:"fixture prompt"),
@@ -112,6 +114,7 @@ private final class NativeTraceRig: @unchecked Sendable {
             if planList { nodes.append(node(20,9,"AXStaticText",chinese ? "计划模式":"Plan mode")) }
             else { items.append(9) }
         }
+        if pickerFlowsToLabel { nodes.append(node(23,1,"AXStaticText","next reading target")) }
         let live=documentURL.map {CurrentRoute.resolve(documents:[$0],selectedLinks:selectedLinks,homeComposer:homeMarker,composerAvailable:true)}
         return MacUISnapshot(app:NSRunningApplication.current,root:elements[0],window:elements[0],nodes:nodes,composer:2,container:1,thread:live?.threadID ?? (documentURL == nil && changed ? "01000000-0000-0000-0000-000000000001":nil),draft:live?.draft ?? !changed,route:live?.key ?? (changed ? "thread:changed":"draft"),selectionKnown:live?.known ?? true,nativeFallback:false,selectedSidebar:nil,controls:plan ? [3,5,6,7]:[3,5,6],menuItems:items,blocked:blocked,modelLabels:Self.models.flatMap(NativeComposerSelection.labels),clientBinding:live?.pendingBinding)
     }
@@ -237,6 +240,19 @@ final class NativeLampFocusTests:XCTestCase {
 }
 
 final class NativeComposerReplayTests:XCTestCase {
+    func testNonMenuPickerRelationshipPreservesFastMindAndModelReadback() async throws {
+        let rig=NativeTraceRig();rig.pickerFlowsToLabel=true
+        let controller=MacUIController(io:rig.access)
+        let fast=try await rig.run(controller,"set_keypad_draft_fast",["enabled":true])
+        XCTAssertEqual(fast["verified"] as? Bool,true);XCTAssertEqual(rig.speed,.fast);XCTAssertFalse(rig.menu)
+        let mind=try await rig.run(controller,"set_keypad_draft_reasoning",["direction":1])
+        XCTAssertEqual(mind["verified"] as? Bool,true);XCTAssertEqual(rig.effort,"high");XCTAssertFalse(rig.menu)
+        let model=try await rig.run(controller,"set_keypad_draft_model",["model":"gpt-6-luna","effort":"low"])
+        XCTAssertEqual(model["verified"] as? Bool,true);XCTAssertEqual(rig.model,"gpt-6-luna")
+        XCTAssertEqual(rig.effort,"low");XCTAssertFalse(rig.menu)
+        XCTAssertEqual(rig.events.filter { $0 == "press:picker" }.count,3)
+        rig.record("AX relations non-menu link settings readback")
+    }
     func testDescendantHelpAndPowerAnnouncementsResolveSelection() {
         let model=NativeTraceRig.models
         XCTAssertEqual(NativeComposerSelection.parse(["Select model","6.1-sol","Extra high"],models:model)?.effort,"xhigh")
