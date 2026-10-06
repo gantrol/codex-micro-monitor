@@ -65,7 +65,7 @@ struct AXNode {
     let parent: Int?
     let role: String
     let subrole: String
-    let name: String
+    var name: String
     let identifier: String
     let classes: [String]
     let url: String
@@ -73,22 +73,27 @@ struct AXNode {
     let current: Bool
     let enabled: Bool
     let focused: Bool
-    let expanded: Bool?
+    var expanded: Bool?
     let selected: Bool
     let rect: CGRect
     let text: String?
     let selectedTextRange: NSRange?
     let numericValue: Double?
-    let accessibleStrings: [String]
+    var accessibleStrings: [String]
     let minimum: Double?
     let maximum: Double?
     let valueSettable: Bool
     let children: [AXUIElement]
+    let titleElement: AXUIElement?
+    let linkedElements: [AXUIElement]
+    let popupValue: String?
+    var titleRelationshipResolved = false
+    var expandedFromLinkedMenu = false
 
     init(_ element: AXUIElement, parent: Int?) {
         self.element = element; self.parent = parent
         let keys = ["AXRole", "AXTitle", "AXDescription", "AXDOMIdentifier", "AXDOMClassList", "AXURL", "AXARIACurrent",
-                    "AXEnabled", "AXFocused", "AXExpanded", "AXSelected", "AXPosition", "AXSize", "AXValue", "AXChildren", "AXSubrole", "AXHelp", "AXValueDescription", "AXMinValue", "AXMaxValue", "AXSelectedTextRange"]
+                    "AXEnabled", "AXFocused", "AXExpanded", "AXSelected", "AXPosition", "AXSize", "AXValue", "AXChildren", "AXSubrole", "AXHelp", "AXValueDescription", "AXMinValue", "AXMaxValue", "AXSelectedTextRange", "AXTitleUIElement", "AXLinkedUIElements", "AXPopupValue"]
         var values: CFArray?
         let status = AXUIElementCopyMultipleAttributeValues(element, keys as CFArray, [], &values)
         let array = status == .success ? values as? [Any] ?? [] : []
@@ -127,8 +132,11 @@ struct AXNode {
         var settable = DarwinBoolean(false)
         valueSettable = role == "AXSlider" && AXUIElementIsAttributeSettable(element,"AXValue" as CFString,&settable) == .success && settable.boolValue
         children = v(14) as? [AXUIElement] ?? []
+        titleElement = MacAX.element(v(21))
+        linkedElements = (v(22) as? [Any] ?? []).compactMap { MacAX.element($0) }
+        popupValue = v(23) as? String
     }
-    init(element:AXUIElement, parent:Int? = nil, role:String = "AXButton", name:String = "", identifier:String = "", strings:[String] = [], enabled:Bool = true, expanded:Bool? = nil, selected:Bool = false, focused:Bool = false, text:String? = nil, selectedTextRange:NSRange? = nil, minimum:Double? = nil, maximum:Double? = nil, valueSettable:Bool = false, classes:[String] = [], frame:CGRect = CGRect(x:0,y:0,width:100,height:100), url:String="",documentURLs:[String]=[],current:Bool=false) {
+    init(element:AXUIElement, parent:Int? = nil, role:String = "AXButton", name:String = "", identifier:String = "", strings:[String] = [], enabled:Bool = true, expanded:Bool? = nil, selected:Bool = false, focused:Bool = false, text:String? = nil, selectedTextRange:NSRange? = nil, minimum:Double? = nil, maximum:Double? = nil, valueSettable:Bool = false, classes:[String] = [], frame:CGRect = CGRect(x:0,y:0,width:100,height:100), url:String="",documentURLs:[String]=[],current:Bool=false,titleElement:AXUIElement?=nil,linkedElements:[AXUIElement]=[],popupValue:String?=nil) {
         self.element=element; self.parent=parent; self.role=role; self.name=name; self.identifier=identifier
         self.accessibleStrings=Array(Set([name]+strings)).filter { !$0.isEmpty }.sorted()
         self.expanded=expanded; self.selected=selected; self.focused=focused; self.text=text
@@ -136,6 +144,7 @@ struct AXNode {
         self.minimum=minimum; self.maximum=maximum; self.valueSettable=valueSettable
         subrole=""; self.classes=classes; self.url=url; self.documentURLs=documentURLs; self.current=current; self.enabled=enabled
         rect=frame; numericValue=nil; children=[]
+        self.titleElement=titleElement; self.linkedElements=linkedElements; self.popupValue=popupValue
     }
     func named(_ names: [String]) -> Bool { names.contains { $0.caseInsensitiveCompare(name.trimmingCharacters(in: .whitespacesAndNewlines)) == .orderedSame } }
     var button: Bool { ["AXButton", "AXPopUpButton", "AXComboBox"].contains(role) }
@@ -226,6 +235,7 @@ struct MacUISnapshot {
         try context.check()
         let visible = nodes.indices.filter { nodes[$0].rect.width > 0 && nodes[$0].rect.height > 0 }
         let tree = AXTreeIndex(nodes)
+        nodes = tree.resolvingRelationships(in: nodes)
         let scope = NativeComposerScope(nodes: nodes, tree: tree, modelLabels: modelLabels)
         let composer = scope.composer, container = scope.container, controls = scope.controls
         let active = visible.filter { nodes[$0].current && nodes[$0].classes.contains("sidebar-item") }
@@ -332,10 +342,18 @@ struct MacUISnapshot {
         }
     }
     var modelMenu: Int? {
-        guard picker?.expanded == true else { return nil }
+        guard let trigger = picker, trigger.expanded == true else { return nil }
         let candidates=nodes.indices.filter { nodes[$0].role == "AXMenu" &&
+            nodes[$0].rect.width > 0 && nodes[$0].rect.height > 0 &&
             !Self.hasAncestor($0,nodes:nodes,matching:{$0.role == "AXMenu"}) }
-        return candidates.count == 1 ? candidates[0] : nil
+        switch (treeIndex ?? AXTreeIndex(nodes)).linkedMenu(for: trigger, nodes: nodes) {
+        case .menu(let linked):
+            return candidates.contains(linked) ? linked : nil
+        case .unavailable:
+            return nil
+        case .noMenu:
+            return candidates.count == 1 ? candidates[0] : nil
+        }
     }
     var powerTexts: [String] {
         guard let menu=modelMenu else { return [] }

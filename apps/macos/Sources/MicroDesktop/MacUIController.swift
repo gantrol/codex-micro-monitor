@@ -97,11 +97,12 @@ final class MacUIController: @unchecked Sendable {
         let diagnostics=state["diagnostics"] as? [String:Any] ?? [:]
         let flags=["composerAvailable","composerContainerAvailable","modelPickerAvailable","blocked"].map {"\($0)=\(diagnostics[$0] as? Bool == true)"}.joined(separator:" ")
         let picker="pickerSource=\(diagnostics["pickerSource"] as? String ?? "none") pickerCandidates=\(diagnostics["pickerCandidates"] as? Int ?? 0)"
+        let relationships="adapter=\(diagnostics["adapterRevision"] as? String ?? "unknown") titleRefs=\(diagnostics["titleRelationshipCount"] as? Int ?? 0) resolvedTitleRefs=\(diagnostics["resolvedTitleRelationshipCount"] as? Int ?? 0) pickerLinkedMenu=\(diagnostics["pickerExpandedFromLinkedMenu"] as? Bool == true) modelLabels=\(diagnostics["modelLabelCount"] as? Int ?? 0)"
         let home=diagnostics["homeComposerEvidence"] as? String ?? "none"
         let reason=state["reason"] as? String ?? ""
         let route=state["routeAvailable"] as? Bool == true,known=state["selectionKnown"] as? Bool == true,focused=state["appFocused"] as? Bool == true
         let code=state["failureCode"] as? String ?? "none",source=state["routeSource"] as? String ?? "none"
-        let summary="available=\(available) accessibility=\(accessibility) kind=\(kind) routeAvailable=\(route) selectionKnown=\(known) appFocused=\(focused) \(flags) \(picker) home=\(home) source=\(source) failure=\(code)"
+        let summary="available=\(available) accessibility=\(accessibility) kind=\(kind) routeAvailable=\(route) selectionKnown=\(known) appFocused=\(focused) \(flags) \(picker) \(relationships) home=\(home) source=\(source) failure=\(code)"
         let identity=summary+" "+reason
         if identity != lastObservationSummary {
             lastObservationSummary=identity
@@ -210,6 +211,11 @@ final class MacUIController: @unchecked Sendable {
         result["diagnostics"]=["nodeCount":state.nodes.count,"composerAvailable":state.editor?.text != nil,
             "composerContainerAvailable":state.container != nil,"modelPickerAvailable":state.picker != nil,"blocked":state.blocked,
             "composerCandidates":state.composerCandidates,"pickerCandidates":state.pickerCandidates,"pickerSource":state.pickerSource,
+            "adapterRevision":"ax-relations-r2",
+            "titleRelationshipCount":state.nodes.filter { $0.titleElement != nil }.count,
+            "resolvedTitleRelationshipCount":state.nodes.filter { $0.titleRelationshipResolved }.count,
+            "pickerExpandedFromLinkedMenu":state.picker?.expandedFromLinkedMenu ?? false,
+            "modelLabelCount":state.modelLabels.count,
             "captureMilliseconds":state.captureDuration*1000,
             "processID":state.app.processIdentifier,"windowFingerprint":String(CFHash(state.window)),
             "homeComposerEvidence":MacUISnapshot.homeComposerEvidence(nodes:state.nodes,composer:state.composer,container:state.container,controls:state.controls,modelLabels:state.modelLabels) ?? "none"]

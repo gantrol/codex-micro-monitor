@@ -54,11 +54,23 @@ enum NativeWindowNavigation {
         let previousSidebarState=action == "sidebar" ? sidebarExpanded(control):nil
         do {
             try io.press(control.element)
-            let end=ProcessInfo.processInfo.systemUptime+2.5
+            let end=min(context.deadline,ProcessInfo.processInfo.systemUptime+6)
             repeat {
                 // Hiding the sidebar can remove its selected-chat identity;
                 // history deliberately changes it. Read back the same window.
-                let state=try capture(preserveTarget:false)
+                let state: MacUISnapshot
+                do {
+                    state = try capture(preserveTarget:false)
+                } catch let failure as NativeObservationFailure
+                    where failure == .treeIncomplete || failure == .windowUnavailable {
+                    // Only retry observation after an already-dispatched action.
+                    // Never replay the click, relax the window identity check,
+                    // or retry authorization/foreground/window-change failures.
+                    try context.check()
+                    guard ProcessInfo.processInfo.systemUptime < end else { break }
+                    Thread.sleep(forTimeInterval:0.04)
+                    continue
+                }
                 if action == "sidebar" {
                     if let next=button(action,in:state),let previousSidebarState,
                        let currentSidebarState=sidebarExpanded(next),currentSidebarState != previousSidebarState {return state}

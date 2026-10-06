@@ -8,7 +8,7 @@ struct NativeComposerScope {
         let identifier: String
     }
     static func allows(_ ancestors: [Ancestor]) -> Bool {
-        !ancestors.contains { $0.identifier.hasPrefix("app-shell-tab-panel-") } &&
+        !ancestors.contains { $0.identifier.hasPrefix("app-shell-tab-panel-") || ["AXMenu", "AXMenuBar"].contains($0.role) } &&
             ancestors.filter { $0.role == "AXWebArea" }.count <= 1
     }
 
@@ -104,7 +104,12 @@ struct NativeComposerScope {
                     let node = nodes[index]
                     guard node.enabled, node.rect.width > 0, node.rect.height > 0,
                           node.rect.height <= 120, node.rect.width <= max(anchor.width + 240, 360),
-                          node.expanded != nil, belongsToMainComposer(index),
+                          // A closed popup need not publish AXExpanded. Its
+                          // actionable role, popup semantics and label remain
+                          // required; an expanded AXGroup is not a press target.
+                          node.button,
+                          (node.expanded != nil || node.popupValue == "menu" || node.role == "AXPopUpButton"),
+                          belongsToMainComposer(index),
                           webArea(index) == area,
                           MacUISnapshot.matchesPicker(pickerTexts(index), modelLabels: modelLabels) else { return false }
                     let horizontal = max(0, max(anchor.minX - node.rect.maxX, node.rect.minX - anchor.maxX))
