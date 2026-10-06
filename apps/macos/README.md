@@ -6,7 +6,9 @@ macOS 14+，UIKit / Mac Catalyst 与原生 AppKit 桥接，无外部 Swift Packa
 
 当前实机日志已能把新建页识别为 `kind=draft`，但同一快照仍为 `modelPickerAvailable=false`、`pickerCandidates=0`。因此模型、Fast 和思考强度在派发前就没有原生目标；[官方 Codex app-server 文档](https://developers.openai.com/siwc/token-sharing-open-source/codex-app-server)也将 `model/list` 定义为目录而非授权判断，它不能替代当前 Codex 输入框里的模型控件。命令键为了保留右键编辑始终接收点击，但不可用动作的 `prepareKey` 为 `nil`，所以会出现“按得下去但没有业务效果”。Plan 有独立快捷键／添加菜单路径，不代表模型控件已经恢复。
 
-本轮同 WebArea 回退与 `pickerSource` 诊断没有在当前 Codex 实机结构中找到候选，仍属于未完成的兼容尝试。摇杆导航的未知结果现会自动重新观察并解除全局控制锁，但不会重放动作，也不能证明原导航已生效。371 项 Swift 回归使用合成 AX 树，只验证控制器逻辑；当前新会话与摇杆仍需真实 AX 证据和端到端验收。
+此前同 WebArea 回退与 `pickerSource` 诊断没有在当前 Codex 实机结构中找到候选，仍属于未完成的兼容尝试。摇杆导航的未知结果现会自动重新观察并解除全局控制锁，但不会重放动作，也不能证明原导航已生效。此前 371 项 Swift 回归使用合成 AX 树，只验证控制器逻辑；当前新会话与摇杆仍需真实 AX 证据和端到端验收。
+
+当前 `ax-relations-r2` 候选接入同作用域的 `AXTitleUIElement` 标签、缺少 `AXExpanded` 的 popup 发现和导航后的有限瞬态重读，并修复附件 r1 的菜单关联回归：已解析的非菜单关联不再阻断明确展开的唯一可见菜单；缺失、隐藏或多个关联菜单仍拒绝使用。展开推断与菜单选择共用关系判定，显式 `AXExpanded=false` 保持优先。13 项针对性组件回归已通过，包含正式控制器的 Fast、MIND、模型设置回读。候选输出为 `dist/macos/ax-relations-r2/universal/`，仍沿用 preview.34 应用版本，用观察日志中的 `adapter=ax-relations-r2` 和 `BuildIdentity.json` 核对实际进程。真实 Codex 访问被电脑操作工具拒绝，不能据此删除本节已知问题；完整验证入口见 [tests/macos](../../tests/macos/README.md)。
 
 preview.34 处理新会话控制失效的三个边界：原生观察保留辅助功能拒绝及输入框／模型控件缺失的具体原因；支持主页内容旁的底部输入框，要求同一原生 WebArea、唯一主页容器和完整输入控件，排除面板输入框；IPC following 只用于监控，不再自动生成当前会话或控制目标。原生状态变化记录到 `com.gantrol.codex-micro-monitor` / `native-observation`，不记录输入文字、会话内容或 token 值。
 

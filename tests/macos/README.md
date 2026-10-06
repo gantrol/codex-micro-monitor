@@ -2,6 +2,25 @@
 
 本目录依据用户 2026-10-05 的明确测试请求新增。工作目录始终为 `codex-micro-monitor`。不将 Swift 单测、夹具应答或隔离界面点击计作真实 Codex 业务验收；逐项结果见 [对照报告](../../docs/architecture/macos-windows-parity-2026-10-05.zh-CN.md)。
 
+## AX 关联修复（2026-10-06，ax-relations-r2）
+
+本轮按用户的补丁验收及修复请求保留 `AXRelationsAcceptanceTests` 的 12 项组件测试：同作用域引用标签、跨面板与编辑框排除、无展开属性的 popup、显式关闭、重复和非菜单关联、未知／隐藏／多个菜单，以及导航瞬态重读与不重放。r1 在其中 3 个测试中产生 7 处断言失败，保留在 `dist/macos/ax-relations-r2/regression-before.log`。r2 共用关系解析后全部通过；未知引用不会被过滤后当成完整证据。
+
+`NativeComposerReplayTests.testNonMenuPickerRelationshipPreservesFastMindAndModelReadback` 沿用现有回放边界，真实运行控制器的 Fast → MIND → 模型切换、菜单清理和设置回读，新增路径只注入一个非菜单关联。13 项针对性测试通过，不新增另一套 E2E；安装包继续使用现有 `process_e2e.py`。日志和构建身份保存在 `dist/macos/ax-relations-r2/`。
+
+最终完整 Swift 回归 384 项、0 失败；Universal Release 构建、Apple Development 签名校验及最终包的 45 项隔离进程场景全部通过。重新计算的源码指纹与包内 `BuildIdentity.json` 一致；未安装或替换运行中的应用。
+
+```sh
+swift test --package-path apps/macos --filter 'AXRelationsAcceptanceTests|NativeComposerReplayTests.testNonMenuPickerRelationship'
+swift test --package-path apps/macos
+scripts/package-macos.sh universal ax-relations-r2
+python3 tests/macos/process_e2e.py \
+  --app 'dist/macos/ax-relations-r2/universal/Codex Micro Monitor.app/Contents/MacOS/CodexMicroMac' \
+  --report dist/macos/ax-relations-r2/process-e2e.json
+```
+
+验收工具明确拒绝访问 `com.openai.codex`，本轮未再访问或改用其他 UI 通道。真实新草稿、设置与导航业务结果仍待允许的实机环境验证；组件及进程测试不能替代这些结果。
+
 ## 恢复验证与 E2E 归属（2026-10-06）
 
 用户要求继续修复，且每种场景最多一种 E2E 测试。延续已有测试入口：协议行为仍由 `process_e2e.py` 负责；编辑器配置行为仍由隔离 Micro UI 旅程负责；真实桌面当前身份及唤起仅归属真实应用旅程。不为同一用户场景再建立一套脚本、第二种 UI 框架或复制进程场景。下表中的组件测试不是 E2E，也不作为真实桌面场景通过的替代证据。
