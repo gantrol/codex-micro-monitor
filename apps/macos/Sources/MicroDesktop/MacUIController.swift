@@ -96,11 +96,12 @@ final class MacUIController: @unchecked Sendable {
         }
         let diagnostics=state["diagnostics"] as? [String:Any] ?? [:]
         let flags=["composerAvailable","composerContainerAvailable","modelPickerAvailable","blocked"].map {"\($0)=\(diagnostics[$0] as? Bool == true)"}.joined(separator:" ")
+        let picker="pickerSource=\(diagnostics["pickerSource"] as? String ?? "none") pickerCandidates=\(diagnostics["pickerCandidates"] as? Int ?? 0)"
         let home=diagnostics["homeComposerEvidence"] as? String ?? "none"
         let reason=state["reason"] as? String ?? ""
         let route=state["routeAvailable"] as? Bool == true,known=state["selectionKnown"] as? Bool == true,focused=state["appFocused"] as? Bool == true
         let code=state["failureCode"] as? String ?? "none",source=state["routeSource"] as? String ?? "none"
-        let summary="available=\(available) accessibility=\(accessibility) kind=\(kind) routeAvailable=\(route) selectionKnown=\(known) appFocused=\(focused) \(flags) home=\(home) source=\(source) failure=\(code)"
+        let summary="available=\(available) accessibility=\(accessibility) kind=\(kind) routeAvailable=\(route) selectionKnown=\(known) appFocused=\(focused) \(flags) \(picker) home=\(home) source=\(source) failure=\(code)"
         let identity=summary+" "+reason
         if identity != lastObservationSummary {
             lastObservationSummary=identity
@@ -208,9 +209,10 @@ final class MacUIController: @unchecked Sendable {
         result["settingsSource"] = source
         result["diagnostics"]=["nodeCount":state.nodes.count,"composerAvailable":state.editor?.text != nil,
             "composerContainerAvailable":state.container != nil,"modelPickerAvailable":state.picker != nil,"blocked":state.blocked,
-            "composerCandidates":state.composerCandidates,"captureMilliseconds":state.captureDuration*1000,
+            "composerCandidates":state.composerCandidates,"pickerCandidates":state.pickerCandidates,"pickerSource":state.pickerSource,
+            "captureMilliseconds":state.captureDuration*1000,
             "processID":state.app.processIdentifier,"windowFingerprint":String(CFHash(state.window)),
-            "homeComposerEvidence":MacUISnapshot.homeComposerEvidence(nodes:state.nodes,composer:state.composer,container:state.container,modelLabels:state.modelLabels) ?? "none"]
+            "homeComposerEvidence":MacUISnapshot.homeComposerEvidence(nodes:state.nodes,composer:state.composer,container:state.container,controls:state.controls,modelLabels:state.modelLabels) ?? "none"]
         result["observedAtUptime"]=state.observedAtUptime
         result["routeSource"]=state.routeEvidence
         if !usable {

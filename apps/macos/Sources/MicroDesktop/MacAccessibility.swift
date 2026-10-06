@@ -162,13 +162,17 @@ struct MacUISnapshot {
     var bindingVerified=false
     var treeIndex: AXTreeIndex?
     var composerCandidates = 0
+    var pickerCandidates = 0
+    var pickerSource = "none"
     var captureDuration: TimeInterval = 0
     var observedAtUptime = ProcessInfo.processInfo.systemUptime
     var routeEvidence = "native-window"
 
     static let sendNames = ["Send", "Send message", "发送", "发送消息", "傳送", "傳送訊息"]
     static let stopNames = ["Stop", "Stop generating", "停止", "停止生成"]
-    static let sidebarNames = ["Hide sidebar", "Show sidebar", "隐藏侧栏", "显示侧栏", "隐藏侧边栏", "显示侧边栏", "隱藏側邊欄", "顯示側邊欄"]
+    static let sidebarOpenNames = ["Hide sidebar", "Close sidebar", "隐藏侧栏", "关闭侧栏", "隐藏侧边栏", "关闭侧边栏", "隱藏側邊欄", "關閉側邊欄"]
+    static let sidebarClosedNames = ["Show sidebar", "显示侧栏", "显示侧边栏", "顯示側邊欄"]
+    static let sidebarNames = sidebarOpenNames + sidebarClosedNames + ["Toggle sidebar", "切换侧栏", "切换侧边栏", "切換側邊欄"]
     static let addNames = ["Add files and more", "添加文件等内容", "新增檔案和更多內容", "加入檔案及更多內容"]
     static let sketchNames = ["Sketch", "Sketch Draw a sketch", "绘图", "绘图 绘制草图", "繪圖", "繪圖 繪製草圖"]
     static let sketchCloseNames = ["Close sketch editor", "关闭草图编辑器", "關閉草圖編輯器"]
@@ -229,7 +233,8 @@ struct MacUISnapshot {
             !Self.hasAncestor($0,nodes:nodes,matching:{$0.role == "AXWebArea"}) }.flatMap { nodes[$0].documentURLs }
         let fallbackDocument = composer == nil || container == nil || liveDocuments.contains(where: { CurrentRoute.documentPath($0) != nil }) ? nil :
             DesktopRouteObservation.document(app:app,root:root,window:window)
-        let route = Self.observeRoute(nodes:nodes,composer:composer,container:container,fallbackDocument:fallbackDocument,modelLabels:modelLabels)
+        let route = Self.observeRoute(nodes:nodes,composer:composer,container:container,controls:controls,
+            fallbackDocument:fallbackDocument,modelLabels:modelLabels)
         let menuItems = visible.filter { nodes[$0].enabled && ["AXMenuItem", "AXRadioButton", "AXCheckBox"].contains(nodes[$0].role) && Self.hasAncestor($0, nodes: nodes, matching: { ["AXMenu", "AXList", "AXListBox"].contains($0.role) }) }
         let blocked = visible.contains { nodes[$0].role == "AXSheet" || nodes[$0].role == "AXDialog" || nodes[$0].subrole == "AXDialog" }
         var snapshot = Self(app: app, root: root, window: window, nodes: nodes, composer: composer, container: container,
@@ -238,6 +243,7 @@ struct MacUISnapshot {
             selectedSidebar: active.count == 1 ? nodes[active[0]].element : nil,
             controls: controls, menuItems: menuItems, blocked: blocked, modelLabels: modelLabels,clientBinding:route.pendingBinding)
         snapshot.treeIndex = tree; snapshot.composerCandidates = scope.candidateCount
+        snapshot.pickerCandidates = scope.pickerCandidateCount; snapshot.pickerSource = scope.pickerSource
         snapshot.captureDuration = ProcessInfo.processInfo.systemUptime - started
         snapshot.routeEvidence = fallbackDocument != nil ? "desktop-window-log" : liveDocuments.contains(where:{CurrentRoute.documentPath($0) != nil}) ? "native-document" : "native-sidebar-or-home"
         try context.check()
@@ -245,15 +251,15 @@ struct MacUISnapshot {
         guard !app.isTerminated, MacAX.same(window,currentWindow) else { throw NativeObservationFailure.windowChanged }
         return snapshot
     }
-    static func observeRoute(nodes:[AXNode],composer:Int?,container:Int?,fallbackDocument:String?=nil,modelLabels:[String]=[])->CurrentRoute {
+    static func observeRoute(nodes:[AXNode],composer:Int?,container:Int?,controls:[Int]?=nil,fallbackDocument:String?=nil,modelLabels:[String]=[])->CurrentRoute {
         let visible=nodes.indices.filter {nodes[$0].rect.width > 0 && nodes[$0].rect.height > 0}
         let active=visible.filter {nodes[$0].current && nodes[$0].classes.contains("sidebar-item")}
         var documents=visible.filter {nodes[$0].role == "AXWebArea" && !hasAncestor($0,nodes:nodes,matching:{$0.role == "AXWebArea"})}.flatMap {nodes[$0].documentURLs}
         if !documents.contains(where:{CurrentRoute.documentPath($0) != nil}),let fallbackDocument {documents.append(fallbackDocument)}
-        let home=homeComposerEvidence(nodes:nodes,composer:composer,container:container,modelLabels:modelLabels) != nil
+        let home=homeComposerEvidence(nodes:nodes,composer:composer,container:container,controls:controls,modelLabels:modelLabels) != nil
         return CurrentRoute.resolve(documents:documents,selectedLinks:active.map {nodes[$0].url},homeComposer:home,composerAvailable:composer != nil && container != nil)
     }
-    static func homeComposerEvidence(nodes:[AXNode],composer:Int?,container:Int?,modelLabels:[String])->String? {
+    static func homeComposerEvidence(nodes:[AXNode],composer:Int?,container:Int?,controls scopedControls:[Int]?=nil,modelLabels:[String])->String? {
         guard let composer,nodes.indices.contains(composer) else {return nil}
         let marker="[container-name:home-main-content]"
         if hasAncestor(composer,nodes:nodes,matching:{$0.classes.contains(marker)}) {return "ancestor"}
@@ -272,8 +278,12 @@ struct MacUISnapshot {
             nodes[$0].classes.contains(marker) && within($0,ancestor:area,nodes:nodes) &&
             !hasAncestor($0,nodes:nodes,matching:{$0.role == "AXWebArea" && !MacAX.same($0.element,nodes[area].element)})}
         guard homes.count == 1 else {return nil}
-        let controls=nodes.indices.filter {nodes[$0].enabled && nodes[$0].button && nodes[$0].rect.width > 0 &&
-            nodes[$0].rect.height > 0 && within($0,ancestor:container,nodes:nodes)}
+        let controls=(scopedControls ?? nodes.indices.filter {nodes[$0].enabled && nodes[$0].button && nodes[$0].rect.width > 0 &&
+            nodes[$0].rect.height > 0 && within($0,ancestor:container,nodes:nodes)}).filter { index in
+                nodes.indices.contains(index) && nodes[index].enabled && nodes[index].rect.width > 0 && nodes[index].rect.height > 0 &&
+                    (within(index,ancestor:area,nodes:nodes) || index == area) &&
+                    !hasAncestor(index,nodes:nodes,matching:{$0.role == "AXWebArea" && !MacAX.same($0.element,nodes[area].element)})
+            }
         guard controls.contains(where:{nodes[$0].named(sendNames+stopNames+addNames)}) else {return nil}
         let pickers=controls.filter {index in
             let texts=nodes.indices.filter {$0 == index || within($0,ancestor:index,nodes:nodes)}.flatMap {nodes[$0].accessibleStrings}

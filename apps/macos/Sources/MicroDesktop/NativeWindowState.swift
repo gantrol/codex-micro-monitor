@@ -4,6 +4,19 @@ import MicroCore
 enum NativeWindowNavigation {
     static let actions=["sidebar","back","forward"]
 
+    private static func named(_ node:AXNode,_ labels:[String]) -> Bool {
+        node.accessibleStrings.contains { value in
+            labels.contains { $0.caseInsensitiveCompare(value.trimmingCharacters(in:.whitespacesAndNewlines)) == .orderedSame }
+        }
+    }
+
+    private static func sidebarExpanded(_ node:AXNode) -> Bool? {
+        if let expanded=node.expanded {return expanded}
+        if named(node,MacUISnapshot.sidebarOpenNames) {return true}
+        if named(node,MacUISnapshot.sidebarClosedNames) {return false}
+        return nil
+    }
+
     static func button(_ action:String,in state:MacUISnapshot) -> AXNode? {
         guard actions.contains(action),!state.blocked,state.route != "conflict",
               state.route != nil || state.nativeComposer,
@@ -11,7 +24,7 @@ enum NativeWindowNavigation {
         let labels = action == "sidebar" ? MacUISnapshot.sidebarNames : action == "back" ?
             ["Back","后退","返回","上一页","上一頁"] : ["Forward","前进","下一页","下一頁"]
         return state.unique(Array(state.nodes.indices)) {
-            $0.enabled && $0.button && $0.named(labels) && $0.rect.width > 0 && $0.rect.height > 0 &&
+            $0.enabled && $0.button && named($0,labels) && $0.rect.width > 0 && $0.rect.height > 0 &&
                 (action == "sidebar" || $0.rect.minY < (state.nodes.first?.rect.minY ?? 0)+100)
         }
     }
@@ -38,6 +51,7 @@ enum NativeWindowNavigation {
         }
         guard io.foreground() == before.app.processIdentifier,
               let control=button(action,in:try capture(preserveTarget:true)) else {throw CodexClientError.staleTarget}
+        let previousSidebarState=action == "sidebar" ? sidebarExpanded(control):nil
         do {
             try io.press(control.element)
             let end=ProcessInfo.processInfo.systemUptime+2.5
@@ -46,7 +60,9 @@ enum NativeWindowNavigation {
                 // history deliberately changes it. Read back the same window.
                 let state=try capture(preserveTarget:false)
                 if action == "sidebar" {
-                    if let next=button(action,in:state),next.name != control.name {return state}
+                    if let next=button(action,in:state),let previousSidebarState,
+                       let currentSidebarState=sidebarExpanded(next),currentSidebarState != previousSidebarState {return state}
+                    if (before.selectedSidebar != nil) != (state.selectedSidebar != nil) {return state}
                 } else if let route=state.route,route != "conflict",route != before.route {return state}
                 Thread.sleep(forTimeInterval:0.04)
             } while ProcessInfo.processInfo.systemUptime < end

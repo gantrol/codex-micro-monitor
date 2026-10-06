@@ -2,6 +2,12 @@
 
 macOS 14+，UIKit / Mac Catalyst 与原生 AppKit 桥接，无外部 Swift Package 依赖。当前源码候选版本 **`1.0.0-macos-preview.34`**，新候选输出到 `dist/macos/preview.34/universal/`。保持 Windows Micro 的 590×610 画布、键帽、双页、旋钮和灯光设计。候选代码与构建检查不代表当前运行进程已更新或真实 Codex 已验收。
 
+## 已知问题：新会话设置仍未联通（2026-10-06）
+
+当前实机日志已能把新建页识别为 `kind=draft`，但同一快照仍为 `modelPickerAvailable=false`、`pickerCandidates=0`。因此模型、Fast 和思考强度在派发前就没有原生目标；[官方 Codex app-server 文档](https://developers.openai.com/siwc/token-sharing-open-source/codex-app-server)也将 `model/list` 定义为目录而非授权判断，它不能替代当前 Codex 输入框里的模型控件。命令键为了保留右键编辑始终接收点击，但不可用动作的 `prepareKey` 为 `nil`，所以会出现“按得下去但没有业务效果”。Plan 有独立快捷键／添加菜单路径，不代表模型控件已经恢复。
+
+本轮同 WebArea 回退与 `pickerSource` 诊断没有在当前 Codex 实机结构中找到候选，仍属于未完成的兼容尝试。摇杆导航的未知结果现会自动重新观察并解除全局控制锁，但不会重放动作，也不能证明原导航已生效。371 项 Swift 回归使用合成 AX 树，只验证控制器逻辑；当前新会话与摇杆仍需真实 AX 证据和端到端验收。
+
 preview.34 处理新会话控制失效的三个边界：原生观察保留辅助功能拒绝及输入框／模型控件缺失的具体原因；支持主页内容旁的底部输入框，要求同一原生 WebArea、唯一主页容器和完整输入控件，排除面板输入框；IPC following 只用于监控，不再自动生成当前会话或控制目标。原生状态变化记录到 `com.gantrol.codex-micro-monitor` / `native-observation`，不记录输入文字、会话内容或 token 值。
 
 本机 2026-10-05 的 preview.33 Debug 进程被 TCC 拒绝辅助功能读取；Codex 已切到 `/` 后 Micro 仍无法确认导航。preview.34 保留该原因，不以重试或旧 UUID 回退绕过授权。签名默认改为 Apple Development，但必须先安装有效证书并在系统设置中授权实际运行的程序；没有证书时只有显式选择的临时签名构建，不能宣称授权稳定性已解决。
@@ -34,7 +40,7 @@ preview.33 修复新建后旧会话 ID 被原生/IPC 轮询重新填回的问题
 | 前台目标与 Composer | 原生 Accessibility | 精确路由 UUID、同一窗口与输入框；草稿要求主页容器证据 |
 | 当前输入框提交 | 原生发送控件 + IPC 空闲检查 | 15 秒目标令牌、原文重验；拦截待审批及未确认提交；观察输入清空与新回合 |
 | 侧栏、前后导航、输入区选择、滚动 | Accessibility | 唯一控件、窗口身份和操作后回读；不猜坐标 |
-| 空白草稿模型、effort、Fast、Plan | 原生菜单 / 用户配置的快捷键 | 实时目录、草稿身份及原设置重验；Power 强度、Speed 三档、Plan 菜单原生回读；无需预先配置快捷键 |
+| 空白草稿模型、effort、Fast、Plan | 原生菜单 / 用户配置的快捷键 | 设计路径；当前实机模型触发器为 0 个候选，模型、effort、Fast 尚不可用；Plan 有独立路径 |
 | Skill 插入 | 原生 HTML 剪贴板 | 进程锁、changeCount 与格式恢复；插入后复制 mention atom，逐项核对 name / path；无法结构确认时结果未知且不重试 |
 | Sketch | Composer 添加菜单 | 必须观察到绘图编辑器；菜单打开不算成功 |
 | MIC | Codex 原生听写控件 | 控件及麦克风权限必须可用；实时语音未接入 |

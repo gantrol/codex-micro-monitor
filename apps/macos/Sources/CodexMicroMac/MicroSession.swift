@@ -1248,7 +1248,10 @@ import OSLog
         controlTask = Task { [weak self] in
             guard let self else { return }
             defer {
-                if generation == lifecycle { controlling = false; controlTask = nil; reconcileCurrentContext(); reconcileRoster() }
+                if generation == lifecycle {
+                    controlling = false; controlTask = nil; reconcileCurrentContext(); reconcileRoster()
+                    if needsControlRefresh, canAutomaticallyRefreshControls { refreshControls(clearError:false) }
+                }
             }
             do {
                 var params = arguments; params["target_token"] = token
@@ -1261,9 +1264,16 @@ import OSLog
                     threads.removeAll {$0.id == id}
                     if selectedID == id { conversation.clearTarget(); state=[:]; desktopConnected=false }
                 }
-                if result["verified"] as? Bool != true { needsControlRefresh = true; controlError = tr("unverifiedControl") }
+                if result["verified"] as? Bool != true {
+                    needsControlRefresh = true
+                    canAutomaticallyRefreshControls = operation == "navigate_keypad_ui"
+                    controlError = tr("unverifiedControl")
+                }
             } catch {
-                if (error as NSError).domain == "MicroBridge", (error as NSError).code == 2 { needsControlRefresh = true }
+                if (error as NSError).domain == "MicroBridge", (error as NSError).code == 2 {
+                    needsControlRefresh = true
+                    canAutomaticallyRefreshControls = operation == "navigate_keypad_ui"
+                }
                 if !Task.isCancelled, lifecycle == generation {
                     controlError = error.localizedDescription
                     foreground = [:]
@@ -1421,7 +1431,13 @@ import OSLog
         let generation=lifecycle,version=selectionVersion
         controlTask=Task { [weak self] in
             guard let self else { return }
-            defer { if generation == lifecycle { if navigationInput === input { navigationInput=nil };controlling=false;controlTask=nil;reconcileRoster() } }
+            defer {
+                if generation == lifecycle {
+                    if navigationInput === input {navigationInput=nil}
+                    controlling=false;controlTask=nil;reconcileRoster()
+                    if needsControlRefresh,canAutomaticallyRefreshControls {refreshControls(clearError:false)}
+                }
+            }
             do {
                 while navigationInput === input,!input.pending.isEmpty {
                     try Task.checkCancellation()
@@ -1437,7 +1453,9 @@ import OSLog
             } catch {
                 if !Task.isCancelled,lifecycle == generation {
                     controlError=error.localizedDescription
-                    if (error as NSError).domain == "MicroBridge",(error as NSError).code == 2 { needsControlRefresh=true }
+                    if (error as NSError).domain == "MicroBridge",(error as NSError).code == 2 {
+                        needsControlRefresh=true;canAutomaticallyRefreshControls=true
+                    }
                 }
             }
         }
