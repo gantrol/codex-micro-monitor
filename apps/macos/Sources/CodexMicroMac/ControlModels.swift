@@ -1,5 +1,11 @@
 import Foundation
 
+struct DialActions {
+    let step: (Int) -> Void
+    let end: (Bool) -> Void
+    let tap: () -> Void
+}
+
 struct ModelChoice: Identifiable {
     let id: String
     let title: String
@@ -43,5 +49,10 @@ struct ControlTarget {
     let lifecycle: Int
     let settings: [String: Any]
     let turnID: String?
+    var uiToken: String? = nil
+    var contextSource: String = "selected"
+    var isDraft: Bool { threadID == "draft" }
+    var isNativeComposer: Bool { threadID == "native-composer" }
+    var usesNativeSettings: Bool { isDraft || isNativeComposer }
     var fast: Bool { ["fast", "priority"].contains(settings["serviceTier"] as? String ?? "") }
 }

@@ -1,15 +1,36 @@
 import Foundation
+import OSLog
+#if SWIFT_PACKAGE
+import MicroShared
+#endif
+
+@MainActor protocol DesktopControlling {
+    func execute(_ operation: String, arguments: [String: Any]) async throws -> [String: Any]
+    func close() async
+}
 
 @MainActor enum Desktop {
+    private static let logger = Logger(subsystem: "com.gantrol.codex-micro-monitor", category: "desktop-bridge")
     static let services: DesktopServices? = {
         guard let url = Bundle.main.builtInPlugInsURL?.appendingPathComponent("MicroDesktop.bundle"),
-              let bundle = Bundle(url: url), bundle.load(),
-              let type = bundle.principalClass as? DesktopServices.Type else { return nil }
+              let bundle = Bundle(url: url) else {
+            logger.error("MicroDesktop.bundle is missing.")
+            return nil
+        }
+        do { try bundle.loadAndReturnError() }
+        catch {
+            logger.error("Native bridge load failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+        guard let type = bundle.principalClass as? DesktopServices.Type else {
+            logger.error("MicroDesktop.bundle has an incompatible principal class.")
+            return nil
+        }
         return type.init()
     }()
 }
 
-@MainActor final class DesktopClient {
+@MainActor final class DesktopClient: DesktopControlling {
     func execute(_ operation: String, arguments: [String: Any]) async throws -> [String: Any] {
         guard let service = Desktop.services else {
             throw NSError(domain: "MicroBridge", code: 1, userInfo: [NSLocalizedDescriptionKey: "MicroDesktop.bundle could not be loaded."])

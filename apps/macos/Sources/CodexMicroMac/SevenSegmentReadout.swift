@@ -1,16 +1,18 @@
 import UIKit
 
 enum QuotaDrawing {
-    static func draw(_ c: CGContext, windows: [UsageWindow], modelID:String, effort:String, showModel:Bool, updating:Bool) {
+    static func draw(_ c: CGContext, windows: [UsageWindow], modelID:String, effort:String, efforts:[String] = [], showModel:Bool, updating:Bool) {
         let available=windows.filter(\.available)
         if showModel {
-            let rank=["low","medium","high","xhigh","max","ultra"].firstIndex(of:effort.lowercased())
-            let levels:[Double?]=[rank.map { Double(min($0+1,3))*100/3 },rank.map { Double(max(0,$0-2))*100/3 }]
-            let accent:UInt32=rank.map { $0<=2 ? 0xFFA8C7FF : $0<=4 ? 0xFFCEB1FF : 0xFFFFD27A } ?? 0xFF9BDBBD
-            for (i,level) in levels.enumerated() { ring(c,diameter:i==0 ? 47 : 41,remaining:level,accent:accent) }
+            let rank=efforts.firstIndex(of:effort)
+            let total=rank.map { Double($0+1)/Double(max(1,efforts.count))*200 }
+            let levels:[Double?]=[total.map { min(100,$0) },total.map { max(0,$0-100) }]
+            let highest=rank.map { $0 == efforts.count-1 } ?? false
+            let accent:UInt32=highest ? 0xFFFF9E8B : 0xFFA8C7FF
+            for (i,level) in levels.enumerated() { ring(c,diameter:i==0 ? 47 : 41,remaining:level,accent:accent,quotaThresholds:false) }
             let label=modelID.lowercased().hasPrefix("gpt-") ? String(modelID.dropFirst(4)) : modelID
             let parts=label.split(separator:"-").map(String.init)
-            let version=updating ? "···" : parts.first ?? "—", family=parts.count>1 ? parts.dropFirst().joined(separator:" ").capitalized : "—"
+            let version=parts.first ?? "—", family=parts.count>1 ? parts.dropFirst().joined(separator:" ").capitalized : "—"
             let a:[NSAttributedString.Key:Any]=[.font:UIFont.systemFont(ofSize:16,weight:.semibold),.foregroundColor:UIColor(argb:0xFFF7FAFF)]
             let b:[NSAttributedString.Key:Any]=[.font:UIFont.systemFont(ofSize:14,weight:.semibold),.foregroundColor:UIColor(argb:0xFFDDE7F2)]
             let va=(version as NSString).size(withAttributes:a), fb=(family as NSString).size(withAttributes:b)
@@ -31,11 +33,11 @@ enum QuotaDrawing {
             c.move(to:CGPoint(x:23,y:28)); c.addLine(to:CGPoint(x:29,y:24)); c.strokePath()
         } else { SevenSegment.draw(c,text:available.first?.text ?? "—",in:Paint.rect(8,16,36,20)) }
     }
-    private static func ring(_ c:CGContext,diameter:CGFloat,remaining:Double?,accent:UInt32) {
+    private static func ring(_ c:CGContext,diameter:CGFloat,remaining:Double?,accent:UInt32,quotaThresholds:Bool=true) {
         c.setStrokeColor(UIColor(argb:0x2EFFFFFF).cgColor); c.setLineWidth(1.4)
         c.strokeEllipse(in:Paint.rect(26-diameter/2,26-diameter/2,diameter,diameter))
         if let remaining,remaining>0 {
-            let color:UInt32=remaining<=10 ? 0xFFFF9E8B : remaining<=30 ? 0xFFFFD27A : accent
+            let color:UInt32=quotaThresholds && remaining<=10 ? 0xFFFF9E8B : quotaThresholds && remaining<=30 ? 0xFFFFD27A : accent
             c.setStrokeColor(UIColor(argb:color).cgColor); c.setLineWidth(1.6*diameter/47); c.setLineCap(.round)
             c.addArc(center:CGPoint(x:26,y:26),radius:diameter/2,startAngle:-.pi/2,endAngle:-.pi/2+2 * .pi * remaining/100,clockwise:false); c.strokePath()
         }

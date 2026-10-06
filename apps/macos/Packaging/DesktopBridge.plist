@@ -4,6 +4,6 @@
 <key>CFBundleIdentifier</key><string>com.gantrol.codex-micro-monitor.desktop</string>
 <key>CFBundleExecutable</key><string>MicroDesktop</string>
 <key>CFBundlePackageType</key><string>BNDL</string>
-<key>CFBundleVersion</key><string>315.5</string>
+<key>CFBundleVersion</key><string>1000.33</string>
 <key>NSPrincipalClass</key><string>MicroDesktopBridge</string>
 </dict></plist>

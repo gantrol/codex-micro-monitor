@@ -1,18 +1,56 @@
 import AppKit
 import MicroCore
 import MicroShared
+import OSLog
 
-@objc(MicroDesktopBridge) public final class MicroDesktopBridge: NSObject, DesktopServices, NSMenuDelegate {
-    private let client = CodexClient()
+@MainActor @objc(MicroDesktopBridge) public final class MicroDesktopBridge: NSObject, DesktopServices, NSMenuDelegate {
+    private let client = DesktopBackend()
     private var tasks: [String: Task<Void, Never>] = [:]
     private var status: NSStatusItem?
     private weak var window: NSWindow?
     private var event: ((String) -> Void)?
+    private var scrollMonitor: Any?
     private var observers: [NSObjectProtocol] = []
     private var scale = 0.75
     private var floating = true
     private var configured = false
-    public required override init() { super.init() }
+    private var settingsVisible = false
+    private var keypadFrame: NSRect?
+    private var settingsFrame: NSRect?
+    private var permissionSetup: PermissionSetupCoordinator?
+    public required override init() {
+        super.init()
+        let logger = Logger(subsystem: "com.gantrol.codex-micro-monitor", category: "runtime-build")
+        if let url = Bundle(for: Self.self).url(forResource: "BuildIdentity", withExtension: "json"),
+           let data = try? Data(contentsOf: url), let identity = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let source = identity["sourceSHA256"] as? String, let built = identity["builtAtUTC"] as? String {
+            logger.notice("Runtime build: source=\(source,privacy:.public) built=\(built,privacy:.public) pid=\(getpid()) app=\(Bundle.main.bundleURL.path,privacy:.public)")
+        } else {
+            logger.warning("Runtime build identity is unavailable; pid=\(getpid())")
+        }
+    }
+    deinit { if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor) } }
+
+    public func installScrollInput(_ input: @escaping (Double, Double, Double, Double, Bool, String) -> Bool) {
+        if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor) }
+        // Local to Micro's window. Consume only events claimed by a visible dial,
+        // so Catalyst cannot dispatch the same wheel movement a second time.
+        scrollMonitor=NSEvent.addLocalMonitorForEvents(matching:.scrollWheel) { [weak self] event in
+            guard let self,let window=self.window,event.window === window,window.isVisible,
+                  let content=window.contentView,content.bounds.width>0,content.bounds.height>0 else { return event }
+            let point=content.convert(event.locationInWindow,from:nil)
+            let x=(point.x-content.bounds.minX)/content.bounds.width
+            let y=(point.y-content.bounds.minY)/content.bounds.height
+            let phase:String
+            if !event.momentumPhase.isEmpty { phase="momentum" }
+            else if event.phase.contains(.cancelled) { phase="cancel" }
+            else if event.phase.contains(.ended) { phase="end" }
+            else if event.phase.contains(.began) || event.phase.contains(.mayBegin) { phase="begin" }
+            else if event.phase.contains(.changed) || event.phase.contains(.stationary) { phase="change" }
+            else { phase="wheel" }
+            return input(x,content.isFlipped ? y : 1-y,event.scrollingDeltaX,event.scrollingDeltaY,event.hasPreciseScrollingDeltas,phase) ? nil : event
+        }
+    }
 
     public func execute(_ id: String, operation: String, arguments: Data, reply: @escaping (Data?, NSError?) -> Void) {
         // All entry calls are on the main thread. CodexClient serializes native I/O.
@@ -24,6 +62,11 @@ import MicroShared
                     throw NSError(domain: "MicroBridge", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid arguments"])
                 }
                 let result = try await client.execute(operation, arguments: args)
+                if operation == "get_keypad_ui_state", result["accessibility"] as? Bool == false {
+                    // Recheck the current process's trust; a late native result
+                    // must not turn an already restored permission into denial.
+                    permissionSetup?.refresh()
+                }
                 reply(try JSONSerialization.data(withJSONObject: result), nil)
             } catch {
                 var code = 1
@@ -41,7 +84,9 @@ import MicroShared
     public func runMCP() {
         let done = DispatchSemaphore(value: 0)
         Task.detached { await MCPServer().run(); done.signal() }
-        done.wait()
+        // AppKit may marshal workspace/pasteboard work to the main run loop.
+        // No Catalyst scene is created for the stdio process.
+        while done.wait(timeout: .now()) != .success { RunLoop.current.run(until: Date().addingTimeInterval(0.025)) }
     }
     public func install(_ event: @escaping (String) -> Void) {
         self.event = event
@@ -54,14 +99,29 @@ import MicroShared
         rebuildMenu(menu)
         let nc = NotificationCenter.default
         observers.append(nc.addObserver(forName: NSWindow.didMoveNotification, object: nil, queue: .main) { [weak self] note in
-            guard let self, note.object as? NSWindow === self.window else { return }
-            self.window?.saveFrame(usingName: "MicroUIKitPanel")
+            MainActor.assumeIsolated {
+                guard let self, note.object as? NSWindow === self.window else { return }
+                if !self.settingsVisible { self.window?.saveFrame(usingName: "MicroUIKitPanel") }
+            }
         })
-        observers.append(nc.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in self?.resize() })
+        observers.append(nc.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.resize() }
+        })
         let workspace = NSWorkspace.shared.notificationCenter
-        observers.append(workspace.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in self?.event?("sleep") })
+        for name in [NSWorkspace.didActivateApplicationNotification, NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
+            observers.append(workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+                guard app?.bundleIdentifier == "com.openai.codex" || app?.processIdentifier == getpid() else { return }
+                MainActor.assumeIsolated { self?.event?("observationChanged") }
+            })
+        }
+        observers.append(workspace.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.permissionSetup?.suspend(); self?.event?("sleep") }
+        })
         observers.append(workspace.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
-            if self?.window?.isVisible == true { self?.event?("show") }
+            MainActor.assumeIsolated {
+                if self?.window?.isVisible == true { self?.permissionSetup?.resume(); self?.event?("show") }
+            }
         })
     }
     public func configureWindow(_ title: String, scale: Double, floating: Bool) -> Bool {
@@ -78,23 +138,53 @@ import MicroShared
             if !window.setFrameUsingName("MicroUIKitPanel") { window.center() }
         }
         resize()
+        if permissionSetup == nil {
+            let setup = PermissionSetupCoordinator { [weak self] _ in self?.event?("observationChanged") }
+            permissionSetup = setup
+            setup.start()
+        }
         return true
     }
     private func resize() {
         guard let window, let screen = window.screen ?? NSScreen.main else { return }
         let area = screen.visibleFrame.insetBy(dx: 6, dy: 6)
         let s = min(scale, area.width / 590, area.height / 610)
-        let size = NSSize(width: 590 * s, height: 610 * s)
+        let size = settingsVisible ? NSSize(width: min(720, area.width), height: min(760, area.height)) : NSSize(width: 590 * s, height: 610 * s)
         let origin = NSPoint(x: max(area.minX, min(window.frame.minX, area.maxX - size.width)),
                              y: max(area.minY, min(window.frame.maxY - size.height, area.maxY - size.height)))
         window.level = floating ? .floating : .normal
         window.setFrame(NSRect(origin: origin, size: size), display: true)
     }
-    public func showWindow() { resize(); window?.orderFrontRegardless(); event?("show") }
-    public func hideWindow() { window?.orderOut(nil); event?("hide") }
+    public func setSettingsVisible(_ visible: Bool) {
+        guard settingsVisible != visible, let window else { return }
+        if visible {
+            keypadFrame = window.frame
+            settingsVisible = true
+            if let settingsFrame { window.setFrame(settingsFrame, display: false) }
+            else {
+                let center = NSPoint(x: window.frame.midX, y: window.frame.midY)
+                window.setFrame(NSRect(x:center.x-360, y:center.y-380, width:720, height:760), display:false)
+            }
+            resize()
+            NSApp.activate(ignoringOtherApps: true)
+            window.makeKeyAndOrderFront(nil)
+        } else {
+            settingsFrame = window.frame
+            settingsVisible = false
+            if let keypadFrame { window.setFrame(keypadFrame, display:false) }
+            resize()
+        }
+    }
+    public func showWindow() { resize(); window?.orderFrontRegardless(); permissionSetup?.resume(); event?("show") }
+    public func hideWindow() { permissionSetup?.suspend(); window?.orderOut(nil); event?("hide") }
     public func centerWindow() { window?.center(); resize() }
     public func dragWindow() { if let event = NSApp.currentEvent { window?.performDrag(with: event) } }
-    public func showMenu() { status?.button?.performClick(nil) }
+    public func showMenu() {
+        guard let window,let content=window.contentView else { return }
+        let menu=NSMenu();menu.delegate=self;rebuildMenu(menu)
+        let point=content.convert(window.convertPoint(fromScreen:NSEvent.mouseLocation),from:nil)
+        menu.popUp(positioning:nil,at:point,in:content)
+    }
     public func menuNeedsUpdate(_ menu: NSMenu) { rebuildMenu(menu) }
     private func tr(_ key: String) -> String { Bundle.main.localizedString(forKey: key, value: key, table: nil) }
     private func rebuildMenu(_ menu: NSMenu) {
@@ -104,7 +194,9 @@ import MicroShared
             item.target = self; item.representedObject = command; menu.addItem(item); return item
         }
         _ = add(tr(window?.isVisible == true ? "hide" : "show"), "toggle")
+        add(tr("settings"), "settings").keyEquivalent = ","
         _ = add(tr("refresh"), "refresh")
+        _ = add(tr("permissionSetup"), "accessibility")
         menu.addItem(.separator())
         add(tr("floating"), "floating").state = floating ? .on : .off
         let sizeItem = add(tr("size"), "size"), sizes = NSMenu()
@@ -121,7 +213,9 @@ import MicroShared
         guard let command = sender.representedObject as? String else { return }
         switch command {
         case "toggle": window?.isVisible == true ? hideWindow() : showWindow()
+        case "settings": showWindow(); event?("settings")
         case "center": centerWindow()
+        case "accessibility": showWindow(); permissionSetup?.show()
         case "quit":
             event?("hide")
             close { NSApp.terminate(nil) }

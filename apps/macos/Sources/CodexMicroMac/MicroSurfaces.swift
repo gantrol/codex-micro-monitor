@@ -126,10 +126,18 @@ enum Paint {
         }
         c.restoreGState()
     }
-    static func glyph(_ c: CGContext, _ name: String, in rect: CGRect, color: UInt32 = 0xFF171717) {
-        c.saveGState(); c.translateBy(x: rect.minX, y: rect.minY); c.scaleBy(x: rect.width, y: rect.height)
-        c.setFillColor(UIColor(argb: color).cgColor)
-        for layer in MicroArtwork.layers[name] ?? [] { c.addPath(layer.path); c.drawPath(using: layer.evenOdd ? .eoFill : .fill) }
+    static func glyph(_ c: CGContext, _ name: String, in rect: CGRect, color: UInt32 = 0xFF171717, reasoningPosition: CGFloat? = nil) {
+        guard let transform = KeycapGlyph.transform(name, in: rect) else { return }
+        c.saveGState(); c.concatenate(transform)
+        if ReasoningGlyph.names.contains(name) {
+            ReasoningGlyph.draw(c, name: name, position: reasoningPosition ?? ReasoningGlyph.rest(name))
+        } else {
+            c.setFillColor(UIColor(argb: color).cgColor)
+            if let path=KeycapGlyph.presetPaths[name] {c.addPath(path);c.fillPath()}
+            else if KeySlots.emptyIcons.contains(name) {c.addPath(KeycapGlyph.emptyPath);c.fillPath()}
+            else if name == "BRANCH" {c.addPath(KeycapGlyph.branchPath);c.fillPath()}
+            else {for layer in MicroArtwork.layers[name] ?? [] { c.addPath(layer.path); c.drawPath(using: layer.evenOdd ? .eoFill : .fill) }}
+        }
         c.restoreGState()
     }
 }

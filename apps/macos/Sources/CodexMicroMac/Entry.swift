@@ -15,7 +15,7 @@ struct MicroEntry {
             return
         }
         if CommandLine.arguments.contains("--version") {
-            print(Bundle.main.object(forInfoDictionaryKey:"CodexMicroReleaseVersion") as? String ?? "0.3.15-macos-preview.5"); return
+            print(Bundle.main.object(forInfoDictionaryKey:"CodexMicroReleaseVersion") as? String ?? "1.0.0-macos-preview.34"); return
         }
         if CommandLine.arguments.contains("--capabilities") {
             if let data=try? JSONSerialization.data(withJSONObject:MacPreviewCapabilities.description,options:[.prettyPrinted,.sortedKeys]) { FileHandle.standardOutput.write(data+Data([10])) }; return
