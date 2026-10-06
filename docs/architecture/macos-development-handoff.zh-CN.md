@@ -1,6 +1,8 @@
 # Codex Micro Monitor：macOS 开发交接
 
-2026-10-04 更新：Mac 已重建为 UIKit / Mac Catalyst 本地控制预览版 preview.5，构建与交付说明见 [apps/macos/README.md](../../apps/macos/README.md)。按 Windows 测量账本重建几何与光效；应用生命周期、双页、菜单栏、状态观察、已有对话模型/强度/Fast/Plan/审批/停止控制、旋钮连续输入与快捷 A/B和 Universal `.app` 已落地。尚未做真实 UI 或 Codex 联调业务验收。
+2026-10-05 当前补充：preview.33 候选放在独立 `dist/macos/preview.33/`，不覆盖运行中的 preview.32。新建后的旧 ID 回填缺陷已在生命周期回放中复现并修复；352 项 Swift 测试通过。此前“新建即退役旧 ID”的验证仅覆盖清空瞬间，不能作为整条链路通过的证据。现状见 [Mac README](../../apps/macos/README.md)，数据源、版本门禁和导航状态机见 [当前会话 ID UML](macos-current-conversation-id.zh-CN.md)。下文保留原交接历史，不代表最新候选状态。
+
+2026-10-05 更新：Mac 已推进至 UIKit / Mac Catalyst 控制预览版 `1.0.0-macos-preview.10`，现状和门禁见 [apps/macos/README.md](../../apps/macos/README.md)。本轮取消小窗口下图标的 24 点强制下限，恢复与键帽等比缩放，并按当前 Windows 设置源码接入单列设置、可点击键盘预览、拆分语音键、独立图标/动作草稿、快捷模型与窗口恢复。额度旋钮的旧清单已并入快捷模型设置，MIND± 改为 Windows 彩色滑轨；修正默认动作、默认强度、设置异常后的只读恢复及新版 Codex 模型显示名识别。preview.10 恢复 MIND± 的 1.35 倍视觉补偿，并接入可见会话 / 当前目标设置订阅；统一设置增加可复制的完整对话 ID、模型名称及 ID、推理强度，区分前台、唯一可见与手动选择。设置保存在 Mac 本机。真实 UI 与会话写操作验收、实时语音仍未完成。
 
 Windows 最新设置改为**叠层、点哪设置哪**，新对话问题和测试规划也在更新。远端仍是原交接快照，因此旧分类设置方案与旧新对话逻辑暂不继续移植。参见 [设置方向](settings-interaction.zh-CN.md)、[验证边界](verification-boundaries.zh-CN.md)。
 

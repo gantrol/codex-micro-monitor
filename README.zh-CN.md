@@ -1,7 +1,7 @@
 # Codex Micro Monitor
 
 
-本地 macOS 控制预览版：[构建与能力范围](apps/macos/README.md)。叠层设置和新对话控制等待 Windows 更新对齐，真实 UI 验收尚未执行。
+本地 macOS 控制预览版：[构建与能力范围](apps/macos/README.md)。原生控制路径和新对话控制已经实现；已加入 Windows 风格设置与独立键位编辑；真实 UI 验收仍是独立发布门禁。
 [![English | Click here](plugins/codex-micro-keypad/assets/badges/en-US.svg)](README.md)
 
 <a href="https://apps.microsoft.com/detail/9NTVMG9QNMHC"><img src="https://get.microsoft.com/images/zh-cn%20dark.svg" alt="从 Microsoft Store 获取" width="200" /></a>

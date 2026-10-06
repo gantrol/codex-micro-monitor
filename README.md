@@ -1,7 +1,7 @@
 # Codex Micro Monitor
 
 
-Local macOS control preview: [build and scope](apps/macos/README.md). Layered settings and new-draft controls await the updated Windows contracts; live UI acceptance is pending.
+Local macOS control preview: [build and scope](apps/macos/README.md). The native control paths and new-draft controls are implemented; Windows-style settings and independent keycap editing are available; live UI acceptance remains a separate release gate.
 [![中文 | 点我](plugins/codex-micro-keypad/assets/badges/zh-CN.svg)](README.zh-CN.md)
 
 <a href="https://apps.microsoft.com/detail/9NTVMG9QNMHC"><img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft Store" width="200" /></a>
