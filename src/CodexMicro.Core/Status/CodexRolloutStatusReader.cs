@@ -7,7 +7,8 @@ namespace CodexMicro.Core.Services;
 
 public readonly record struct CodexRolloutStatusSnapshot(
     ThreadStatus Status,
-    bool HasPendingQuestion);
+    bool HasPendingQuestion,
+    string? ErrorCode = null);
 
 public sealed record CodexPendingQuestion(string ItemId, int Index, string Title);
 
@@ -106,12 +107,12 @@ public sealed class CodexRolloutStatusReader
             {
                 // Codex may rotate or briefly hold a rollout. Keep the last
                 // observed state instead of flashing a false state.
-                return new(cursor.Status, false);
+                return new(cursor.Status, false, cursor.ErrorCode);
             }
             catch (UnauthorizedAccessException)
             {
                 // Preserve the last observation when the file is unavailable.
-                return new(cursor.Status, false);
+                return new(cursor.Status, false, cursor.ErrorCode);
             }
 
             if (acceptedQuestionReplies is not null)
@@ -189,7 +190,7 @@ public sealed class CodexRolloutStatusReader
             line.Span.IndexOf("stream_error"u8) < 0 &&
             line.Span.IndexOf("\"questions\""u8) < 0 &&
             line.Span.IndexOf("send_user_message_question_reply"u8) < 0 &&
-            line.Span.IndexOf("\"type\":\"error\""u8) < 0)
+            line.Span.IndexOf("\"error\""u8) < 0)
         {
             return;
         }
@@ -233,12 +234,18 @@ public sealed class CodexRolloutStatusReader
                 }
                 cursor.TurnId = turnId;
                 cursor.Status = ThreadStatus.Thinking;
+                cursor.ErrorCode = null;
             }
             else if (
                 payloadType.ValueEquals("task_complete") ||
                 payloadType.ValueEquals("turn_aborted"))
             {
-                cursor.Status = ThreadStatus.Idle;
+                // task_complete closes both successful and failed turns.
+                // Capacity failures are reported here, without a separate error event.
+                var failed = payload.TryGetProperty("error", out var error) &&
+                    error.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined);
+                cursor.Status = failed ? ThreadStatus.Error : ThreadStatus.Idle;
+                cursor.ErrorCode = failed ? ReadErrorCode(error) : null;
                 cursor.ClearQuestions();
                 cursor.TurnId = null;
             }
@@ -247,6 +254,7 @@ public sealed class CodexRolloutStatusReader
                 payloadType.ValueEquals("stream_error"))
             {
                 cursor.Status = ThreadStatus.Error;
+                cursor.ErrorCode = ReadErrorCode(payload);
             }
             else if (payloadType.ValueEquals("item_completed") &&
                 payload.TryGetProperty("item", out var item) &&
@@ -365,6 +373,9 @@ public sealed class CodexRolloutStatusReader
         }
     }
 
+    private static string? ReadErrorCode(JsonElement error) =>
+        ReadString(error, "codex_error_info") ?? ReadString(error, "code");
+
     private static string? ReadString(JsonElement element, string name) =>
         element.ValueKind == JsonValueKind.Object &&
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
@@ -375,11 +386,12 @@ public sealed class CodexRolloutStatusReader
         public long Offset { get; set; }
         public PooledLineBuffer PartialLine { get; } = new();
         public ThreadStatus Status { get; set; } = ThreadStatus.Unknown;
+        public string? ErrorCode { get; set; }
         public string? TurnId { get; set; }
         public Dictionary<(string ItemId, int Index), string> PendingQuestions { get; } = [];
         public HashSet<(string ItemId, int Index)> ResolvedQuestions { get; } = [];
         public CodexRolloutStatusSnapshot Snapshot => new(
-            Status, Status == ThreadStatus.Thinking && PendingQuestions.Count > 0);
+            Status, Status == ThreadStatus.Thinking && PendingQuestions.Count > 0, ErrorCode);
 
         public void ClearQuestions()
         {
@@ -392,6 +404,7 @@ public sealed class CodexRolloutStatusReader
             Offset = 0;
             PartialLine.Clear();
             Status = ThreadStatus.Unknown;
+            ErrorCode = null;
             TurnId = null;
             ClearQuestions();
         }

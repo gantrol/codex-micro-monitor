@@ -702,6 +702,7 @@ internal static class MicroEnglishTranslations
         ("等待输入", "Waiting for input"),
         ("已点亮", "Lit"),
         ("空闲", "Idle"),
+        ("模型容量已满", "Model at capacity"),
         ("错误", "Error"),
         ("Codex 运行时握手", "Codex runtime handshake"),
         ("虚拟 HID 驱动", "Virtual HID driver"),

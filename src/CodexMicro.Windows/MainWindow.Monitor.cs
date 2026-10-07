@@ -15,7 +15,7 @@ public partial class MicroSurfaceWindow
 {
     private sealed record MonitorTask(
         string HarnessId, string Id, string Title, MicroHarnessSessionStatus? Status,
-        bool HasPendingQuestion = false);
+        bool HasPendingQuestion = false, string? ErrorCode = null);
 
     private readonly CodexTaskMonitorService _taskMonitor = new();
     private readonly CodexQuestionSkipObserver _questionSkipObserver = new();
@@ -381,7 +381,7 @@ public partial class MicroSurfaceWindow
         var tasks = codex
             ? (_monitoredTasks ?? []).Select(task => new MonitorTask(
                 harness.Id, task.Id, task.Title, ResolveMonitoredTaskStatus(task.Status),
-                task.HasPendingQuestion)).ToArray()
+                task.HasPendingQuestion, task.ErrorCode)).ToArray()
             : (_harnessStateSnapshot?.HarnessId == harness.Id
                 ? _harnessStateSnapshot.Sessions : [])
                 .Take(CodexTaskMonitorService.Capacity)
@@ -422,7 +422,7 @@ public partial class MicroSurfaceWindow
 
             var appearance = fresh && codex
                 ? ResolveMonitoredCodexAppearance(
-                    task!.Id, status, task.Id == currentId, task.HasPendingQuestion)
+                    task!.Id, status, task.Id == currentId, task.HasPendingQuestion, task.ErrorCode)
                 : fresh && status is { } knownStatus
                     ? AgentLightingAppearance.FromHarnessSession(knownStatus, task!.Id == currentId)
                     : AgentLightingAppearance.From(null);
@@ -478,7 +478,8 @@ public partial class MicroSurfaceWindow
         string threadId,
         MicroHarnessSessionStatus? status,
         bool isCurrentSession,
-        bool hasPendingQuestion = false)
+        bool hasPendingQuestion = false,
+        string? errorCode = null)
     {
         // The rollout marks an open turn; Micro can additionally identify a
         // pending request. Apply that detail to the same task on either page.
@@ -501,7 +502,7 @@ public partial class MicroSurfaceWindow
         return status is null or MicroHarnessSessionStatus.Idle &&
             (_manualUnreadThreads.IsConfirmed(threadId))
             ? AgentLightingAppearance.ManualUnread(isCurrentSession)
-            : AgentLightingAppearance.FromCodexSession(status, isCurrentSession);
+            : AgentLightingAppearance.FromCodexSession(status, isCurrentSession, errorCode);
     }
 
     private string? CurrentCodexAgentThreadId()

@@ -49,12 +49,22 @@ internal readonly record struct AgentLightingAppearance(
 
     internal static AgentLightingAppearance FromCodexSession(
         MicroHarnessSessionStatus? status,
-        bool isCurrentSession) =>
-        status is null or MicroHarnessSessionStatus.Idle && isCurrentSession
+        bool isCurrentSession,
+        string? errorCode = null)
+    {
+        var appearance = status is null or MicroHarnessSessionStatus.Idle && isCurrentSession
             ? From(null, isCurrentSession: true)
             : status is { } knownStatus
                 ? FromHarnessSession(knownStatus, isCurrentSession)
                 : From(null);
+        return status == MicroHarnessSessionStatus.Error && errorCode == "server_overloaded"
+            ? appearance with
+            {
+                Color = Color.FromRgb(0xFF, 0x8A, 0x80),
+                StatusName = "模型容量已满",
+            }
+            : appearance;
+    }
 
     internal static AgentLightingAppearance From(
         SlotLighting? lighting,

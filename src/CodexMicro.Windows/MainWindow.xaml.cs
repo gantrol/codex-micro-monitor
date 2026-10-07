@@ -3295,7 +3295,7 @@ public partial class MicroSurfaceWindow : Window
         {
             var status = ResolveMonitoredTaskStatus(task.Status);
             return ResolveMonitoredCodexAppearance(
-                task.Id, status, isCurrentSession, task.HasPendingQuestion);
+                task.Id, status, isCurrentSession, task.HasPendingQuestion, task.ErrorCode);
         }
 
         var canShowUnread = !protocolAppearance.IsActive ||

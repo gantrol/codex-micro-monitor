@@ -9,7 +9,8 @@ internal sealed record CodexMonitoredTask(
     string Id,
     string Title,
     ThreadStatus Status,
-    bool HasPendingQuestion = false);
+    bool HasPendingQuestion = false,
+    string? ErrorCode = null);
 
 internal sealed record CodexTaskMonitorSnapshot(
     CodexAgentRosterSnapshot AgentRoster,
@@ -191,7 +192,7 @@ internal sealed class CodexTaskMonitorService
                     _acceptedQuestionReplies.TryGetValue(task.Id, out var acceptedReplies);
                     var rollout = reader.Reader.ReadSnapshot(reader.Path, acceptedReplies);
                     if (rollout.HasPendingQuestion == task.HasPendingQuestion &&
-                        rollout.Status == task.Status)
+                        rollout.Status == task.Status && rollout.ErrorCode == task.ErrorCode)
                     {
                         continue;
                     }
@@ -201,6 +202,7 @@ internal sealed class CodexTaskMonitorService
                     {
                         Status = rollout.Status,
                         HasPendingQuestion = rollout.HasPendingQuestion,
+                        ErrorCode = rollout.ErrorCode,
                     };
                 }
 
@@ -270,6 +272,7 @@ internal sealed class CodexTaskMonitorService
                 var path = NormalizeRolloutPath(thread.RolloutPath);
                 var status = ThreadStatus.Unknown;
                 var hasPendingQuestion = false;
+                string? errorCode = null;
                 if (path is not null && File.Exists(path))
                 {
                     if (!_readers.TryGetValue(thread.ThreadId, out var reader) ||
@@ -282,6 +285,7 @@ internal sealed class CodexTaskMonitorService
                     var rollout = reader.Reader.ReadSnapshot(path, acceptedReplies);
                     status = rollout.Status;
                     hasPendingQuestion = rollout.HasPendingQuestion;
+                    errorCode = rollout.ErrorCode;
                 }
 
                 if (status is not ThreadStatus.Thinking and not ThreadStatus.Error &&
@@ -292,7 +296,7 @@ internal sealed class CodexTaskMonitorService
 
                 // A missing rollout affects state only; do not replace a recent
                 // task with an older task because of its path or availability.
-                tasks.Add(new(thread.ThreadId, thread.Title, status, hasPendingQuestion));
+                tasks.Add(new(thread.ThreadId, thread.Title, status, hasPendingQuestion, errorCode));
             }
 
             foreach (var id in _readers.Keys.Where(id => !retained.Contains(id)).ToArray())
