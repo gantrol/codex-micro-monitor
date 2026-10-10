@@ -760,13 +760,7 @@ public partial class MicroSurfaceWindow : Window
                 return;
             }
 
-            _quotaRefreshFailed = snapshot is null;
-            if (snapshot is not null)
-            {
-                _quotaSnapshot = snapshot;
-            }
-
-            UpdateQuotaPresentation();
+            ApplyQuotaSnapshot(snapshot, refreshFailed: snapshot is null);
         }
         finally
         {
@@ -3811,7 +3805,10 @@ public partial class MicroSurfaceWindow : Window
         CodexQuotaSnapshot? snapshot,
         bool refreshFailed = false)
     {
-        _quotaSnapshot = snapshot;
+        if (snapshot is not null || !refreshFailed)
+        {
+            _quotaSnapshot = snapshot;
+        }
         _quotaRefreshFailed = refreshFailed;
         UpdateQuotaPresentation();
     }
@@ -3916,6 +3913,10 @@ public partial class MicroSurfaceWindow : Window
         SettingsKey.HasWeeklyWindow = _quotaSnapshot?.WeeklyWindow is not null;
         SettingsKey.FiveHourRemaining = _quotaSnapshot?.FiveHourWindow?.RemainingPercent;
         SettingsKey.WeeklyRemaining = _quotaSnapshot?.WeeklyWindow?.RemainingPercent;
+        SettingsKey.ReadoutCulture = CultureInfo.GetCultureInfo(
+            MicroLocalization.ToSettingValue(_localization.EffectiveLanguage));
+        SettingsKey.CreditBalance = _quotaSnapshot?.Credits?.Balance;
+        SettingsKey.HasUnlimitedCredits = _quotaSnapshot?.Credits?.Unlimited == true;
         AutomationProperties.SetItemStatus(SettingsKey,
             _quotaRefreshFailed
                 ? english ? "Quota refresh unavailable" : "额度刷新暂不可用"
@@ -4448,7 +4449,12 @@ public partial class MicroSurfaceWindow : Window
         ToolTipService.SetInitialShowDelay(element, 320);
         ToolTipService.SetBetweenShowDelay(element, 100);
         ToolTipService.SetShowDuration(element, 16000);
-        AutomationProperties.SetName(element, localizedTitle);
+        // The quota knob owns its accessible name, including the full balance
+        // when the visible readout is abbreviated.
+        if (element is not QuotaKnob { UseQuotaReadout: true })
+        {
+            AutomationProperties.SetName(element, localizedTitle);
+        }
         AutomationProperties.SetHelpText(element, localizedDetail);
     }
 

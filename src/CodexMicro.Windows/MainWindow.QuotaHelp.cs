@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using CodexMicro.Desktop.Controls;
 using CodexMicro.Desktop.Services;
 
 namespace CodexMicro.Desktop;
@@ -73,6 +74,17 @@ public partial class MicroSurfaceWindow
             content.Children.Add(section);
             help.Add($"{label} · {remainingText}\n{resetTime}");
         }
+
+        Divider();
+        var creditBalance = snapshot.Credits switch
+        {
+            { Unlimited: true } => Localize("无限"),
+            { Balance: { } balance } => CreditBalanceFormatter.Full(balance, culture),
+            _ => Localize("余额暂不可用"),
+        };
+        var creditLabel = Localize("Credits 余额");
+        content.Children.Add(Row(Text(creditLabel, "MicroHelpSection"), Text(creditBalance)));
+        help.Add($"{creditLabel} · {creditBalance}");
 
         Divider();
         if (snapshot.AvailableResets is { } resets)

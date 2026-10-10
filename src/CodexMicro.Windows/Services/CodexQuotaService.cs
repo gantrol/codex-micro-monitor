@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 
@@ -17,6 +18,11 @@ internal sealed record CodexQuotaResetCredit(
     string Title,
     DateTimeOffset ExpiresAt);
 
+internal sealed record CodexCreditBalance(
+    bool HasCredits,
+    bool Unlimited,
+    decimal? Balance);
+
 internal sealed record CodexQuotaSnapshot(
     CodexQuotaWindow Primary,
     CodexQuotaWindow? Secondary,
@@ -24,6 +30,7 @@ internal sealed record CodexQuotaSnapshot(
     DateTimeOffset ReadAt)
 {
     public IReadOnlyList<CodexQuotaResetCredit>? AvailableResets { get; init; }
+    public CodexCreditBalance? Credits { get; init; }
 
     public IReadOnlyList<CodexQuotaWindow> Windows => Secondary is null
         ? [Primary]
@@ -160,7 +167,44 @@ internal sealed class CodexQuotaService
             snapshotReadAt)
         {
             AvailableResets = ReadAvailableResets(result, snapshotReadAt),
+            Credits = ReadCredits(rateLimits),
         };
+    }
+
+    private static CodexCreditBalance? ReadCredits(JsonElement rateLimits)
+    {
+        if (!rateLimits.TryGetProperty("credits", out var credits) ||
+            credits.ValueKind != JsonValueKind.Object ||
+            !credits.TryGetProperty("hasCredits", out var hasCredits) ||
+            hasCredits.ValueKind is not (JsonValueKind.True or JsonValueKind.False) ||
+            !credits.TryGetProperty("unlimited", out var unlimited) ||
+            unlimited.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+        {
+            return null;
+        }
+
+        decimal? balance = null;
+        if (credits.TryGetProperty("balance", out var value) &&
+            value.ValueKind == JsonValueKind.String &&
+            decimal.TryParse(value.GetString(),
+                NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign,
+                CultureInfo.InvariantCulture, out var parsed) && parsed >= 0)
+        {
+            balance = parsed;
+        }
+
+        // An explicit no-credit flag establishes zero even when the service
+        // omits the amount. Missing/invalid amounts with hasCredits=true stay unknown.
+        if (!hasCredits.GetBoolean() && !unlimited.GetBoolean())
+        {
+            if (balance is > 0)
+            {
+                return null; // Contradictory fields must not advertise spendable credit.
+            }
+            balance = 0;
+        }
+
+        return new CodexCreditBalance(hasCredits.GetBoolean(), unlimited.GetBoolean(), balance);
     }
 
     private static IReadOnlyList<CodexQuotaResetCredit>? ReadAvailableResets(

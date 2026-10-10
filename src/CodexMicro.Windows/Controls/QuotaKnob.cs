@@ -24,6 +24,15 @@ public sealed class QuotaKnob : Button
     public static readonly DependencyProperty WeeklyRemainingProperty =
         DependencyProperty.Register(nameof(WeeklyRemaining), typeof(double?),
             typeof(QuotaKnob), new PropertyMetadata(null, OnReadoutChanged));
+    public static readonly DependencyProperty CreditBalanceProperty =
+        DependencyProperty.Register(nameof(CreditBalance), typeof(decimal?),
+            typeof(QuotaKnob), new PropertyMetadata(null, OnReadoutChanged));
+    public static readonly DependencyProperty HasUnlimitedCreditsProperty =
+        DependencyProperty.Register(nameof(HasUnlimitedCredits), typeof(bool),
+            typeof(QuotaKnob), new PropertyMetadata(false, OnReadoutChanged));
+    public static readonly DependencyProperty ReadoutCultureProperty =
+        DependencyProperty.Register(nameof(ReadoutCulture), typeof(CultureInfo),
+            typeof(QuotaKnob), new PropertyMetadata(CultureInfo.InvariantCulture, OnReadoutChanged));
     public static readonly DependencyProperty ModelIdProperty =
         DependencyProperty.Register(nameof(ModelId), typeof(string),
             typeof(QuotaKnob), new PropertyMetadata(string.Empty, OnReadoutChanged));
@@ -78,6 +87,22 @@ public sealed class QuotaKnob : Button
     private readonly SevenSegmentReadout _fiveHourValue = new();
     private readonly SevenSegmentReadout _weeklyValue = new();
     private readonly SevenSegmentReadout _singleQuotaValue = new();
+    private readonly TextBlock _creditValue = new()
+    {
+        FontFamily = new FontFamily("Cascadia Mono, Consolas"),
+        FontSize = 16,
+        FontWeight = FontWeights.SemiBold,
+        HorizontalAlignment = HorizontalAlignment.Center,
+    };
+    private readonly Viewbox _creditReadout = new()
+    {
+        MaxWidth = 38,
+        MaxHeight = 34,
+        Stretch = Stretch.Uniform,
+        StretchDirection = StretchDirection.DownOnly,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center,
+    };
     private readonly Grid _diagonalReadout = new()
     {
         Width = 34,
@@ -153,6 +178,18 @@ public sealed class QuotaKnob : Button
         readout.Children.Add(_modelFamily);
         _modelReadout.Child = readout;
         gauge.Children.Add(_modelReadout);
+        var creditReadout = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        creditReadout.Children.Add(_creditValue);
+        creditReadout.Children.Add(new TextBlock
+        {
+            Text = "Credits",
+            FontFamily = _modelFamily.FontFamily,
+            FontSize = 9,
+            Foreground = _modelFamily.Foreground,
+            HorizontalAlignment = HorizontalAlignment.Center,
+        });
+        _creditReadout.Child = creditReadout;
+        gauge.Children.Add(_creditReadout);
         _singleQuotaReadout.Child = _singleQuotaValue;
         gauge.Children.Add(_singleQuotaReadout);
         _diagonalReadout.Children.Add(new Viewbox
@@ -219,6 +256,24 @@ public sealed class QuotaKnob : Button
     {
         get => (string)GetValue(ModelIdProperty);
         set => SetValue(ModelIdProperty, value);
+    }
+
+    public decimal? CreditBalance
+    {
+        get => (decimal?)GetValue(CreditBalanceProperty);
+        set => SetValue(CreditBalanceProperty, value);
+    }
+
+    public bool HasUnlimitedCredits
+    {
+        get => (bool)GetValue(HasUnlimitedCreditsProperty);
+        set => SetValue(HasUnlimitedCreditsProperty, value);
+    }
+
+    public CultureInfo ReadoutCulture
+    {
+        get => (CultureInfo)GetValue(ReadoutCultureProperty);
+        set => SetValue(ReadoutCultureProperty, value);
     }
 
     public string ReasoningEffort
@@ -332,10 +387,19 @@ public sealed class QuotaKnob : Button
             (false, true) => FormatPercent(weekly),
             _ => "—",
         };
-        var showDiagonalQuota = !showModel && HasFiveHourWindow && HasWeeklyWindow;
+        var quotaExhausted = HasFiveHourWindow && fiveHour == 0 || HasWeeklyWindow && weekly == 0;
+        var showCredits = !showModel && quotaExhausted &&
+            (HasUnlimitedCredits || CreditBalance is >= 0);
+        var showDiagonalQuota = !showModel && !showCredits && HasFiveHourWindow && HasWeeklyWindow;
         _diagonalReadout.Visibility = showDiagonalQuota ? Visibility.Visible : Visibility.Collapsed;
         _modelReadout.Visibility = showModel ? Visibility.Visible : Visibility.Collapsed;
-        _singleQuotaReadout.Visibility = !showModel && !showDiagonalQuota ? Visibility.Visible : Visibility.Collapsed;
+        _creditReadout.Visibility = showCredits ? Visibility.Visible : Visibility.Collapsed;
+        _singleQuotaReadout.Visibility = !showModel && !showCredits && !showDiagonalQuota
+            ? Visibility.Visible : Visibility.Collapsed;
+        _creditValue.Text = HasUnlimitedCredits ? "∞" : CreditBalance is >= 0 and { } balance
+            ? CreditBalanceFormatter.Compact(balance, ReadoutCulture) : "—";
+        _creditValue.Foreground = new SolidColorBrush(!HasUnlimitedCredits && CreditBalance == 0
+            ? LimitColor : Color.FromRgb(0xF7, 0xFA, 0xFF));
         _fiveHourValue.Text = FormatPercent(fiveHour);
         _weeklyValue.Text = FormatPercent(weekly);
         _singleQuotaValue.Text = quotaText;
@@ -382,7 +446,9 @@ public sealed class QuotaKnob : Button
         };
         AutomationProperties.SetName(this, showModel
             ? $"{_modelVersion.Text} {_modelFamily.Text} · {ReasoningEffort}"
-            : quotaName);
+            : showCredits
+                ? $"{(HasUnlimitedCredits ? "∞" : CreditBalanceFormatter.Full(CreditBalance!.Value, ReadoutCulture))} Credits · {quotaName}"
+                : quotaName);
     }
 
     private void UpdateLoadingAnimation()
