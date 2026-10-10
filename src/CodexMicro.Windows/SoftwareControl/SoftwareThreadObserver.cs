@@ -6,285 +6,249 @@ using CodexMicro.Desktop.Services;
 
 namespace CodexMicro.Codex;
 
-// Observes live task activity and accepted question replies on the same stream.
+// Each visible conversation owns its pipe, receive worker and subscription.
+// A slow or broken snapshot withdraws only that conversation's observation.
 internal sealed class SoftwareThreadObserver : IDisposable, IAsyncDisposable
 {
-    private sealed class Subscription(string threadId, string owner)
+    private sealed class Subscription(string id, ICodexDesktopConnection peer)
     {
-        internal CodexThreadModelStateAccumulator Stream { get; } = new(threadId, owner);
-        internal TaskCompletionSource Ready { get; set; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        internal CodexThreadActivity? LastActivity { get; set; }
-        internal long LastMessageAt { get; set; } = Stopwatch.GetTimestamp();
+        internal string Id { get; } = id;
+        internal ICodexDesktopConnection Peer { get; } = peer;
+        internal CancellationTokenSource Lifetime { get; } = new();
+        internal CodexThreadModelStateAccumulator? Stream;
+        internal TaskCompletionSource Ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal CodexThreadActivity? LastActivity;
+        internal long LastMessageAt, Generation;
+        internal bool Resync;
+        internal Task? Refresh;
+        internal Action<JsonObject> Broadcast = null!;
+        internal Action Disconnected = null!;
     }
 
-    private readonly ICodexDesktopConnection _peer;
-    private readonly CancellationTokenSource _lifetime = new();
+    private readonly ICodexDesktopConnection? _providedPeer;
     private readonly object _sync = new();
     private readonly Dictionary<string, Subscription> _streams = new(StringComparer.Ordinal);
-    private readonly HashSet<string> _resync = new(StringComparer.Ordinal);
-    private HashSet<string> _wanted = new(StringComparer.Ordinal);
-    private Task? _refresh;
+    private readonly HashSet<Task> _retiring = [];
     private Task? _dispose;
-    private bool _refreshRequested;
     private bool _disposed;
     private long _sequence;
-    private long _connectionGeneration;
-    // This renews observation, never infers a task outcome from elapsed time.
     private static readonly TimeSpan ReconfirmInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan ResponseInterval = TimeSpan.FromSeconds(2);
 
     internal event Action<string, IReadOnlyList<string>>? AnswersAccepted;
     internal event Action<CodexThreadActivityObservation>? ActivityChanged;
 
-    internal SoftwareThreadObserver(ICodexDesktopConnection? peer = null)
-    {
-        _peer = peer ?? new CodexDesktopConnection();
-        _peer.Broadcast += OnBroadcast;
-        _peer.Disconnected += OnDisconnected;
-    }
+    // An explicitly supplied transport belongs to this observer's lifetime.
+    // Normal monitoring creates a separate projected connection for each ID.
+    internal SoftwareThreadObserver(ICodexDesktopConnection? peer = null) => _providedPeer = peer;
 
     internal Task RefreshAsync(IEnumerable<string> threadIds)
     {
         List<CodexThreadActivityObservation> observations = [];
-        Task refresh;
+        Task[] work;
         lock (_sync)
         {
             if (_disposed) return Task.CompletedTask;
-            _wanted = threadIds.Take(CodexTaskMonitorService.Capacity).ToHashSet(StringComparer.Ordinal);
-            foreach (var id in _streams.Keys.Where(id => !_wanted.Contains(id))) Invalidate(id, observations);
-            _refreshRequested = true;
-            refresh = _refresh ??= Task.Run(RefreshCoreAsync);
+            var wanted = threadIds.Take(CodexTaskMonitorService.Capacity).ToHashSet(StringComparer.Ordinal);
+            foreach (var id in _streams.Keys.Where(id => !wanted.Contains(id)).ToArray())
+            {
+                var removed = _streams[id];
+                _streams.Remove(id);
+                Invalidate(removed, observations);
+                removed.Lifetime.Cancel();
+                _retiring.Add(Task.Run(() => RetireAsync(removed)));
+            }
+            _retiring.RemoveWhere(task => task.IsCompletedSuccessfully);
+            foreach (var id in wanted)
+            {
+                if (!_streams.TryGetValue(id, out var subscription))
+                {
+                    subscription = new(id, _providedPeer ?? new CodexDesktopConnection(CodexActivityMessageReader.ReadAsync));
+                    subscription.Broadcast = message => OnBroadcast(subscription, message);
+                    subscription.Disconnected = () => OnDisconnected(subscription);
+                    subscription.Peer.Broadcast += subscription.Broadcast;
+                    subscription.Peer.Disconnected += subscription.Disconnected;
+                    _streams.Add(id, subscription);
+                }
+                if (subscription.Refresh is null || subscription.Refresh.IsCompleted)
+                    subscription.Refresh = Task.Run(() => RefreshSubscriptionAsync(subscription));
+            }
+            work = _streams.Values.Select(subscription => subscription.Refresh!).Concat(_retiring).ToArray();
         }
-        if (observations.Count > 0)
-            return Task.Run(async () => { Publish(observations); await refresh.ConfigureAwait(false); });
-        return refresh;
+        Publish(observations);
+        return WaitForRefreshAsync(work);
     }
 
-    private async Task RefreshCoreAsync()
+    private static async Task WaitForRefreshAsync(Task[] work)
     {
-        while (true)
-        {
-            string[] wanted;
-            Subscription[] removed;
-            lock (_sync)
-            {
-                if (_disposed || !_refreshRequested) { _refresh = null; return; }
-                _refreshRequested = false;
-                wanted = _wanted.ToArray();
-                removed = _streams.Values.Where(subscription =>
-                    !_wanted.Contains(subscription.Stream.ThreadId) || _resync.Contains(subscription.Stream.ThreadId)).ToArray();
-                foreach (var subscription in removed)
-                {
-                    _streams.Remove(subscription.Stream.ThreadId);
-                    _resync.Remove(subscription.Stream.ThreadId);
-                }
-            }
-            try
-            {
-                if (wanted.Length == 0 && removed.Length == 0) continue;
-                await _peer.ConnectAsync(_lifetime.Token).ConfigureAwait(false);
-                foreach (var subscription in removed)
-                {
-                    var stream = subscription.Stream;
-                    await _peer.FollowAsync(stream.ThreadId, stream.OwnerClientId, false, _lifetime.Token).ConfigureAwait(false);
-                }
-                // One unavailable owner must not block the remaining keys.
-                await Parallel.ForEachAsync(wanted, new ParallelOptions
-                {
-                    MaxDegreeOfParallelism = 4, CancellationToken = _lifetime.Token,
-                }, async (id, token) => await SubscribeAsync(id, token)).ConfigureAwait(false);
-            }
-            catch (Exception error) when (IsUnavailable(error))
-            {
-                OnDisconnected();
-                SoftwareControlDiagnostics.Write("thread-observer-unavailable", error);
-            }
-        }
+        // Leave the roster refreshable while one pipe is receiving a large
+        // frame. Its individual operation continues on its own worker.
+        try { await Task.WhenAll(work).WaitAsync(ResponseInterval).ConfigureAwait(false); }
+        catch (TimeoutException) { }
     }
 
-    private async Task SubscribeAsync(string id, CancellationToken token)
+    private async Task RefreshSubscriptionAsync(Subscription subscription)
     {
-        Subscription? subscription = null;
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
-        timeout.CancelAfter(TimeSpan.FromSeconds(2));
         try
         {
-            long generation;
-            Subscription? existing;
+            var token = subscription.Lifetime.Token;
             lock (_sync)
             {
-                if (_disposed || !_wanted.Contains(id)) return;
-                existing = _streams.GetValueOrDefault(id);
-                if (existing is not null && Stopwatch.GetElapsedTime(existing.LastMessageAt) < ReconfirmInterval) return;
-                generation = _connectionGeneration;
+                if (!IsCurrent(subscription)) return;
+                if (subscription.Stream is not null && !subscription.Resync &&
+                    Stopwatch.GetElapsedTime(subscription.LastMessageAt) < ReconfirmInterval) return;
             }
-            var owner = (await _peer.RequestAsync("thread-owner-discovery", 1,
-                new { hostId = "local", conversationId = id }, null, timeout.Token).ConfigureAwait(false))
+            await subscription.Peer.ConnectAsync(token).ConfigureAwait(false);
+            long generation;
+            string? previousOwner;
+            lock (_sync)
+            {
+                if (!IsCurrent(subscription)) return;
+                generation = subscription.Generation;
+                previousOwner = subscription.Stream?.OwnerClientId;
+            }
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+            timeout.CancelAfter(ResponseInterval);
+            var owner = (await subscription.Peer.RequestAsync("thread-owner-discovery", 1,
+                new { hostId = "local", conversationId = subscription.Id }, null, timeout.Token).ConfigureAwait(false))
                 .Required("handledByClientId");
             List<CodexThreadActivityObservation> observations = [];
+            Task ready;
             lock (_sync)
             {
-                if (_disposed || !_wanted.Contains(id) || generation != _connectionGeneration ||
-                    _resync.Contains(id) || _streams.GetValueOrDefault(id) != existing) return;
-                if (existing is not null && existing.Stream.OwnerClientId == owner)
+                if (!IsCurrent(subscription) || generation != subscription.Generation) return;
+                if (subscription.Resync || subscription.Stream?.OwnerClientId != owner)
                 {
-                    subscription = existing;
-                    subscription.Ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                    if (subscription.Stream is not null) Invalidate(subscription, observations);
+                    subscription.Stream = new(subscription.Id, owner);
                 }
-                else
-                {
-                    if (existing is not null)
-                        observations.Add(new(id, ++_sequence, UnavailableActivity(existing)));
-                    subscription = new(id, owner);
-                }
-                _streams[id] = subscription;
+                subscription.Resync = false;
+                subscription.Ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                ready = subscription.Ready.Task;
             }
             Publish(observations);
-            if (existing is not null && existing != subscription)
-                await _peer.FollowAsync(id, existing.Stream.OwnerClientId, false, timeout.Token).ConfigureAwait(false);
-            await _peer.FollowAsync(id, owner, true, timeout.Token).ConfigureAwait(false);
-            await subscription.Ready.Task.WaitAsync(timeout.Token).ConfigureAwait(false);
+            if (previousOwner is not null && previousOwner != owner)
+                await subscription.Peer.FollowAsync(subscription.Id, previousOwner, false, timeout.Token).ConfigureAwait(false);
+            await subscription.Peer.FollowAsync(subscription.Id, owner, true, timeout.Token).ConfigureAwait(false);
+            while (true)
+            {
+                try { await ready.WaitAsync(ResponseInterval, token).ConfigureAwait(false); break; }
+                catch (TimeoutException) when (subscription.Peer is CodexDesktopConnection { IsReceivingFrame: true })
+                {
+                    // Progress, rather than total snapshot size or duration,
+                    // distinguishes an ongoing read from an unavailable owner.
+                }
+            }
         }
         catch (Exception error) when (IsUnavailable(error))
         {
             List<CodexThreadActivityObservation> observations = [];
             lock (_sync)
-            {
-                if (subscription is not null && _streams.GetValueOrDefault(id) == subscription)
-                    Invalidate(id, observations);
-                else if (subscription is null && _streams.ContainsKey(id))
-                    Invalidate(id, observations);
-            }
+                if (IsCurrent(subscription)) Invalidate(subscription, observations);
             Publish(observations);
             SoftwareControlDiagnostics.Write("thread-observer-unavailable", error);
         }
     }
 
-    // Never call the monitor while holding the subscription lock: its worker
-    // may be reading rollout files. Sequence numbers reject reordered delivery.
+    private bool IsCurrent(Subscription subscription) => !_disposed &&
+        _streams.GetValueOrDefault(subscription.Id) == subscription;
+
     private void Publish(IEnumerable<CodexThreadActivityObservation> observations)
     {
         foreach (var observation in observations) ActivityChanged?.Invoke(observation);
     }
 
-    private void Invalidate(string id, List<CodexThreadActivityObservation> observations)
+    private void Invalidate(Subscription subscription, List<CodexThreadActivityObservation> observations)
     {
-        _streams.TryGetValue(id, out var subscription);
-        if (_resync.Add(id))
-            observations.Add(new(id, ++_sequence, UnavailableActivity(subscription)));
-        subscription?.Ready.TrySetResult();
-    }
-
-    private static CodexThreadActivity UnavailableActivity(Subscription? subscription) =>
-        (subscription?.LastActivity ?? CodexThreadActivity.Unknown) with
+        ++subscription.Generation;
+        subscription.LastActivity = (subscription.LastActivity ?? CodexThreadActivity.Unknown) with
         {
             Status = CodexMicro.Core.Models.ThreadStatus.Unknown,
-            HasPendingQuestion = false,
-            ErrorCode = null,
+            HasPendingQuestion = false, ErrorCode = null,
         };
+        if (!subscription.Resync)
+            observations.Add(new(subscription.Id, ++_sequence, subscription.LastActivity.Value));
+        subscription.Resync = true;
+        subscription.Ready.TrySetResult();
+    }
 
-    private void OnDisconnected()
+    private void OnDisconnected(Subscription subscription)
     {
         List<CodexThreadActivityObservation> observations = [];
         lock (_sync)
         {
-            ++_connectionGeneration;
-            foreach (var pair in _streams)
-            {
-                // Losing this listener says nothing about the task's outcome.
-                observations.Add(new(pair.Key, ++_sequence, UnavailableActivity(pair.Value)));
-                pair.Value.Ready.TrySetResult();
-            }
-            _streams.Clear();
-            _resync.Clear();
+            if (!IsCurrent(subscription)) return;
+            Invalidate(subscription, observations);
+            subscription.Stream = null;
         }
         Publish(observations);
     }
 
-    private void OnBroadcast(JsonObject message)
+    private void OnBroadcast(Subscription subscription, JsonObject message)
     {
+        if (message["params"]?.Text("conversationId") is { } id && id != subscription.Id) return;
         List<CodexThreadActivityObservation> observations = [];
-        string[] replies = [];
-        string? answeredThread = null;
-        Subscription? ready;
-        // Decode large snapshots on the IPC worker, outside the lock also used
-        // when the UI changes its visible task set.
+        TaskCompletionSource? ready;
+        string[] replies;
+        // Only projected metadata reaches this stage on production pipes.
         using var document = message["params"]?["change"] is JsonObject change
-            ? JsonDocument.Parse(change.ToJsonString()) : null;
+            ? JsonSerializer.SerializeToDocument(change) : null;
         lock (_sync)
-        {
-            ready = ApplyBroadcast(message, document, observations, out answeredThread, out replies);
-        }
+            ready = ApplyBroadcast(subscription, message, document, observations, out replies);
         Publish(observations);
-        if (answeredThread is not null && replies.Length > 0) AnswersAccepted?.Invoke(answeredThread, replies);
-        ready?.Ready.TrySetResult();
+        if (replies.Length > 0) AnswersAccepted?.Invoke(subscription.Id, replies);
+        ready?.TrySetResult();
     }
 
-    private Subscription? ApplyBroadcast(JsonObject message, JsonDocument? document,
-        List<CodexThreadActivityObservation> observations, out string? answeredThread, out string[] replies)
+    private TaskCompletionSource? ApplyBroadcast(Subscription subscription, JsonObject message,
+        JsonDocument? document, List<CodexThreadActivityObservation> observations, out string[] replies)
     {
-        answeredThread = null;
         replies = [];
-        if (_disposed) return null;
+        if (!IsCurrent(subscription)) return null;
         if (message.Text("method") == "ipc-connection-reset")
         {
-            ++_connectionGeneration;
-            // The router can reset subscriptions while this pipe stays open.
-            // Retire every old revision before the next roster refresh follows
-            // the same task IDs again, even when their owner ID is unchanged.
-            foreach (var threadId in _streams.Keys) Invalidate(threadId, observations);
+            Invalidate(subscription, observations);
             return null;
         }
         if (message.Text("method") == "thread-stream-following-status-requested" &&
             message["params"]?.Text("hostId") == "local" &&
-            message["params"]?.Text("conversationId") is { } requestedId &&
-            _wanted.Contains(requestedId) && _streams.ContainsKey(requestedId))
+            message["params"]?.Text("conversationId") == subscription.Id)
         {
-            // Ownership can move without the old client's pipe closing. The
-            // new owner explicitly asks followers to register again.
-            Invalidate(requestedId, observations);
+            Invalidate(subscription, observations);
             return null;
         }
         if (message.Text("method") == "client-status-changed" &&
-            message["params"]?.Text("status") == "disconnected")
+            message["params"]?.Text("status") == "disconnected" &&
+            subscription.Stream?.OwnerClientId == message["params"]?.Text("clientId"))
         {
-            foreach (var pair in _streams.Where(pair =>
-                pair.Value.Stream.OwnerClientId == message["params"]?.Text("clientId")))
-                Invalidate(pair.Key, observations);
+            Invalidate(subscription, observations);
             return null;
         }
         if (message.Text("method") != "thread-stream-state-changed" ||
             message["params"]?.Text("hostId") != "local" ||
-            message["params"]?.Text("conversationId") is not { } id ||
-            !_wanted.Contains(id) || !_streams.TryGetValue(id, out var subscription) ||
-            _resync.Contains(id) || subscription.Stream.OwnerClientId != message.Text("sourceClientId")) return null;
-        var stream = subscription.Stream;
+            message["params"]?.Text("conversationId") != subscription.Id ||
+            subscription.Stream is not { } stream || subscription.Resync ||
+            stream.OwnerClientId != message.Text("sourceClientId")) return null;
         if (message["version"] is not JsonValue version || !version.TryGetValue<int>(out var number) ||
-            number != 11 || document is null)
+            number != 11 || document is null || !IsValidChange(document.RootElement))
         {
-            Invalidate(id, observations);
-            return null;
-        }
-        if (!IsValidChange(document.RootElement))
-        {
-            Invalidate(id, observations);
+            Invalidate(subscription, observations);
             return null;
         }
         var result = stream.ApplyChange(document.RootElement);
         var activity = stream.Activity.Current;
         if (result.RequiresSnapshot || !stream.Activity.IsValid)
         {
-            Invalidate(id, observations);
+            Invalidate(subscription, observations);
             return null;
         }
         if (!result.Applied)
         {
-            // Repeating following=true asks the owner for a full snapshot. An
-            // unchanged revision confirms liveness without replaying state.
             if (document.RootElement.GetProperty("type").GetString() == "snapshot" &&
                 document.RootElement.GetProperty("revision").GetInt64() == stream.Revision)
             {
                 subscription.LastMessageAt = Stopwatch.GetTimestamp();
-                return subscription;
+                return subscription.Ready;
             }
             return null;
         }
@@ -292,19 +256,17 @@ internal sealed class SoftwareThreadObserver : IDisposable, IAsyncDisposable
         if (activity != subscription.LastActivity)
         {
             subscription.LastActivity = activity;
-            observations.Add(new(id, ++_sequence, activity));
+            observations.Add(new(subscription.Id, ++_sequence, activity));
         }
-        answeredThread = id;
         replies = stream.QuestionAnswers.DrainAcceptedReplies();
-        return subscription;
+        return subscription.Ready;
     }
 
     private static bool IsValidChange(JsonElement change)
     {
         if (!change.TryGetProperty("type", out var type) || type.ValueKind != JsonValueKind.String ||
             !change.TryGetProperty("revision", out var revision) || revision.ValueKind != JsonValueKind.Number ||
-            !revision.TryGetInt64(out var number) || number < 0)
-            return false;
+            !revision.TryGetInt64(out var number) || number < 0) return false;
         if (type.GetString() == "snapshot")
             return change.TryGetProperty("conversationState", out var state) && state.ValueKind == JsonValueKind.Object;
         if (type.GetString() != "patches" || !change.TryGetProperty("baseRevision", out var baseline) ||
@@ -318,7 +280,22 @@ internal sealed class SoftwareThreadObserver : IDisposable, IAsyncDisposable
     }
 
     private static bool IsUnavailable(Exception error) => error is IOException or TimeoutException or
-        OperationCanceledException or ObjectDisposedException or InvalidOperationException;
+        OperationCanceledException or ObjectDisposedException or InvalidOperationException or JsonException;
+
+    private async Task RetireAsync(Subscription subscription)
+    {
+        subscription.Peer.Broadcast -= subscription.Broadcast;
+        subscription.Peer.Disconnected -= subscription.Disconnected;
+        if (_providedPeer is null) await subscription.Peer.DisposeAsync().ConfigureAwait(false);
+        if (subscription.Refresh is not null) await subscription.Refresh.ConfigureAwait(false);
+        if (_providedPeer is not null && subscription.Stream is { } stream)
+        {
+            using var timeout = new CancellationTokenSource(ResponseInterval);
+            try { await subscription.Peer.FollowAsync(subscription.Id, stream.OwnerClientId, false, timeout.Token).ConfigureAwait(false); }
+            catch (Exception error) when (IsUnavailable(error)) { }
+        }
+        subscription.Lifetime.Dispose();
+    }
 
     public void Dispose() => _ = DisposeAsync();
 
@@ -328,19 +305,20 @@ internal sealed class SoftwareThreadObserver : IDisposable, IAsyncDisposable
         {
             if (_dispose is not null) return new(_dispose);
             _disposed = true;
-            _lifetime.Cancel();
-            var refresh = _refresh;
-            return new(_dispose = Task.Run(() => DisposeCoreAsync(refresh)));
+            List<CodexThreadActivityObservation> observations = [];
+            foreach (var subscription in _streams.Values)
+            {
+                Invalidate(subscription, observations);
+                subscription.Lifetime.Cancel();
+            }
+            var subscriptions = _streams.Values.ToArray();
+            _streams.Clear();
+            return new(_dispose = Task.Run(async () =>
+            {
+                Publish(observations);
+                await Task.WhenAll(subscriptions.Select(RetireAsync).Concat(_retiring)).ConfigureAwait(false);
+                if (_providedPeer is not null) await _providedPeer.DisposeAsync().ConfigureAwait(false);
+            }));
         }
-    }
-
-    private async Task DisposeCoreAsync(Task? refresh)
-    {
-        OnDisconnected();
-        if (refresh is not null) await refresh.ConfigureAwait(false);
-        _peer.Broadcast -= OnBroadcast;
-        _peer.Disconnected -= OnDisconnected;
-        await _peer.DisposeAsync().ConfigureAwait(false);
-        _lifetime.Dispose();
     }
 }
