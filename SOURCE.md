@@ -4,7 +4,7 @@ Codex Micro Monitor was extracted from [gantrol/AgentController](https://github.
 
 The independent product contains the Windows panel, desktop and plugin hosts, product state/lighting contracts, existing tests and a historical UIKit prototype. The current Apple target is macOS; no macOS client has been implemented.
 
-Shared control implementations live in the independent `codex-control` repository. The Micro release builds consume exact-version `CodexControl` and `CodexControl.Windows` packages (`1.0.1`); AgentController maintains its own independent dependency pin. Micro additionally supports an explicit sibling-source option for local development; releases use the pinned packages. Existing namespaces are retained for compatibility and do not imply repository ownership.
+Shared control implementations live in the independent `codex-control` repository. The Micro release builds consume exact-version `CodexControl` and `CodexControl.Windows` packages (`1.0.2`); AgentController maintains its own independent dependency pin. Micro additionally supports an explicit sibling-source option for local development; releases use the pinned packages. Existing namespaces are retained for compatibility and do not imply repository ownership.
 
 The extraction excludes the virtual HID broker/driver, DeepSeek setup and launch, external adapter dispatch and local speech capture/ASR. Legacy voice profile fields may remain as inert compatibility data; the product cannot start a speech provider. AgentController retains its own navigation and physical-controller integration.
 

@@ -4,14 +4,14 @@
 
 Requires Windows x64, .NET SDK 10.0.302 and the pinned `CodexControl` packages. Build those packages in the independent [codex-control repository](https://github.com/gantrol/codex-control) first, or download the pinned packages from its [Releases](https://github.com/gantrol/codex-control/releases); AgentController source is not required.
 
-The current `1.0.2` candidate pins `CodexControl.1.0.1.nupkg` and `CodexControl.Windows.1.0.1.nupkg`. Build that exact version in the control repository and pass its package directory to `scripts/import-control-packages.ps1`. The published [0.3.15 release](https://github.com/gantrol/codex-micro-monitor/releases/tag/v0.3.15) supplies the older `0.1.0-local.2` packages for its matching source, not this candidate. Do not rebuild and substitute different contents under an already imported package version.
+The current `1.0.3` candidate pins `CodexControl.1.0.2.nupkg` and `CodexControl.Windows.1.0.2.nupkg`. Build that exact version in the control repository and pass its package directory to `scripts/import-control-packages.ps1`. The published [0.3.15 release](https://github.com/gantrol/codex-micro-monitor/releases/tag/v0.3.15) supplies the older `0.1.0-local.2` packages for its matching source, not this candidate. Do not rebuild and substitute different contents under an already imported package version.
 
 For local development with `codex-control` checked out beside this repository, pass `-p:UseLocalCodexControl=true` to `dotnet build`, `dotnet run`, or `dotnet test`. This builds both shared control projects from source and avoids reusing a cached package with the same version. The workspace `debug:micro`, `build:micro:debug`, `test:micro`, and `manage.ps1` Micro Debug builds enable this option. Normal builds and release packaging continue to use pinned packages; the option is explicit and requires the sibling repository.
 
 Run from this repository's root:
 
 ```powershell
-.\scripts\import-control-packages.ps1 -PackageDirectory ..\codex-control\dist\1.0.1\packages
+.\scripts\import-control-packages.ps1 -PackageDirectory ..\codex-control\dist\1.0.2\packages
 dotnet build CodexMicro.slnx -c Release
 dotnet run --project src/CodexMicro.Desktop -c Release
 .\scripts\package.ps1
@@ -24,7 +24,7 @@ Quit an existing Micro window normally before running another copy. `Version.pro
 
 ## Release version
 
-The next desktop app and bundled plugin release is `1.0.2`; Windows assembly/file and Store package versions use `1.0.2.0`. Shared control packages are independently pinned to `1.0.1`. See the [candidate release notes](releases/1.0.2.md). Preparing this candidate does not publish it or change the approved Store package.
+The next desktop app and bundled plugin release is `1.0.3`; Windows assembly/file and Store package versions use `1.0.3.0`. Shared control packages are independently pinned to `1.0.2`. See the [candidate release notes](releases/1.0.3.md). Preparing this candidate does not publish it or change the approved Store package.
 
 The Store catalog was checked on 2026-10-04 and served `0.3.15.0`. The initially published desktop binaries carry the historical `0.3.15-local.1` informational string while their file version is `0.3.15.0`. Keep those published artifacts unchanged.
 

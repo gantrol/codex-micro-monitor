@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <CodexControlVersion>1.0.1</CodexControlVersion>
+    <CodexControlVersion>1.0.2</CodexControlVersion>
   </PropertyGroup>
 
   <ItemGroup>
