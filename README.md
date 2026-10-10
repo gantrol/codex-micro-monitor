@@ -1,7 +1,5 @@
 # Codex Micro Monitor
 
-
-Local macOS control preview: [build and scope](apps/macos/README.md). The native control paths and new-draft controls are implemented; Windows-style settings and independent keycap editing are available; live UI acceptance remains a separate release gate.
 [![中文 | 点我](plugins/codex-micro-keypad/assets/badges/zh-CN.svg)](README.zh-CN.md)
 
 <a href="https://apps.microsoft.com/detail/9NTVMG9QNMHC"><img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft Store" width="200" /></a>
@@ -25,6 +23,8 @@ Requires Windows 10 build 19041+ / Windows 11 x64 and a signed-in Codex desktop 
 The desktop app is available on Microsoft Store and GitHub Releases. Public plugin-directory publication is still pending. See [build and distribution](docs/build-and-distribution.md).
 
 For local development, open [codex-micro.code-workspace](codex-micro.code-workspace) with sibling checkouts of `codex-control` and `codex-plugin-micro-keypad`. The [repository map](docs/repository-layout.zh-CN.md) defines source ownership and one-way plugin synchronization.
+
+Local macOS control preview: [build and scope](apps/macos/README.md). The native control paths and new-draft controls are implemented; Windows-style settings and independent keycap editing are available; live UI acceptance remains a separate release gate.
 
 ## Notice
 

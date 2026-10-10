@@ -1,7 +1,5 @@
 # Codex Micro Monitor
 
-
-本地 macOS 控制预览版：[构建与能力范围](apps/macos/README.md)。原生控制路径和新对话控制已经实现；已加入 Windows 风格设置与独立键位编辑；真实 UI 验收仍是独立发布门禁。
 [![English | Click here](plugins/codex-micro-keypad/assets/badges/en-US.svg)](README.md)
 
 <a href="https://apps.microsoft.com/detail/9NTVMG9QNMHC"><img src="https://get.microsoft.com/images/zh-cn%20dark.svg" alt="从 Microsoft Store 获取" width="200" /></a>
@@ -25,6 +23,8 @@
 桌面应用已在 Microsoft Store 和 GitHub Releases 发布，公开插件目录尚未发布。构建方式及插件发布路线见[开发说明](docs/build-and-distribution.md)。
 
 本地开发打开 [codex-micro.code-workspace](codex-micro.code-workspace)，与相邻的 `codex-control`、`codex-plugin-micro-keypad` 一起维护。源码归属和插件单向同步见[仓库关系](docs/repository-layout.zh-CN.md)。
+
+本地 macOS 控制预览版：[构建与能力范围](apps/macos/README.md)。原生控制路径和新对话控制已经实现；已加入 Windows 风格设置与独立键位编辑；真实 UI 验收仍是独立发布门禁。
 
 ## 声明
 
