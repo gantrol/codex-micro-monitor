@@ -10,7 +10,8 @@ internal sealed record CodexMonitoredTask(
     string Title,
     ThreadStatus Status,
     bool HasPendingQuestion = false,
-    string? ErrorCode = null);
+    string? ErrorCode = null,
+    CodexComposerDraftState DraftState = CodexComposerDraftState.Unknown);
 
 internal sealed record CodexTaskMonitorSnapshot(
     CodexAgentRosterSnapshot AgentRoster,
@@ -32,6 +33,11 @@ internal sealed class CodexTaskMonitorService
     private readonly Dictionary<string, CachedText> _sharedText = new(StringComparer.Ordinal);
     private readonly Dictionary<string, HashSet<string>> _acceptedQuestionReplies =
         new(StringComparer.Ordinal);
+    private readonly Dictionary<string, CodexRolloutStatusSnapshot> _rolloutStatuses = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, CodexThreadActivityObservation> _activity = new(StringComparer.Ordinal);
+    private HashSet<string> _unread = new(StringComparer.Ordinal);
+    private IReadOnlyDictionary<string, CodexComposerDraftState> _draftStates =
+        new Dictionary<string, CodexComposerDraftState>(StringComparer.Ordinal);
 
     private readonly Func<CancellationToken, Task<IReadOnlyList<CodexRecentThread>?>> _readThreads;
     private readonly Func<CancellationToken, Task<CodexUnreadStateSnapshot?>> _readUnread;
@@ -62,12 +68,62 @@ internal sealed class CodexTaskMonitorService
         lock (_sync)
         {
             ++_unreadConfirmationRevision;
+            _unread.Add(threadId);
             if (_snapshot is null) return null;
             var tasks = _snapshot.Tasks.Select(task => task.Id == threadId &&
                 task.Status is ThreadStatus.Idle or ThreadStatus.Unknown
                     ? task with { Status = ThreadStatus.CompleteUnread } : task).ToArray();
             return UpdateSnapshot(_snapshot.AgentRoster, tasks);
         }
+    }
+
+    internal CodexTaskMonitorSnapshot? ObserveActivity(CodexThreadActivityObservation observation)
+    {
+        lock (_sync)
+        {
+            if (_activity.TryGetValue(observation.ThreadId, out var previous) &&
+                observation.Sequence <= previous.Sequence) return _snapshot;
+            if (observation.Activity.Status == ThreadStatus.Unknown && !observation.Activity.HasCurrentTurn &&
+                previous.Activity.HasCurrentTurn)
+            {
+                // Loss of observation cannot erase the identity of a newer
+                // turn and expose an older rollout terminal record as current.
+                observation = observation with { Activity = observation.Activity with
+                {
+                    TurnId = previous.Activity.TurnId,
+                    HasCurrentTurn = true,
+                } };
+            }
+            _activity[observation.ThreadId] = observation;
+            if (_snapshot is null) return null;
+            return UpdateSnapshot(_snapshot.AgentRoster, _snapshot.Tasks.Select(task =>
+                task.Id == observation.ThreadId ? Project(task.Id, task.Title) : task).ToArray());
+        }
+    }
+
+    private CodexMonitoredTask Project(string threadId, string title)
+    {
+        var rollout = _rolloutStatuses.GetValueOrDefault(threadId,
+            new(ThreadStatus.Unknown, false));
+        var runtime = _activity.TryGetValue(threadId, out var observed)
+            ? observed.Activity : CodexThreadActivity.Unknown;
+        var sameTurn = !runtime.HasCurrentTurn ||
+            (runtime.TurnId is not null && runtime.TurnId == rollout.TurnId);
+        var status = runtime.Status;
+        // A terminal record is useful offline; an unclosed start is only
+        // historical evidence and cannot assert that a turn is running now.
+        if (status == ThreadStatus.Unknown && sameTurn)
+            status = rollout.Status is ThreadStatus.Idle or ThreadStatus.Error
+                ? rollout.Status : ThreadStatus.Unknown;
+        else if (status == ThreadStatus.Idle && !runtime.HasCurrentTurn && rollout.Status == ThreadStatus.Error)
+            status = ThreadStatus.Error;
+        var question = runtime.Status == ThreadStatus.Thinking &&
+            (runtime.HasPendingQuestion || (sameTurn && rollout.HasPendingQuestion));
+        if (status is ThreadStatus.Idle or ThreadStatus.Unknown && _unread.Contains(threadId))
+            status = ThreadStatus.CompleteUnread;
+        return new(threadId, title, status, question,
+            status == ThreadStatus.Error ? runtime.ErrorCode ?? (sameTurn ? rollout.ErrorCode : null) : null,
+            _draftStates.GetValueOrDefault(threadId, CodexComposerDraftState.Unknown));
     }
 
     internal async Task<CodexTaskMonitorSnapshot?> ReadAsync(
@@ -82,9 +138,15 @@ internal sealed class CodexTaskMonitorService
         var threads = await threadsRead.ConfigureAwait(false);
         Volatile.Write(ref _recentThreads, threads);
         var unread = await unreadRead.ConfigureAwait(false);
-        if (threads is null || unread is null)
+        if (threads is null)
         {
-            return null;
+            // Codex's app server can be unavailable while it restarts. Keep
+            // task identities, but continue reading their lifecycle records.
+            lock (_sync)
+            {
+                threads = _rosterThreads;
+                if (threads is null) return _snapshot;
+            }
         }
 
         return await Task.Run(() =>
@@ -94,7 +156,14 @@ internal sealed class CodexTaskMonitorService
                 cancellationToken.ThrowIfCancellationRequested();
                 // A read started before a confirmed user action cannot undo it.
                 if (confirmationRevision != _unreadConfirmationRevision) return _snapshot;
-                var tasks = ReadStatuses(threads, unread.ThreadIds, cancellationToken);
+                // Unread lookup failure must not prevent live subscriptions
+                // from starting or erase the last confirmed unread state.
+                var globalState = ReadSharedText(".codex-global-state.json", out var globalStateCurrent);
+                // Reuse this refresh's settings read. A cached settings fallback
+                // remains useful for slot assignments, but is not live draft evidence.
+                _draftStates = CodexComposerDraftReader.Read(globalStateCurrent ? globalState : null,
+                    threads.Select(thread => thread.ThreadId));
+                var tasks = ReadStatuses(threads, unread?.ThreadIds ?? _unread, cancellationToken);
                 if (tasks is null)
                 {
                     return null;
@@ -102,8 +171,7 @@ internal sealed class CodexTaskMonitorService
 
                 // Read source settings after the query so a source change cannot
                 // restore the previous slot assignments while it is in flight.
-                var globalState = ReadSharedText(".codex-global-state.json");
-                var config = ReadSharedText("config.toml");
+                var config = ReadSharedText("config.toml", out _);
                 var roster = _snapshot is not null && _rosterThreads is not null &&
                     ReferenceEquals(_rosterGlobalState, globalState) &&
                     ReferenceEquals(_rosterConfig, config) &&
@@ -126,7 +194,8 @@ internal sealed class CodexTaskMonitorService
     {
         lock (_sync)
         {
-            return _readers.SelectMany(pair => pair.Value.Reader
+            return _readers.Where(pair => _snapshot?.Tasks.Any(task =>
+                task.Id == pair.Key && task.HasPendingQuestion) == true).SelectMany(pair => pair.Value.Reader
                 .GetPendingQuestions(pair.Value.Path)
                 .Select(question => new CodexMonitoredQuestion(pair.Key, question))).ToArray();
         }
@@ -191,19 +260,15 @@ internal sealed class CodexTaskMonitorService
 
                     _acceptedQuestionReplies.TryGetValue(task.Id, out var acceptedReplies);
                     var rollout = reader.Reader.ReadSnapshot(reader.Path, acceptedReplies);
-                    if (rollout.HasPendingQuestion == task.HasPendingQuestion &&
-                        rollout.Status == task.Status && rollout.ErrorCode == task.ErrorCode)
+                    _rolloutStatuses[task.Id] = rollout;
+                    var projected = Project(task.Id, task.Title);
+                    if (projected == task)
                     {
                         continue;
                     }
 
                     updated ??= _snapshot.Tasks.ToArray();
-                    updated[index] = task with
-                    {
-                        Status = rollout.Status,
-                        HasPendingQuestion = rollout.HasPendingQuestion,
-                        ErrorCode = rollout.ErrorCode,
-                    };
+                    updated[index] = projected;
                 }
 
                 return updated is null ? _snapshot : UpdateSnapshot(_snapshot.AgentRoster, updated);
@@ -226,28 +291,40 @@ internal sealed class CodexTaskMonitorService
         return _snapshot = new CodexTaskMonitorSnapshot(roster, tasks, ++_revision);
     }
 
-    private string? ReadSharedText(string name)
+    private string? ReadSharedText(string name, out bool current)
     {
-        var path = Path.Combine(_codexRoot, name);
-        var file = new FileInfo(path);
-        if (!file.Exists)
+        current = false;
+        try
         {
-            _sharedText.Remove(name);
-            return null;
-        }
+            var path = Path.Combine(_codexRoot, name);
+            var file = new FileInfo(path);
+            if (!file.Exists)
+            {
+                _sharedText.Remove(name);
+                return null;
+            }
 
-        if (_sharedText.TryGetValue(name, out var cached) &&
-            cached.Length == file.Length && cached.LastWriteTimeUtc == file.LastWriteTimeUtc)
+            if (_sharedText.TryGetValue(name, out var cached) &&
+                cached.Length == file.Length && cached.LastWriteTimeUtc == file.LastWriteTimeUtc)
+            {
+                current = true;
+                return cached.Text;
+            }
+
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream);
+            var text = reader.ReadToEnd();
+            _sharedText[name] = new CachedText(file.Length, file.LastWriteTimeUtc, text);
+            current = true;
+            return text;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            return cached.Text;
+            // Settings availability does not determine task activity or the
+            // validity of its independent IPC subscription.
+            return _sharedText.GetValueOrDefault(name)?.Text;
         }
-
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete);
-        using var reader = new StreamReader(stream);
-        var text = reader.ReadToEnd();
-        _sharedText[name] = new CachedText(file.Length, file.LastWriteTimeUtc, text);
-        return text;
     }
 
     private IReadOnlyList<CodexMonitoredTask>? ReadStatuses(
@@ -258,6 +335,7 @@ internal sealed class CodexTaskMonitorService
         try
         {
             var tasks = new List<CodexMonitoredTask>(Capacity);
+            _unread = new(unread, StringComparer.Ordinal);
             var retained = new HashSet<string>(StringComparer.Ordinal);
             foreach (var thread in threads)
             {
@@ -270,39 +348,34 @@ internal sealed class CodexTaskMonitorService
                 }
 
                 var path = NormalizeRolloutPath(thread.RolloutPath);
-                var status = ThreadStatus.Unknown;
-                var hasPendingQuestion = false;
-                string? errorCode = null;
-                if (path is not null && File.Exists(path))
+                _rolloutStatuses[thread.ThreadId] = new(ThreadStatus.Unknown, false);
+                if (path is not null)
                 {
                     if (!_readers.TryGetValue(thread.ThreadId, out var reader) ||
                         !string.Equals(reader.Path, path, StringComparison.OrdinalIgnoreCase))
                     {
-                        reader = new RolloutReader(path, new CodexRolloutStatusReader());
+                        reader = new RolloutReader(path,
+                            new CodexRolloutStatusReader(CodexRolloutFileIdentity.Read));
                         _readers[thread.ThreadId] = reader;
                     }
                     _acceptedQuestionReplies.TryGetValue(thread.ThreadId, out var acceptedReplies);
-                    var rollout = reader.Reader.ReadSnapshot(path, acceptedReplies);
-                    status = rollout.Status;
-                    hasPendingQuestion = rollout.HasPendingQuestion;
-                    errorCode = rollout.ErrorCode;
-                }
-
-                if (status is not ThreadStatus.Thinking and not ThreadStatus.Error &&
-                    unread.Contains(thread.ThreadId))
-                {
-                    status = ThreadStatus.CompleteUnread;
+                    _rolloutStatuses[thread.ThreadId] = reader.Reader.ReadSnapshot(path, acceptedReplies);
                 }
 
                 // A missing rollout affects state only; do not replace a recent
                 // task with an older task because of its path or availability.
-                tasks.Add(new(thread.ThreadId, thread.Title, status, hasPendingQuestion, errorCode));
+                tasks.Add(Project(thread.ThreadId, thread.Title));
             }
 
             foreach (var id in _readers.Keys.Where(id => !retained.Contains(id)).ToArray())
             {
                 _readers.Remove(id);
             }
+
+            foreach (var id in _rolloutStatuses.Keys.Where(id => !retained.Contains(id)).ToArray())
+                _rolloutStatuses.Remove(id);
+            foreach (var id in _activity.Keys.Where(id => !retained.Contains(id)).ToArray())
+                _activity.Remove(id);
 
             foreach (var id in _acceptedQuestionReplies.Keys.Where(id => !retained.Contains(id)).ToArray())
             {

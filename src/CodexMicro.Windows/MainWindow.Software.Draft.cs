@@ -13,6 +13,10 @@ public partial class MicroSurfaceWindow
 
     private async Task ToggleSoftwareQuickModelAsync()
     {
+#if DEBUG
+        using var diagnosticOperation = new System.Diagnostics.Activity("model").Start();
+        RecordSoftwareTarget("input-before-selection", "model");
+#endif
         if (_quickModelSwitching || _reasoningAdjusting || _windowClosed || SoftwareTargetPending) return;
         _quickModelSwitching = true;
         using var action = new CancellationTokenSource(TimeSpan.FromSeconds(30));
@@ -23,6 +27,9 @@ public partial class MicroSurfaceWindow
             // Re-read at dispatch; a timer's previous chat must not receive a new draft's click.
             var navigation = _softwareNavigationVersion;
             await ReadSoftwareThreadSelectionAsync(action.Token, waitForRead: true);
+#if DEBUG
+            RecordSoftwareTarget("input-after-selection", "model");
+#endif
             if (_windowClosed || SoftwareTargetPending) return;
             if (navigation != _softwareNavigationVersion) return;
             var selected = _modelToggleService.CurrentVisibleThreadId;
@@ -39,6 +46,9 @@ public partial class MicroSurfaceWindow
                 return;
             }
             _softwareDraft = draft;
+#if DEBUG
+            CodexModelToggleDiagnostics.RecordStage("action-route", new { action = "model", route = "native-draft", reason = "confirmed-draft" });
+#endif
             var profile = _profileSettings.Current;
             await RunActionAsync(async () =>
             {

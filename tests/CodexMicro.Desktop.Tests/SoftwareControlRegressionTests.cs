@@ -241,7 +241,7 @@ public sealed class SoftwareControlRegressionTests
     {
         await using var owner = new FakeOwner();
         owner.AnswerInSnapshots = true;
-        using var observer = new SoftwareQuestionObserver(new(owner.Name));
+        await using var observer = new SoftwareThreadObserver(new CodexDesktopConnection(owner.Name));
         var received = new HashSet<string>();
         var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         observer.AnswersAccepted += (id, replies) =>

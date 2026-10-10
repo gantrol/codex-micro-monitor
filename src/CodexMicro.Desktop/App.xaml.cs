@@ -255,6 +255,9 @@ public partial class App : System.Windows.Application
         }
         finally
         {
+#if DEBUG
+            await CodexModelToggleDiagnostics.FlushAsync();
+#endif
             if (Dispatcher.CheckAccess())
             {
                 Shutdown(exitCode);

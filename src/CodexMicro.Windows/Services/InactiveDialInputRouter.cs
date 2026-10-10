@@ -24,6 +24,7 @@ internal sealed class InactiveDialInputRouter : IDisposable
 
     private readonly Func<Point, int, bool> _routeWheel;
     private readonly Func<RoutedDialPointerInput, bool> _routePointer;
+    private readonly Action<RoutedDialPointerInput>? _observePointer;
     private readonly HookProcedure _hookProcedure;
     private IntPtr _hook;
     private bool _pointerIntercepted;
@@ -35,12 +36,14 @@ internal sealed class InactiveDialInputRouter : IDisposable
 
     public InactiveDialInputRouter(
         Func<Point, int, bool> routeWheel,
-        Func<RoutedDialPointerInput, bool> routePointer)
+        Func<RoutedDialPointerInput, bool> routePointer,
+        Action<RoutedDialPointerInput>? observePointer = null)
     {
         ArgumentNullException.ThrowIfNull(routeWheel);
         ArgumentNullException.ThrowIfNull(routePointer);
         _routeWheel = routeWheel;
         _routePointer = routePointer;
+        _observePointer = observePointer;
         _hookProcedure = HookCallback;
     }
 
@@ -102,6 +105,7 @@ internal sealed class InactiveDialInputRouter : IDisposable
                 }
                 else if (message == WmLeftButtonDown)
                 {
+                    _observePointer?.Invoke(new(RoutedDialPointerAction.Pressed, point));
                     if (_routePointer(new RoutedDialPointerInput(
                         RoutedDialPointerAction.Pressed,
                         point)))
@@ -119,13 +123,17 @@ internal sealed class InactiveDialInputRouter : IDisposable
                         RoutedDialPointerAction.Moved,
                         point));
                 }
-                else if (_pointerIntercepted && message == WmLeftButtonUp)
+                else if (message == WmLeftButtonUp)
                 {
-                    _pointerIntercepted = false;
-                    _ = _routePointer(new RoutedDialPointerInput(
-                        RoutedDialPointerAction.Released,
-                        point));
-                    return new IntPtr(1);
+                    _observePointer?.Invoke(new(RoutedDialPointerAction.Released, point));
+                    if (_pointerIntercepted)
+                    {
+                        _pointerIntercepted = false;
+                        _ = _routePointer(new RoutedDialPointerInput(
+                            RoutedDialPointerAction.Released,
+                            point));
+                        return new IntPtr(1);
+                    }
                 }
             }
         }

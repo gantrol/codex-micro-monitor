@@ -49,6 +49,9 @@ internal static class Program
                 exiting = true;
                 restartRequested = restart;
                 await surface.ShutdownAsync();
+#if DEBUG
+                await CodexMicro.Desktop.Services.CodexModelToggleDiagnostics.FlushAsync();
+#endif
                 app.Shutdown();
             }
             using var tray = new MicroTrayIcon(surface, localization,

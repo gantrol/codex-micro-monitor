@@ -93,7 +93,7 @@ iOS 是可编译的远程控制原型，不能直接作为 Mac 产品基础。�
 
 | 信息 | Windows 表现与依据 |
 | --- | --- |
-| 进行中 | 蓝色；本地 rollout 的未结束回合可能仍在等待输入，提示语不保证正在计算 |
+| 进行中 | 蓝色；依据可信桌面快照中的加载状态、当前回合和 runtime 合成；只有未结束的 rollout 不足以亮蓝，历史回合也不能当作当前执行 |
 | 等待输入 | 橙色；有明确等待状态 |
 | 待回答 | 黄色；独立的 `HasPendingQuestion` 观察，不能并入一般等待 |
 | 未读 | 绿色；依赖未读状态或明确确认的手动标记，不从“回合完成”自行推断 |
@@ -105,6 +105,8 @@ iOS 是可编译的远程控制原型，不能直接作为 Mac 产品基础。�
 状态光分为宽光晕、近光晕、键帽染色、凹槽染色等载体，选中与未选中的强度不同。Mac 应先复现状态与材质的关系，再调光晕数值；不能只在普通按钮下方加一个彩色小点。
 
 来源：[AgentLightingAppearance](../../src/CodexMicro.Windows/Services/AgentLightingAppearance.cs)、[任务状态合成](../../src/CodexMicro.Windows/Services/CodexTaskMonitorService.cs)、[Monitor](../../src/CodexMicro.Windows/MainWindow.Monitor.cs)。
+
+实时状态、断线回退和回归边界见[任务键灯光状态](task-lighting.zh-CN.md)。
 
 ### 设置的现状与提案
 

@@ -697,6 +697,8 @@ internal static class MicroEnglishTranslations
         ("；右击标记为未读。", "; right-click to mark unread."),
         ("未分配", "Unassigned"),
         ("未读", "Unread"),
+        ("输入状态未知", "Draft status unknown"),
+        ("有输入", "Draft"),
         ("思考中", "Thinking"),
         ("已完成", "Completed"),
         ("等待输入", "Waiting for input"),

@@ -103,6 +103,19 @@ sequenceDiagram
 
 淡绿光仍遵循原有空闲当前会话规则；正在运行、等待输入等状态继续使用相应状态色。本轮没有重新设计灯光样式。
 
+## Dev 诊断日志
+
+2026-10-08：Debug 构建沿用 `CodexModelToggleDiagnostics`，将模型与 Fast 的输入、目标刷新、分流和结果写入 `%LOCALAPPDATA%/CodexMicro/logs/model-toggle-<PID>.jsonl`。每条记录包含 UTC 时间、进程／应用／构建标识；从按钮发起的操作还带有跨异步调用传播的 `operationId`。`control-started` 记录实际加载组件的路径及模块标识，便于核对运行程序与源码是否对应。测试进程使用各自的文件。
+
+- `input-before-selection`／`input-after-selection`：比较模型与 Fast 刷新前后的已选 ID、目标版本、导航状态、草稿及未识别会话输入框。
+- `selection-observed`／`selection-applied`：记录 ID 的观察来源、是否沿用原 ID，以及路由日志可用性、读取文件数／字节数、窗口数和读取错误；不记录聊天标题、正文或原始页面路径。
+- `action-context`／`action-route`：记录实际捕获的 `ThreadId`、目标版本、IPC／原生路径及选择原因；`thread-id-unresolved` 表示已确认原生输入框，但没有正式会话 ID，不能将其视为新草稿。
+- `target-rejected`／`ipc-request`／`ipc-result`／`native-result`／`action-result`：记录目标校验差异、请求操作、确认的设置、结果码和耗时。
+
+配合本地 Debug 控制组件时，`%LOCALAPPDATA%/CodexControl/control.log` 的 `native-fast` 记录同一个 `operationId`。`open-picker-speed-unreadable` 明确表示菜单打开是为了读取速度，随后记录快捷键派发与速度读回。仅有 `ui.fast.*` 或模型 IPC 成功记录不足以证明当时的 ID 识别失败原因。
+
+Micro 的日志通过有界队列在后台异步追加，达到 1 MiB 后保留一份轮转文件，队列满或写入失败后的缺口记为 `diagnostics-dropped`；正常退出最多等待两秒排空已入队记录。目录和轮转元数据操作仅在后台执行。原生 Fast 复用控制组件现有的同步、256 KiB 轮转日志，调用位置位于原生操作的工作线程，不在 WPF Dispatcher 上。新日志不触发额外的 UI 观察或操作；真实界面复现仍需单独授权。
+
 ## 验证与边界
 
 一次经用户明确授权的只读检查确认：当前 Codex 窗口可以读取标题与输入框，但不提供实时 Document 路由、选中侧栏行和可用的输入框 DOM 属性。这解释了先前方案为什么在状态灯已更新后仍没有控制目标。未操作模型、Fast 或发送按钮；本机检查输出和原始日志不进入公开仓。

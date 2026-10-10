@@ -16,6 +16,18 @@ internal sealed class CodexDesktopRouteReader
     private uint _processId;
     private DateTimeOffset _nextRefresh;
     private bool _available;
+#if DEBUG
+    private int _filesRead;
+    private long _bytesRead;
+    private string? _readError;
+    internal object CaptureDiagnostics() => new
+    {
+        processId = _processId, available = _available, filesRead = _filesRead,
+        bytesRead = _bytesRead, readError = _readError, windowCount = _routes.Count,
+        mappingCount = _threads.Count,
+        latestRouteAt = _routes.Count == 0 ? (DateTimeOffset?)null : _routes.Values.Max(route => route.ObservedAt),
+    };
+#endif
 
     internal static bool IsClientThreadId(string? value) =>
         value is not null && value.StartsWith("client-new-thread:", StringComparison.Ordinal) &&
@@ -49,6 +61,11 @@ internal sealed class CodexDesktopRouteReader
         if (!force && now < _nextRefresh) return;
         _nextRefresh = now.AddSeconds(1);
         _available = false;
+#if DEBUG
+        _filesRead = 0;
+        _bytesRead = 0;
+        _readError = null;
+#endif
         var readAny = false;
         var readFailed = false;
         var local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -73,10 +90,19 @@ internal sealed class CodexDesktopRouteReader
                     .OrderDescending(StringComparer.Ordinal).Take(8))
                 {
                     await ReadAsync(path, token).ConfigureAwait(false);
+#if DEBUG
+                    _filesRead++;
+#endif
                     readAny = true;
                 }
             }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { readFailed = true; }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                readFailed = true;
+#if DEBUG
+                _readError = error.GetType().Name;
+#endif
+            }
         }
         _available = readAny && !readFailed;
     }
@@ -110,6 +136,9 @@ internal sealed class CodexDesktopRouteReader
         }
         // An incomplete last line is read again after the writer finishes it.
         _offsets[path] = start + lineStart;
+#if DEBUG
+        _bytesRead += read;
+#endif
     }
 
     private void Observe(string line)

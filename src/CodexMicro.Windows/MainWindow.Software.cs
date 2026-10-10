@@ -222,6 +222,22 @@ public partial class MicroSurfaceWindow
                 ++_softwareSelectionGeneration;
                 RefreshCurrentCodexThreadPresentation();
             }
+#if DEBUG
+            if (changed || waitForRead)
+                CodexModelToggleDiagnostics.RecordStage("selection-applied", new
+                {
+                    observedThreadId = selection.ThreadId,
+                    retainedThreadId = selection.ThreadId is null && threadId is not null,
+                    threadId,
+                    selection.CanRetainThreadId,
+                    targetChanged = changed,
+                    hasPageIdentity = selection.PageKey is not null,
+                    generation = _softwareSelectionGeneration,
+                    navigationPending = _softwareNavigationPending,
+                    hasDraft = draft is not null,
+                    hasUnidentifiedComposer = composer is not null,
+                });
+#endif
         }
         catch (OperationCanceledException) { }
         finally { _softwareSelectionGate.Release(); }
@@ -320,14 +336,24 @@ public partial class MicroSurfaceWindow
 
     private async Task HandleSoftwareKeyAsync(string key, bool agentKey)
     {
+#if DEBUG
+        using var diagnosticOperation = new System.Diagnostics.Activity("keypad:" + key).Start();
+        RecordSoftwareTarget("input-before-selection", key);
+#endif
         // A single Agent tap must navigate; the old focus preference must not consume it.
         var action = agentKey ? null : _layoutObserver.Current.GetSlot(key).ResolvedAction;
         if (action == "composer.toggleFastMode")
             await ReadSoftwareThreadSelectionAsync(waitForRead: true);
+#if DEBUG
+        RecordSoftwareTarget("input-after-selection", action ?? key);
+#endif
         if (action is not null &&
             _layoutObserver.Current.GetSlot(key).Action is not { Type: "skill" } &&
             SoftwareActionUnavailableReason(action) is not null)
         {
+#if DEBUG
+            CodexModelToggleDiagnostics.RecordStage("input-rejected", new { action, reason = SoftwareActionUnavailableReason(action) });
+#endif
             RefreshSoftwareActionAvailability();
             return;
         }
@@ -374,6 +400,20 @@ public partial class MicroSurfaceWindow
             }
         }
     }
+
+#if DEBUG
+    private void RecordSoftwareTarget(string stage, string action) => CodexModelToggleDiagnostics.RecordStage(stage, new
+    {
+        action,
+        selectedThreadId = _modelToggleService.CurrentVisibleThreadId,
+        navigationTarget = _softwareNavigationTarget,
+        navigationPending = _softwareNavigationPending,
+        generation = _softwareSelectionGeneration,
+        hasPageIdentity = _softwareSelectionPageKey is not null,
+        hasDraft = _softwareDraft is not null,
+        hasUnidentifiedComposer = _softwareUnidentifiedComposer is not null,
+    });
+#endif
 
     private void RefreshSoftwareFeedback()
     {

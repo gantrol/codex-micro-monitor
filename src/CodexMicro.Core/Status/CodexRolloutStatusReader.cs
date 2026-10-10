@@ -8,7 +8,8 @@ namespace CodexMicro.Core.Services;
 public readonly record struct CodexRolloutStatusSnapshot(
     ThreadStatus Status,
     bool HasPendingQuestion,
-    string? ErrorCode = null);
+    string? ErrorCode = null,
+    string? TurnId = null);
 
 public sealed record CodexPendingQuestion(string ItemId, int Index, string Title);
 
@@ -25,8 +26,16 @@ public sealed class CodexRolloutStatusReader
 
     private readonly object _sync = new();
     private readonly byte[] _readBuffer = new byte[ReadBufferSize];
+    private readonly Func<FileStream, string>? _readFileIdentity;
     private readonly Dictionary<string, RolloutCursor> _cursors =
         new(StringComparer.OrdinalIgnoreCase);
+
+    // Platform callers supply identity from the opened handle, so a path
+    // replacement cannot race a separate path-based metadata lookup.
+    public CodexRolloutStatusReader(Func<FileStream, string>? readFileIdentity = null)
+    {
+        _readFileIdentity = readFileIdentity;
+    }
 
     public ThreadStatus Read(string? rolloutPath) => ReadSnapshot(rolloutPath).Status;
 
@@ -81,12 +90,15 @@ public sealed class CodexRolloutStatusReader
                     FileMode.Open,
                     FileAccess.Read,
                     FileShare.ReadWrite | FileShare.Delete);
-                if (stream.Length < cursor.Offset)
+                var identity = _readFileIdentity?.Invoke(stream);
+                var endOffset = stream.Length;
+                if (endOffset < cursor.Offset ||
+                    (cursor.FileIdentity is not null && cursor.FileIdentity != identity))
                 {
                     cursor.Reset();
                 }
+                cursor.FileIdentity = identity;
 
-                var endOffset = stream.Length;
                 stream.Position = cursor.Offset;
                 while (cursor.Offset < endOffset)
                 {
@@ -107,12 +119,11 @@ public sealed class CodexRolloutStatusReader
             {
                 // Codex may rotate or briefly hold a rollout. Keep the last
                 // observed state instead of flashing a false state.
-                return new(cursor.Status, false, cursor.ErrorCode);
+                // Accepted IPC replies below remain useful while it is locked.
             }
             catch (UnauthorizedAccessException)
             {
                 // Preserve the last observation when the file is unavailable.
-                return new(cursor.Status, false, cursor.ErrorCode);
             }
 
             if (acceptedQuestionReplies is not null)
@@ -228,11 +239,14 @@ public sealed class CodexRolloutStatusReader
             if (payloadType.ValueEquals("task_started"))
             {
                 var turnId = ReadString(payload, "turn_id");
+                if (turnId is not null && turnId == cursor.TurnId && cursor.IsTerminal)
+                    return;
                 if (turnId is null || turnId != cursor.TurnId)
                 {
                     cursor.ClearQuestions();
                 }
                 cursor.TurnId = turnId;
+                cursor.IsTerminal = false;
                 cursor.Status = ThreadStatus.Thinking;
                 cursor.ErrorCode = null;
             }
@@ -240,6 +254,9 @@ public sealed class CodexRolloutStatusReader
                 payloadType.ValueEquals("task_complete") ||
                 payloadType.ValueEquals("turn_aborted"))
             {
+                var turnId = ReadString(payload, "turn_id");
+                if (turnId is not null && cursor.TurnId is not null && turnId != cursor.TurnId)
+                    return;
                 // task_complete closes both successful and failed turns.
                 // Capacity failures are reported here, without a separate error event.
                 var failed = payload.TryGetProperty("error", out var error) &&
@@ -247,12 +264,17 @@ public sealed class CodexRolloutStatusReader
                 cursor.Status = failed ? ThreadStatus.Error : ThreadStatus.Idle;
                 cursor.ErrorCode = failed ? ReadErrorCode(error) : null;
                 cursor.ClearQuestions();
-                cursor.TurnId = null;
+                cursor.TurnId = turnId ?? cursor.TurnId;
+                cursor.IsTerminal = true;
             }
             else if (
                 payloadType.ValueEquals("error") ||
                 payloadType.ValueEquals("stream_error"))
             {
+                var turnId = ReadString(payload, "turn_id");
+                if ((cursor.IsTerminal && turnId is not null) ||
+                    (turnId is not null && cursor.TurnId is not null && turnId != cursor.TurnId))
+                    return;
                 cursor.Status = ThreadStatus.Error;
                 cursor.ErrorCode = ReadErrorCode(payload);
             }
@@ -383,15 +405,17 @@ public sealed class CodexRolloutStatusReader
 
     private sealed class RolloutCursor
     {
+        public string? FileIdentity { get; set; }
         public long Offset { get; set; }
         public PooledLineBuffer PartialLine { get; } = new();
         public ThreadStatus Status { get; set; } = ThreadStatus.Unknown;
         public string? ErrorCode { get; set; }
         public string? TurnId { get; set; }
+        public bool IsTerminal { get; set; }
         public Dictionary<(string ItemId, int Index), string> PendingQuestions { get; } = [];
         public HashSet<(string ItemId, int Index)> ResolvedQuestions { get; } = [];
         public CodexRolloutStatusSnapshot Snapshot => new(
-            Status, Status == ThreadStatus.Thinking && PendingQuestions.Count > 0, ErrorCode);
+            Status, Status == ThreadStatus.Thinking && PendingQuestions.Count > 0, ErrorCode, TurnId);
 
         public void ClearQuestions()
         {
@@ -401,11 +425,13 @@ public sealed class CodexRolloutStatusReader
 
         public void Reset()
         {
+            FileIdentity = null;
             Offset = 0;
             PartialLine.Clear();
             Status = ThreadStatus.Unknown;
             ErrorCode = null;
             TurnId = null;
+            IsTerminal = false;
             ClearQuestions();
         }
     }

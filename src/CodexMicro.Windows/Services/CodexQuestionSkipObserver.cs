@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Windows;
 using System.Windows.Automation;
 
 namespace CodexMicro.Desktop.Services;
@@ -18,17 +19,52 @@ internal sealed class CodexQuestionSkipObserver : IDisposable
         internal AutomationElement Button { get; } = button;
         internal CodexMonitoredQuestion Question { get; } = question;
         internal AutomationEventHandler Handler { get; set; } = null!;
+        internal bool HandlerAttached { get; set; }
         internal int Active = 1;
+        internal int Resolved;
     }
+
+    private sealed record PointerTarget(
+        string RuntimeId, nint Window, Rect Bounds, Subscription Subscription, long ObservedAt);
+
+    private sealed record PendingClick(PointerTarget Target, long ReleasedAt);
 
     private readonly object _sync = new();
     private readonly BlockingCollection<RefreshRequest> _requests = new();
     private readonly Dictionary<string, Subscription> _subscriptions = new(StringComparer.Ordinal);
+    private readonly ConcurrentQueue<PendingClick> _clicks = new();
+    private PointerTarget[] _pointerTargets = [];
+    private PointerTarget? _pressedTarget;
     private Thread? _worker;
     private int _generation;
     private volatile bool _disposed;
 
     internal event Action<CodexMonitoredQuestion>? QuestionSkipped;
+
+    // Called by the existing mouse hook. Only inspect cached geometry and HWNDs
+    // here; UIA and confirmation run on the observer's background thread.
+    internal void ObservePointer(RoutedDialPointerInput input)
+    {
+        if (_disposed) return;
+        if (input.Action == RoutedDialPointerAction.Pressed)
+        {
+            _pressedTarget = Volatile.Read(ref _pointerTargets).FirstOrDefault(target =>
+                Environment.TickCount64 - target.ObservedAt <= 1000 &&
+                Volatile.Read(ref target.Subscription.Active) == 1 &&
+                IsTargetWindow(target, input.ScreenPoint));
+        }
+        else if (input.Action == RoutedDialPointerAction.Released)
+        {
+            var pressed = _pressedTarget;
+            _pressedTarget = null;
+            if (pressed is not null && IsTargetWindow(pressed, input.ScreenPoint))
+                _clicks.Enqueue(new(pressed, Environment.TickCount64));
+        }
+    }
+
+    private static bool IsTargetWindow(PointerTarget target, Point point) =>
+        target.Bounds.Contains(point) && GetForegroundWindow() == target.Window &&
+        GetAncestor(WindowFromPoint(new((int)point.X, (int)point.Y)), 2) == target.Window;
 
     internal Task RefreshAsync(IReadOnlyList<CodexMonitoredQuestion> questions)
     {
@@ -76,6 +112,7 @@ internal sealed class CodexQuestionSkipObserver : IDisposable
         }
         finally
         {
+            Volatile.Write(ref _pointerTargets, []);
             RemoveSubscriptions([]);
             _requests.Dispose();
         }
@@ -83,7 +120,7 @@ internal sealed class CodexQuestionSkipObserver : IDisposable
 
     private void Refresh(RefreshRequest request)
     {
-        var matches = new Dictionary<string, (AutomationElement Button, CodexMonitoredQuestion Question)>();
+        var matches = new Dictionary<string, (AutomationElement Button, CodexMonitoredQuestion Question, Rect Bounds)>();
         var window = request.Questions.Count == 0
             ? nint.Zero : CodexWindowActivator.CaptureForegroundWindow();
         if (window != nint.Zero)
@@ -102,7 +139,7 @@ internal sealed class CodexQuestionSkipObserver : IDisposable
                     continue;
                 }
 
-                var card = TreeWalker.ControlViewWalker.GetParent(button);
+                var card = TreeWalker.RawViewWalker.GetParent(button);
                 for (var depth = 0; card is not null && depth < 16; depth++)
                 {
                     if ((card.Current.ClassName ?? string.Empty).Contains(
@@ -118,11 +155,12 @@ internal sealed class CodexQuestionSkipObserver : IDisposable
                             visibleText.Contains(title, StringComparison.Ordinal)).Take(2).ToArray();
                         if (questions.Length == 1)
                         {
-                            matches[string.Join(",", button.GetRuntimeId())] = (button, questions[0]);
+                            matches[string.Join(",", button.GetRuntimeId())] =
+                                (button, questions[0], button.Current.BoundingRectangle);
                         }
                         break;
                     }
-                    card = TreeWalker.ControlViewWalker.GetParent(card);
+                    card = TreeWalker.RawViewWalker.GetParent(card);
                 }
             }
         }
@@ -130,6 +168,23 @@ internal sealed class CodexQuestionSkipObserver : IDisposable
         if (request.Generation != Volatile.Read(ref _generation))
         {
             return;
+        }
+
+        // Skip can unmount its button before an Invoked event is delivered.
+        // Require a press/release on that exact button AND a changed card.
+        // A timeout, Escape, scrolling or navigation alone is never a skip.
+        for (var remaining = _clicks.Count; remaining > 0 && _clicks.TryDequeue(out var click); remaining--)
+        {
+            var target = click.Target;
+            if (window != target.Window || !CodexWindowActivator.IsForegroundWindow(window) ||
+                !request.Questions.Contains(target.Subscription.Question) ||
+                Environment.TickCount64 - click.ReleasedAt > 2000)
+                continue;
+            if (!matches.TryGetValue(target.RuntimeId, out var current) ||
+                current.Question != target.Subscription.Question)
+                ReportSkipped(target.Subscription);
+            else
+                _clicks.Enqueue(click);
         }
 
         RemoveSubscriptions(matches.Where(pair => _subscriptions.TryGetValue(pair.Key, out var current) &&
@@ -145,15 +200,32 @@ internal sealed class CodexQuestionSkipObserver : IDisposable
             subscription.Handler = (_, _) =>
             {
                 if (!_disposed && CodexWindowActivator.IsForegroundWindow(window) &&
-                    Interlocked.Exchange(ref subscription.Active, 0) == 1)
+                    Volatile.Read(ref subscription.Active) == 1)
                 {
-                    QuestionSkipped?.Invoke(subscription.Question);
+                    ReportSkipped(subscription);
                 }
             };
-            Automation.AddAutomationEventHandler(InvokePattern.InvokedEvent,
-                subscription.Button, TreeScope.Element, subscription.Handler);
+            try
+            {
+                Automation.AddAutomationEventHandler(InvokePattern.InvokedEvent,
+                    subscription.Button, TreeScope.Element, subscription.Handler);
+                subscription.HandlerAttached = true;
+            }
+            catch (Exception exception) when (IsUnavailable(exception))
+            {
+                // The native pointer observation can still confirm a click
+                // when this provider does not support Invoke notifications.
+            }
             _subscriptions.Add(key, subscription);
         }
+        Volatile.Write(ref _pointerTargets, matches.Select(pair => new PointerTarget(
+            pair.Key, window, pair.Value.Bounds, _subscriptions[pair.Key], Environment.TickCount64)).ToArray());
+    }
+
+    private void ReportSkipped(Subscription subscription)
+    {
+        if (!_disposed && Interlocked.Exchange(ref subscription.Resolved, 1) == 0)
+            QuestionSkipped?.Invoke(subscription.Question);
     }
 
     private void RemoveSubscriptions(HashSet<string> retained)
@@ -164,8 +236,9 @@ internal sealed class CodexQuestionSkipObserver : IDisposable
             Interlocked.Exchange(ref subscription.Active, 0);
             try
             {
-                Automation.RemoveAutomationEventHandler(InvokePattern.InvokedEvent,
-                    subscription.Button, subscription.Handler);
+                if (subscription.HandlerAttached)
+                    Automation.RemoveAutomationEventHandler(InvokePattern.InvokedEvent,
+                        subscription.Button, subscription.Handler);
             }
             catch (Exception exception) when (IsUnavailable(exception))
             {
@@ -189,6 +262,18 @@ internal sealed class CodexQuestionSkipObserver : IDisposable
             COMException or Win32Exception or ArgumentException or UnauthorizedAccessException or
             System.Security.SecurityException;
 
+    [StructLayout(LayoutKind.Sequential)]
+    private readonly record struct NativePoint(int X, int Y);
+
+    [DllImport("user32.dll")]
+    private static extern nint GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern nint WindowFromPoint(NativePoint point);
+
+    [DllImport("user32.dll")]
+    private static extern nint GetAncestor(nint window, uint flags);
+
     public void Dispose()
     {
         lock (_sync)
@@ -198,6 +283,9 @@ internal sealed class CodexQuestionSkipObserver : IDisposable
                 return;
             }
             _disposed = true;
+            Volatile.Write(ref _pointerTargets, []);
+            _pressedTarget = null;
+            _clicks.Clear();
             Interlocked.Increment(ref _generation);
             _requests.CompleteAdding();
             if (_worker is null)

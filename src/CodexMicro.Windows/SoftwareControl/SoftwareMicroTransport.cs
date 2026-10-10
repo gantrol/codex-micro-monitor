@@ -27,6 +27,17 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         _controller = controller;
         _ui = ui;
         _controller.Disconnected += OnDisconnected;
+#if DEBUG
+        CodexModelToggleDiagnostics.RecordStage("control-started", new
+        {
+            logPath = CodexModelToggleDiagnostics.LogPath,
+            windowsModule = typeof(SoftwareMicroTransport).Module.ModuleVersionId,
+            controlModule = controller.GetType().Module.ModuleVersionId,
+            nativeModule = ui?.GetType().Module.ModuleVersionId,
+            controlLocation = controller.GetType().Assembly.Location,
+            nativeLocation = ui?.GetType().Assembly.Location,
+        });
+#endif
     }
     public event EventHandler<string>? Log;
     public event EventHandler<string>? StateChanged;
@@ -83,6 +94,14 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
     public Task<MicroSendResult> TapKeyAsync(string key)
     {
         var context = CaptureContext?.Invoke() ?? throw new InvalidOperationException("No keypad context");
+#if DEBUG
+        CodexModelToggleDiagnostics.RecordStage("action-context", new
+        {
+            key, context.ThreadId, context.TargetVersion, context.NavigationPending,
+            hasDraft = context.DraftModelPickerId is not null,
+            hasUnidentifiedComposer = context.ComposerTarget is not null,
+        });
+#endif
         if (context.AgentThreads.TryGetValue(key, out var selected))
             return RunAsync(() => OpenThreadAsync(selected));
         if (key.StartsWith("AG", StringComparison.Ordinal)) return Unsupported("Empty agent slot");
@@ -143,6 +162,18 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
 
     private Task<MicroSendResult> DispatchActionAsync(string action, MicroControlContext context)
     {
+#if DEBUG
+        var nativeComposer = CodexActionCatalog.IsComposerSetting(action) && context.ThreadId is null;
+        CodexModelToggleDiagnostics.RecordStage("action-route", new
+        {
+            action, context.ThreadId, context.TargetVersion, context.NavigationPending,
+            route = nativeComposer ? "native-ui" : CodexActionCatalog.SoftwareRoute(action),
+            reason = context.ThreadId is not null ? "confirmed-thread" : context.DraftModelPickerId is not null
+                ? "confirmed-draft" : context.ComposerTarget is not null ? "thread-id-unresolved" : "target-unavailable",
+            unavailable = CodexActionCatalog.SoftwareUnavailableReason(action, context.ThreadId is not null,
+                context.DraftModelPickerId is not null, context.ComposerTarget is not null),
+        });
+#endif
         if (CodexActionCatalog.SoftwareUnavailableReason(action, context.ThreadId is not null,
             context.DraftModelPickerId is not null, context.ComposerTarget is not null) is { } reason)
             return Unsupported(reason);
@@ -163,9 +194,23 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
         };
     }
 
-    private bool IsCurrentTarget(MicroControlContext context) => !_disposed && CaptureContext?.Invoke() is { } current &&
-        current.TargetVersion == context.TargetVersion && current.ThreadId == context.ThreadId &&
-        current.DraftModelPickerId == context.DraftModelPickerId && current.ComposerTarget == context.ComposerTarget;
+    private bool IsCurrentTarget(MicroControlContext context)
+    {
+        var current = _disposed ? null : CaptureContext?.Invoke();
+        var matches = current is not null && current.TargetVersion == context.TargetVersion &&
+            current.ThreadId == context.ThreadId && current.DraftModelPickerId == context.DraftModelPickerId &&
+            current.ComposerTarget == context.ComposerTarget;
+#if DEBUG
+        if (!matches) CodexModelToggleDiagnostics.RecordStage("target-rejected", new
+        {
+            disposed = _disposed, expectedThreadId = context.ThreadId, currentThreadId = current?.ThreadId,
+            expectedVersion = context.TargetVersion, currentVersion = current?.TargetVersion,
+            draftChanged = current?.DraftModelPickerId != context.DraftModelPickerId,
+            composerChanged = current?.ComposerTarget != context.ComposerTarget,
+        });
+#endif
+        return matches;
+    }
 
     private Task<MicroSendResult> RunUiAsync(CodexUiRequest request, MicroControlContext context, bool queue = false) => RunResultAsync(async () =>
     {
@@ -182,6 +227,13 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
             return IsCurrentTarget(context);
         }
         var result = await _ui.ExecuteAsync(request, Guard, _lifetime.Token);
+#if DEBUG
+        CodexModelToggleDiagnostics.RecordStage("native-result", new
+        {
+            operation = request.Operation.ToString(), disposition = result.Disposition.ToString(),
+            result.Code, result.FastEnabled, context.ThreadId, context.TargetVersion,
+        });
+#endif
         if (result.Disposition == CodexUiDisposition.Confirmed && result.FastEnabled is { } fast && IsCurrentTarget(context))
             ComposerFastApplied?.Invoke(context, fast);
         return new(result.Disposition switch
@@ -257,6 +309,13 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
     private async Task ToggleModelAsync(MicroControlContext context)
     {
         var thread = RequireThread(context);
+#if DEBUG
+        CodexModelToggleDiagnostics.RecordStage("action-route", new
+        {
+            action = "model", route = "ipc", reason = "confirmed-thread",
+            context.ThreadId, context.TargetVersion, context.NavigationPending,
+        });
+#endif
         var state = await StateAsync(thread);
         var sameModel = context.Profile.QuickModelA.Id == context.Profile.QuickModelB.Id;
         var effortA = context.Profile.QuickModelAEffort;
@@ -314,6 +373,13 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
     private Task<JsonNode> StateAsync(string thread) => CallAsync(CodexOperation.ReadThreadState, new() { ["thread_id"] = thread });
     private async Task<JsonNode> CallAsync(CodexOperation tool, JsonObject args, MicroControlContext? context = null)
     {
+#if DEBUG
+        CodexModelToggleDiagnostics.RecordStage("ipc-request", new
+        {
+            operation = tool.ToString(), threadId = args.Text("thread_id"),
+            context?.TargetVersion, model = args.Text("model"), effort = args.Text("effort"),
+        });
+#endif
         var result = await _controller.ExecuteAsync(tool, args, _lifetime.Token,
             context is null ? null : async () => IsCurrentTarget(context) &&
                 (ValidateTargetAsync is not null
@@ -321,6 +387,15 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
                     : true) && IsCurrentTarget(context));
         if (result["ok"] is JsonValue value && value.TryGetValue<bool>(out var ok) && !ok)
             throw new InvalidOperationException("Codex did not acknowledge the keypad action");
+#if DEBUG
+        CodexModelToggleDiagnostics.RecordStage("ipc-result", new
+        {
+            operation = tool.ToString(), threadId = args.Text("thread_id"),
+            applied = result["applied"]?.GetValue<bool>(),
+            model = result["settings"]?.Text("model"), effort = result["settings"]?.Text("effort"),
+            serviceTier = result["settings"]?.Text("serviceTier"),
+        });
+#endif
         return result;
     }
     private static string RequireThread(MicroControlContext context) => context.ThreadId is { } thread
@@ -334,6 +409,10 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
 
     private async Task<MicroSendResult> RunResultAsync(Func<Task<MicroSendResult>> action, bool requiresIpc, bool queue = false)
     {
+#if DEBUG
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        CodexModelToggleDiagnostics.RecordStage("action-queued", new { requiresIpc, queue });
+#endif
         if (_disposed) return MicroSendResult.NotSent("The keypad is closed");
         // Reversible setting changes wait for earlier input. Sending and approvals never queue.
         // Cancel waiting input on shutdown, before it acquires the action lease.
@@ -360,18 +439,35 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
                     return MicroSendResult.NotSent("Codex IPC is disconnected");
                 }
             }
-            return await action();
+            var result = await action();
+#if DEBUG
+            CodexModelToggleDiagnostics.RecordStage("action-result", new
+            {
+                disposition = result.Disposition.ToString(), result.Detail,
+                elapsedMs = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+            });
+#endif
+            return result;
         }
         catch (NotSupportedException error)
         {
+#if DEBUG
+            CodexModelToggleDiagnostics.RecordStage("action-failed", new { error = error.GetType().Name, error.HResult });
+#endif
             return MicroSendResult.NotSent(error.Message);
         }
         catch (Exception error) when (error is ArgumentException or InvalidOperationException)
         {
+#if DEBUG
+            CodexModelToggleDiagnostics.RecordStage("action-failed", new { error = error.GetType().Name, error.HResult });
+#endif
             return new(MicroSendDisposition.Rejected, 0, 0, 0, error.Message);
         }
         catch (Exception error) when (error is IOException or TimeoutException or OperationCanceledException)
         {
+#if DEBUG
+            CodexModelToggleDiagnostics.RecordStage("action-failed", new { error = error.GetType().Name, error.HResult });
+#endif
             return new(MicroSendDisposition.OutcomeUnknown, 0, 0, 0, error.Message);
         }
         finally { _actions.Release(); }

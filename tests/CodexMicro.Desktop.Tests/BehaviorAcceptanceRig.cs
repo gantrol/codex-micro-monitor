@@ -19,11 +19,20 @@ internal sealed class BehaviorAcceptanceRig : IAsyncDisposable
 {
     private readonly CancellationTokenSource _lifetime = new();
     private readonly NamedPipeServerStream? _desktop;
+    private readonly NamedPipeServerStream _observationDesktop;
+    private readonly string _observationPipe = "micro-observer-" + Guid.NewGuid().ToString("N");
+    private readonly SemaphoreSlim _desktopWrites = new(1);
+    private readonly SemaphoreSlim _observationWrites = new(1);
     private readonly Task _server;
     private readonly ConcurrentQueue<JsonObject> _desktopRequests = new();
     private readonly ConcurrentQueue<string> _openedUris = new();
     private readonly SyntheticUiDesktop _uiDesktop = new();
     private readonly CodexUiController _uiController;
+    private readonly KeypadController _controller;
+    private string _turnStatus = "inProgress";
+    private bool _ownerAvailable = true;
+    private string _ownerClientId = "owner";
+    private long _revision = 1;
     private const string ThreadId = "01000000-0000-0000-0000-000000000001";
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "micro-acceptance-" + Guid.NewGuid().ToString("N"));
     internal IMicroTransport Transport { get; }
@@ -36,12 +45,15 @@ internal sealed class BehaviorAcceptanceRig : IAsyncDisposable
         var pipe = "micro-acceptance-" + Guid.NewGuid().ToString("N");
         {
             _desktop = new(pipe, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            _server = ServeDesktopAsync();
-            Transport = new SoftwareMicroTransport(new KeypadController(new CodexPeerClient(pipe),
+            _observationDesktop = new(_observationPipe, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            _server = Task.WhenAll(ServeDesktopAsync(_desktop, _desktopWrites),
+                ServeDesktopAsync(_observationDesktop, _observationWrites));
+            _controller = new KeypadController(new CodexPeerClient(pipe),
                 (method, _, _) => method == "collaborationMode/list"
                     ? Task.FromResult<JsonNode>(JsonSerializer.SerializeToNode(new { data = new[] { new { mode = "plan" }, new { mode = "default" } } })!)
                     : throw new InvalidOperationException("This dispatch lane does not provide a model catalog"),
-                uri => _openedUris.Enqueue(uri)), _uiController);
+                uri => _openedUris.Enqueue(uri));
+            Transport = new SoftwareMicroTransport(_controller, _uiController);
         }
         var slots = CodexMicroLayoutObserver.DefaultSlots.ToDictionary();
         if (binding is not null)
@@ -60,6 +72,46 @@ internal sealed class BehaviorAcceptanceRig : IAsyncDisposable
     }
 
     internal IReadOnlyList<JsonObject> DesktopRequests => _desktopRequests.ToArray();
+
+    internal Task<JsonNode> ReadDesktopStateAsync() => _controller.ExecuteAsync(
+        "get_keypad_state", new() { ["thread_id"] = ThreadId });
+
+    internal CodexDesktopConnection CreateActivityConnection() => new(_observationPipe);
+
+    internal async Task RestartOwnerAsync()
+    {
+        _ownerAvailable = false;
+        _turnStatus = "interrupted";
+        var previousOwner = _ownerClientId;
+        _ownerClientId = "restarted-owner";
+        Interlocked.Exchange(ref _revision, 1);
+        await SendAsync(_observationDesktop, _observationWrites, new
+        {
+            type = "broadcast", method = "client-status-changed", version = 1,
+            @params = new { clientId = previousOwner, status = "disconnected" },
+        });
+    }
+
+    internal void RestoreIdleOwner() => _ownerAvailable = true;
+
+    internal async Task ResumeTaskAsync()
+    {
+        _turnStatus = "inProgress";
+        var before = Interlocked.Read(ref _revision);
+        Interlocked.Increment(ref _revision);
+        await PublishRuntimeAsync(before, "active");
+    }
+
+    private Task PublishRuntimeAsync(long before, string runtime) => _observationDesktop.IsConnected
+        ? SendAsync(_observationDesktop, _observationWrites, new
+        {
+            type = "broadcast", method = "thread-stream-state-changed", version = 11, sourceClientId = _ownerClientId,
+            @params = new { hostId = "local", conversationId = ThreadId, change = new
+            {
+                type = "patches", baseRevision = before, revision = before + 1,
+                patches = new[] { new { op = "replace", path = "/threadRuntimeStatus/type", value = runtime } },
+            } },
+        }) : Task.CompletedTask;
 
     internal bool SawControlInput(string gesture, string? binding)
     {
@@ -91,64 +143,91 @@ internal sealed class BehaviorAcceptanceRig : IAsyncDisposable
             request["params"]?["mode"]?.GetValue<string>() == "user-stop");
     }
 
-    private async Task ServeDesktopAsync()
+    private async Task ServeDesktopAsync(NamedPipeServerStream desktop, SemaphoreSlim writes)
     {
         try
         {
             var token = _lifetime.Token;
-            await _desktop!.WaitForConnectionAsync(token);
             while (!token.IsCancellationRequested)
             {
-                var header = new byte[4];
-                await _desktop.ReadExactlyAsync(header, token);
-                var bytes = new byte[BinaryPrimitives.ReadInt32LittleEndian(header)];
-                await _desktop.ReadExactlyAsync(bytes, token);
-                var request = JsonNode.Parse(bytes)!.AsObject();
-                var method = request["method"]!.GetValue<string>();
-                if (request["type"]?.GetValue<string>() == "broadcast")
-                {
-                    if (method == "thread-stream-following-changed" && request["params"]?["following"]?.GetValue<bool>() == true)
-                        await SendAsync(new
-                        {
-                            type = "broadcast", method = "thread-stream-state-changed", version = 11, sourceClientId = "owner",
-                            @params = new
-                            {
-                                hostId = "local", conversationId = ThreadId,
-                                change = new { type = "snapshot", revision = 1, conversationState = new
-                                {
-                                    latestModel = "fixture-model", latestReasoningEffort = "medium",
-                                    latestCollaborationMode = new { mode = "default", settings = new { model = "fixture-model", reasoning_effort = "medium", developer_instructions = (string?)null } },
-                                    turns = new[] { new { turnId = "fixture-turn", status = "inProgress", items = Array.Empty<object>() } },
-                                } },
-                            },
-                        });
-                    continue;
-                }
-                if (request["type"]?.GetValue<string>() != "request") continue;
-                var supported = method is "initialize" or "thread-owner-discovery" or "thread-follower-interrupt-turn" ||
-                    method == "thread-follower-update-thread-settings" &&
-                    request["params"]?["threadSettings"]?["collaborationMode"]?["mode"]?.GetValue<string>() == "plan";
-                if (method is not ("initialize" or "thread-owner-discovery")) _desktopRequests.Enqueue(request);
-                // Only modeled operations receive an acknowledgement; unknown methods identify a fixture gap.
-                await SendAsync(new
-                {
-                    type = "response", requestId = request["requestId"]!.GetValue<string>(), method,
-                    resultType = supported ? "success" : "error", handledByClientId = "owner",
-                    result = new { clientId = "isolated-desktop-client", ok = true, applied = supported }, error = "FIXTURE GAP: " + method,
-                });
+                await desktop.WaitForConnectionAsync(token);
+                try { await ServeConnectionAsync(desktop, writes, token); }
+                catch (IOException) when (!token.IsCancellationRequested) { }
+                finally { if (!token.IsCancellationRequested) desktop.Disconnect(); }
             }
         }
         catch (Exception error) when (error is IOException or OperationCanceledException or ObjectDisposedException) { }
     }
 
-    private async Task SendAsync(object response)
+    private async Task ServeConnectionAsync(NamedPipeServerStream desktop, SemaphoreSlim writes, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            var header = new byte[4];
+            await desktop.ReadExactlyAsync(header, token);
+            var bytes = new byte[BinaryPrimitives.ReadInt32LittleEndian(header)];
+            await desktop.ReadExactlyAsync(bytes, token);
+            var request = JsonNode.Parse(bytes)!.AsObject();
+            var method = request["method"]!.GetValue<string>();
+            if (request["type"]?.GetValue<string>() == "broadcast")
+            {
+                if (_ownerAvailable && method == "thread-stream-following-changed" && request["params"]?["following"]?.GetValue<bool>() == true)
+                    await SendAsync(desktop, writes, new
+                    {
+                        type = "broadcast", method = "thread-stream-state-changed", version = 11, sourceClientId = _ownerClientId,
+                        @params = new
+                        {
+                            hostId = "local", conversationId = ThreadId,
+                            change = new { type = "snapshot", revision = Interlocked.Read(ref _revision), conversationState = new
+                            {
+                                threadRuntimeStatus = new { type = _turnStatus == "inProgress" ? "active" : "idle", activeFlags = Array.Empty<string>() },
+                                requests = Array.Empty<object>(),
+                                latestModel = "fixture-model", latestReasoningEffort = "medium",
+                                latestCollaborationMode = new { mode = "default", settings = new { model = "fixture-model", reasoning_effort = "medium", developer_instructions = (string?)null } },
+                                turns = new[] { new { turnId = "fixture-turn", status = _turnStatus, items = Array.Empty<object>() } },
+                            } },
+                        },
+                    });
+                continue;
+            }
+            if (request["type"]?.GetValue<string>() != "request") continue;
+            var stop = method == "thread-follower-interrupt-turn" &&
+                request["params"]?["conversationId"]?.GetValue<string>() == ThreadId &&
+                request["params"]?["expectedTurnId"]?.GetValue<string>() == "fixture-turn" &&
+                request["params"]?["mode"]?.GetValue<string>() == "user-stop";
+            var supported = method is "initialize" or "thread-owner-discovery" || stop ||
+                method == "thread-follower-update-thread-settings" &&
+                request["params"]?["threadSettings"]?["collaborationMode"]?["mode"]?.GetValue<string>() == "plan";
+            var ownerMissing = method == "thread-owner-discovery" && !_ownerAvailable;
+            if (ownerMissing) supported = false;
+            if (method is not ("initialize" or "thread-owner-discovery")) _desktopRequests.Enqueue(request);
+            var before = Interlocked.Read(ref _revision);
+            if (stop) { _turnStatus = "interrupted"; Interlocked.Increment(ref _revision); }
+            // Only modeled operations receive an acknowledgement; unknown methods identify a fixture gap.
+            await SendAsync(desktop, writes, new
+            {
+                type = "response", requestId = request["requestId"]!.GetValue<string>(), method,
+                resultType = supported ? "success" : "error", handledByClientId = _ownerClientId,
+                result = new { clientId = "isolated-desktop-client", ok = true, applied = supported },
+                error = ownerMissing ? "no-client-found" : "FIXTURE GAP: " + method,
+            });
+            if (stop) await PublishRuntimeAsync(before, "idle");
+        }
+    }
+
+    private async Task SendAsync(NamedPipeServerStream desktop, SemaphoreSlim writes, object response)
     {
         var bytes = JsonSerializer.SerializeToUtf8Bytes(response);
         var header = new byte[4];
         BinaryPrimitives.WriteInt32LittleEndian(header, bytes.Length);
-        await _desktop!.WriteAsync(header, _lifetime.Token);
-        await _desktop.WriteAsync(bytes, _lifetime.Token);
-        await _desktop.FlushAsync(_lifetime.Token);
+        await writes.WaitAsync(_lifetime.Token);
+        try
+        {
+            await desktop.WriteAsync(header, _lifetime.Token);
+            await desktop.WriteAsync(bytes, _lifetime.Token);
+            await desktop.FlushAsync(_lifetime.Token);
+        }
+        finally { writes.Release(); }
     }
 
     public async ValueTask DisposeAsync()
@@ -157,7 +236,10 @@ internal sealed class BehaviorAcceptanceRig : IAsyncDisposable
         _uiController.Dispose();
         _lifetime.Cancel();
         _desktop?.Dispose();
+        _observationDesktop.Dispose();
         await _server;
+        _desktopWrites.Dispose();
+        _observationWrites.Dispose();
         _lifetime.Dispose();
         // Only the explicitly created synthetic directory can be removed.
         var root = Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;

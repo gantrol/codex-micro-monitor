@@ -6,6 +6,8 @@
         </ResourceDictionary.MergedDictionaries>
         <SolidColorBrush x:Key="InkBrush" Color="#2F3438" />
         <SolidColorBrush x:Key="MutedInkBrush" Color="#737C82" />
+        <SolidColorBrush x:Key="ComposerNoInputBrush" Color="#685FAE" />
+        <SolidColorBrush x:Key="ComposerHasInputBrush" Color="#B9EFD2" />
         <SolidColorBrush x:Key="AdjustmentBoundaryBrush" Color="#FFD66E" />
         <SolidColorBrush x:Key="AdjustmentBoundaryKnobBrush" Color="#73501A" />
         <SolidColorBrush x:Key="AdjustmentMaximumBrush" Color="#BE4238" />
@@ -401,49 +403,12 @@
                                               Height="18"
                                               HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
-                                              Opacity="0.6">
-                                            <Grid.Effect>
-                                                <DropShadowEffect BlurRadius="4"
-                                                                  ShadowDepth="0"
-                                                                  Opacity="0.38"
-                                                                  Color="#685FAE" />
-                                            </Grid.Effect>
-                                            <Ellipse Width="18"
+                                              IsHitTestVisible="False">
+                                            <Ellipse x:Name="AgentInputDot"
+                                                     Width="18"
                                                      Height="18"
-                                                     HorizontalAlignment="Center"
-                                                     VerticalAlignment="Center"
-                                                     Fill="#FF685FAE" />
+                                                     Fill="{DynamicResource ComposerNoInputBrush}" />
                                         </Grid>
-                                        <Ellipse x:Name="WhiteAgentGlyph"
-                                                 Width="18"
-                                                 Height="18"
-                                                 Fill="White"
-                                                 Stroke="#28939A96"
-                                                 StrokeThickness="0.8"
-                                                 Opacity="0"
-                                                 IsHitTestVisible="False">
-                                            <Ellipse.Effect>
-                                                <DropShadowEffect Color="White"
-                                                                  BlurRadius="4"
-                                                                  ShadowDepth="0"
-                                                                  Opacity="0.38" />
-                                            </Ellipse.Effect>
-                                        </Ellipse>
-                                        <Ellipse x:Name="MintAgentGlyph"
-                                                 Width="18"
-                                                 Height="18"
-                                                 Fill="#B9EFD2"
-                                                 Stroke="#28939A96"
-                                                 StrokeThickness="0.8"
-                                                 Opacity="0"
-                                                 IsHitTestVisible="False">
-                                            <Ellipse.Effect>
-                                                <DropShadowEffect Color="#B9EFD2"
-                                                                  BlurRadius="4"
-                                                                  ShadowDepth="0"
-                                                                  Opacity="0.38" />
-                                            </Ellipse.Effect>
-                                        </Ellipse>
                                     </Grid>
                                 </Grid>
                                 <Border.Effect>

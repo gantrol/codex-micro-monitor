@@ -21,6 +21,9 @@ internal sealed partial class CodexSelectedThreadReader
     private nint _lastWindow;
     private readonly CodexDesktopRouteReader _desktopRoutes = new();
     private (CodexThreadSelection Selection, string Source)? _lastDiagnostic;
+#if DEBUG
+    private string? _routeRejection;
+#endif
 
     internal bool ObserveRecentThreads(IReadOnlyList<CodexRecentThread>? threads)
     {
@@ -46,11 +49,17 @@ internal sealed partial class CodexSelectedThreadReader
             return await Task.Run<CodexThreadSelection>(async () =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
+#if DEBUG
+                _routeRejection = null;
+#endif
                 // Finish disk I/O before observing the page. A chat switch during an
                 // index read must not make an old header authorize a new operation.
                 try { await RefreshTitlesAsync(cancellationToken).ConfigureAwait(false); }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                 {
+#if DEBUG
+                    CodexModelToggleDiagnostics.RecordStage("selection-index-unavailable", new { error = error.GetType().Name });
+#endif
                     _titles.Clear();
                     _indexLength = -1;
                 }
@@ -71,6 +80,10 @@ internal sealed partial class CodexSelectedThreadReader
                         return RecordSelection(new(desktopId, $"{window}:route:{desktopRoute.Path}",
                             CanRetainThreadId: false), "desktop-window-route");
                     }
+#if DEBUG
+                    _routeRejection = _desktopRoutes.TryReadSingleWindow(processId, out _)
+                        ? "native-window-not-unique" : "logged-window-route-unavailable";
+#endif
                     if (TryReadDocumentThreadId(window, cancellationToken, out var threadId, out var route))
                     {
                         var identity = route is null ? null : Uri.UnescapeDataString(new Uri(route).AbsolutePath);
@@ -117,6 +130,12 @@ internal sealed partial class CodexSelectedThreadReader
         catch (Exception error) when (error is COMException or ElementNotAvailableException or IOException or
             UnauthorizedAccessException or InvalidOperationException or ArgumentException)
         {
+#if DEBUG
+            CodexModelToggleDiagnostics.RecordStage("selection-failed", new
+            {
+                error = error.GetType().Name, error.HResult, routes = _desktopRoutes.CaptureDiagnostics(),
+            });
+#endif
             return default;
         }
         finally { _gate.Release(); }
@@ -127,6 +146,16 @@ internal sealed partial class CodexSelectedThreadReader
 
     private CodexThreadSelection RecordSelection(CodexThreadSelection selection, string source)
     {
+#if DEBUG
+        if (_lastDiagnostic != (selection, source) || System.Diagnostics.Activity.Current is not null)
+            CodexModelToggleDiagnostics.RecordStage("selection-observed", new
+            {
+                source, selection.ThreadId, selection.CanRetainThreadId,
+                hasPageIdentity = selection.PageKey is not null,
+                routeRejection = source == "desktop-window-route" ? null : _routeRejection,
+                routes = _desktopRoutes.CaptureDiagnostics(),
+            });
+#endif
         if (_lastDiagnostic != (selection, source))
         {
             _lastDiagnostic = (selection, source);

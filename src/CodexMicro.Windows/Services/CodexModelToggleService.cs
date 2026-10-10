@@ -73,6 +73,7 @@ internal sealed class CodexThreadModelStateAccumulator
     internal long? Revision { get; private set; }
 
     internal CodexQuestionAnswerStream QuestionAnswers { get; } = new();
+    internal CodexThreadActivityStream Activity { get; } = new();
 
     internal CodexThreadStateApplyResult ApplyChange(JsonElement change)
     {
@@ -143,6 +144,13 @@ internal sealed class CodexThreadModelStateAccumulator
             return default;
         }
 
+        // A duplicate patch is not a gap. Retiring a valid stream here can
+        // discard its last terminal state while an owner is being rediscovered.
+        if (revisionValue <= Revision.Value)
+        {
+            return default;
+        }
+
         if (baseRevision != Revision.Value ||
             baseRevision == long.MaxValue ||
             revisionValue != baseRevision + 1)
@@ -189,6 +197,7 @@ internal sealed class CodexThreadModelStateAccumulator
     private void ReadConversationState(JsonElement state)
     {
         QuestionAnswers.ReadState(state);
+        Activity.ReadState(state);
         _latestModel = ReadOptionalString(state, "latestModel");
         _latestReasoningEffort = ReadOptionalString(
             state,
@@ -229,8 +238,6 @@ internal sealed class CodexThreadModelStateAccumulator
             return;
         }
 
-        QuestionAnswers.ApplyPatch(operation, path, value);
-
         if (path.Length == 0)
         {
             if (removesValue || value.ValueKind != JsonValueKind.Object)
@@ -244,6 +251,9 @@ internal sealed class CodexThreadModelStateAccumulator
 
             return;
         }
+
+        QuestionAnswers.ApplyPatch(operation, path, value);
+        Activity.ApplyPatch(operation, path, value);
 
         if (path.Length == 1)
         {
@@ -354,6 +364,7 @@ internal sealed class CodexThreadModelStateAccumulator
     private void ClearStateFields()
     {
         QuestionAnswers.Reset();
+        Activity.Reset();
         _latestModel = null;
         _latestReasoningEffort = null;
         _settingsModel = null;
@@ -362,7 +373,7 @@ internal sealed class CodexThreadModelStateAccumulator
         _serviceTier = null;
     }
 
-    private static bool TryReadPatchPath(
+    internal static bool TryReadPatchPath(
         JsonElement patch,
         out string[] path)
     {

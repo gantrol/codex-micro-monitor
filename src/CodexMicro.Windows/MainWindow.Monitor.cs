@@ -15,11 +15,12 @@ public partial class MicroSurfaceWindow
 {
     private sealed record MonitorTask(
         string HarnessId, string Id, string Title, MicroHarnessSessionStatus? Status,
-        bool HasPendingQuestion = false, string? ErrorCode = null);
+        bool HasPendingQuestion = false, string? ErrorCode = null,
+        CodexComposerDraftState DraftState = CodexComposerDraftState.Unknown);
 
     private readonly CodexTaskMonitorService _taskMonitor = new();
     private readonly CodexQuestionSkipObserver _questionSkipObserver = new();
-    private SoftwareQuestionObserver? _softwareQuestionObserver;
+    private SoftwareThreadObserver? _softwareThreadObserver;
     private readonly DispatcherTimer _monitorRefreshTimer = new()
     {
         Interval = TimeSpan.FromSeconds(2),
@@ -46,6 +47,8 @@ public partial class MicroSurfaceWindow
     private string? _monitorHarnessId;
     private bool _monitorPage;
     private bool _monitorAvailable;
+    private bool _composerDraftsObserved;
+    private bool _composerHighContrast = SystemParameters.HighContrast;
     private bool _monitorRefreshRequested;
     private bool _pageSwitching;
     private bool _monitorOpening;
@@ -106,8 +109,9 @@ public partial class MicroSurfaceWindow
         _modelToggleService.QuestionAnswersAccepted += ModelToggleService_QuestionAnswersAccepted;
         _questionSkipObserver.QuestionSkipped += QuestionSkipObserver_QuestionSkipped;
         {
-            _softwareQuestionObserver = new();
-            _softwareQuestionObserver.AnswersAccepted += ModelToggleService_QuestionAnswersAccepted;
+            _softwareThreadObserver = new();
+            _softwareThreadObserver.AnswersAccepted += ModelToggleService_QuestionAnswersAccepted;
+            _softwareThreadObserver.ActivityChanged += SoftwareThreadObserver_ActivityChanged;
         }
         MonitorGrid.MouseLeave += (_, _) => RefreshMonitorPresentation();
         RefreshPageHelp();
@@ -123,8 +127,13 @@ public partial class MicroSurfaceWindow
         AutomationProperties.SetName(MonitorPageButton, monitor);
     }
 
-    private void MonitorRefreshTimer_Tick(object? sender, EventArgs e) =>
+    private void MonitorRefreshTimer_Tick(object? sender, EventArgs e)
+    {
+        // IPC recovery must continue while the independent roster/unread query
+        // is slow or unavailable.
+        UpdatePendingQuestionRefresh();
         _ = RefreshMonitorAsync();
+    }
 
     private void PendingQuestionRefreshTimer_Tick(object? sender, EventArgs e) =>
         _ = RefreshPendingQuestionsAsync();
@@ -157,6 +166,17 @@ public partial class MicroSurfaceWindow
         });
     }
 
+    private void SoftwareThreadObserver_ActivityChanged(CodexThreadActivityObservation observation)
+    {
+        var snapshot = _taskMonitor.ObserveActivity(observation);
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            if (!_windowClosed && IsVisible && _monitorAvailable && snapshot is not null &&
+                snapshot.Revision > _monitorSnapshotRevision)
+                ApplyMonitorSnapshot(snapshot);
+        });
+    }
+
     private void QuestionSkipObserver_QuestionSkipped(CodexMonitoredQuestion question)
     {
         _ = Dispatcher.InvokeAsync(async () =>
@@ -183,10 +203,10 @@ public partial class MicroSurfaceWindow
 
     private void UpdatePendingQuestionRefresh()
     {
-        if (_softwareQuestionObserver is not null)
-            _ = _softwareQuestionObserver.RefreshAsync(
+        if (_softwareThreadObserver is not null)
+            _ = _softwareThreadObserver.RefreshAsync(
                 !_windowClosed && IsVisible && _monitorAvailable
-                    ? _monitoredTasks?.Where(task => task.HasPendingQuestion).Select(task => task.Id) ?? []
+                    ? _monitoredTasks?.Select(task => task.Id) ?? []
                     : []);
         if (!_windowClosed && IsLoaded && IsVisible &&
             _monitorRefreshTimer.IsEnabled && _monitorAvailable &&
@@ -206,6 +226,11 @@ public partial class MicroSurfaceWindow
     {
         if (_windowClosed || !IsLoaded || !IsVisible)
         {
+            if (_composerDraftsObserved)
+            {
+                _composerDraftsObserved = false;
+                RefreshAgentSlotPresentation();
+            }
             _monitorRefreshTimer.Stop();
             _monitorRefreshCancellation?.Cancel();
             UpdatePendingQuestionRefresh();
@@ -263,7 +288,10 @@ public partial class MicroSurfaceWindow
             }
 
             var selectionMetadataChanged = _softwareSelectionReader.ObserveRecentThreads(_taskMonitor.RecentThreads);
+            var draftObservationChanged = _composerDraftsObserved != (snapshot is not null);
+            _composerDraftsObserved = snapshot is not null;
             ApplyMonitorSnapshot(snapshot);
+            if (draftObservationChanged) RefreshAgentSlotPresentation();
             if (selectionMetadataChanged) RefreshSoftwareThreadSelection();
         }
         catch (OperationCanceledException)
@@ -312,9 +340,6 @@ public partial class MicroSurfaceWindow
                         questions = questions.Where(question => question.ThreadId == selected).ToArray();
                     }
                     await _questionSkipObserver.RefreshAsync(questions);
-                    if (_softwareQuestionObserver is not null)
-                        await _softwareQuestionObserver.RefreshAsync(
-                            snapshot.Tasks.Where(task => task.HasPendingQuestion).Select(task => task.Id));
                 }
             }
         }
@@ -381,7 +406,7 @@ public partial class MicroSurfaceWindow
         var tasks = codex
             ? (_monitoredTasks ?? []).Select(task => new MonitorTask(
                 harness.Id, task.Id, task.Title, ResolveMonitoredTaskStatus(task.Status),
-                task.HasPendingQuestion, task.ErrorCode)).ToArray()
+                task.HasPendingQuestion, task.ErrorCode, task.DraftState)).ToArray()
             : (_harnessStateSnapshot?.HarnessId == harness.Id
                 ? _harnessStateSnapshot.Sessions : [])
                 .Take(CodexTaskMonitorService.Capacity)
@@ -442,7 +467,9 @@ public partial class MicroSurfaceWindow
             key.IsEnabled = fresh && !_monitorOpening &&
                 (codex || !IsHarnessMenuNavigationActive(harness));
             key.Opacity = task is null ? 0.42 : fresh ? 1 : 0.58;
-            appearance = ApplyAgentLightingAppearance(key, appearance);
+            var draftState = fresh && codex && _composerDraftsObserved
+                ? task!.DraftState : CodexComposerDraftState.Unknown;
+            appearance = ApplyAgentLightingAppearance(key, appearance, draftState);
             SetTemplatePartOpacity(key, "GlowWide", 0);
             SetTemplatePartOpacity(key, "Glow", 0);
             ApplyAgentGlowAppearance(
@@ -450,18 +477,28 @@ public partial class MicroSurfaceWindow
                 _monitorNearGlows[index],
                 key.BorderBrush,
                 appearance);
+            if (task is not null && codex) state = WithComposerInputStatus(state, draftState);
             key.ToolTip = task is null ? state : $"{task.Title}\n{state}";
             if (task is not null && _monitorOpenFailure is { } failure &&
                 failure.HarnessId == task.HarnessId && failure.Id == task.Id)
             {
-                key.ToolTip = $"{task.Title}\n{failure.Message}";
-                state = failure.Message;
+                state = codex ? WithComposerInputStatus(failure.Message, draftState) : failure.Message;
+                key.ToolTip = $"{task.Title}\n{state}";
             }
             AutomationProperties.SetName(key, task?.Title ?? $"{index + 1}");
             AutomationProperties.SetItemStatus(key, state);
         }
         UpdateTaskKeyMotion(monitor: true, departures);
     }
+
+    private CodexComposerDraftState ResolveComposerDraftState(string? threadId) =>
+        _monitorAvailable && _composerDraftsObserved && threadId is not null
+            ? _monitoredTasks?.FirstOrDefault(task => task.Id == threadId)?.DraftState ?? CodexComposerDraftState.Unknown
+            : CodexComposerDraftState.Unknown;
+
+    private string WithComposerInputStatus(string status, CodexComposerDraftState draftState) =>
+        draftState == CodexComposerDraftState.Empty ? status :
+            status + " · " + Localize(draftState == CodexComposerDraftState.Present ? "有输入" : "输入状态未知");
 
     private static MicroHarnessSessionStatus? ResolveMonitoredTaskStatus(ThreadStatus status) =>
         status switch
@@ -610,7 +647,12 @@ public partial class MicroSurfaceWindow
     {
         _questionSkipObserver.QuestionSkipped -= QuestionSkipObserver_QuestionSkipped;
         _questionSkipObserver.Dispose();
-        _softwareQuestionObserver?.Dispose();
+        if (_softwareThreadObserver is not null)
+        {
+            _softwareThreadObserver.AnswersAccepted -= ModelToggleService_QuestionAnswersAccepted;
+            _softwareThreadObserver.ActivityChanged -= SoftwareThreadObserver_ActivityChanged;
+            _softwareThreadObserver.Dispose();
+        }
         _modelToggleService.QuestionAnswersAccepted -= ModelToggleService_QuestionAnswersAccepted;
         _pageMotionCancellation?.Cancel();
         ResetTaskKeyMotion();

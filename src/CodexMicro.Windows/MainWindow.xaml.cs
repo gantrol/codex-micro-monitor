@@ -431,7 +431,8 @@ public partial class MicroSurfaceWindow : Window
     {
         _inactiveDialInputRouter ??= new InactiveDialInputRouter(
             RouteInactiveDialWheel,
-            RouteInactiveDialPointer);
+            RouteInactiveDialPointer,
+            _questionSkipObserver.ObservePointer);
         if (_inactiveDialInputRouter.Start())
         {
             AutomationProperties.SetItemStatus(
@@ -618,6 +619,11 @@ public partial class MicroSurfaceWindow : Window
         object? sender,
         EventArgs e)
     {
+        if (_composerHighContrast != SystemParameters.HighContrast)
+        {
+            _composerHighContrast = SystemParameters.HighContrast;
+            RefreshAgentSlotPresentation();
+        }
         RefreshActionTargetForegroundState();
         RefreshTopmostContinuity();
         RefreshDraftQuickModelObservation();
@@ -3357,9 +3363,12 @@ public partial class MicroSurfaceWindow : Window
                 slotId,
                 lighting,
                 rosterEntry);
-            ApplyAgentLightingAppearance(slotId, appearance);
+            var draftState = ResolveComposerDraftState(rosterEntry?.ThreadId);
+            ApplyAgentLightingAppearance(slotId, appearance, draftState);
 
             var title = rosterEntry?.DisplayTitle ?? $"Agent 槽位 {slotId + 1}";
+            AutomationProperties.SetItemStatus(_agentKeys[slotId], rosterEntry is null
+                ? Localize(appearance.StatusName) : WithComposerInputStatus(Localize(appearance.StatusName), draftState));
             var state = appearance.UsesNeutralSelectionRing
                 ? appearance.StatusName
                 : appearance.IsActive
@@ -3373,6 +3382,7 @@ public partial class MicroSurfaceWindow : Window
             {
                 state = $"当前会话 · {state}";
             }
+            if (rosterEntry is not null) state = WithComposerInputStatus(state, draftState);
 
             var localMatch = rosterEntry is null
                 ? string.Empty
@@ -3394,7 +3404,8 @@ public partial class MicroSurfaceWindow : Window
 
     internal static AgentLightingAppearance ApplyAgentLightingAppearance(
         Button key,
-        AgentLightingAppearance appearance)
+        AgentLightingAppearance appearance,
+        CodexComposerDraftState draftState = CodexComposerDraftState.Unknown)
     {
         appearance = appearance.ForDisplay();
         var mintSelectionLight = appearance.UsesMintSelectionLight;
@@ -3405,9 +3416,18 @@ public partial class MicroSurfaceWindow : Window
         };
         key.ApplyTemplate();
         ApplyAgentShadowAppearance(key, whiteLight);
-        SetTemplatePartOpacity(key, "AgentGlyph", whiteLight || mintSelectionLight ? 0 : 0.6);
-        SetTemplatePartOpacity(key, "WhiteAgentGlyph", whiteLight && !mintSelectionLight ? 1 : 0);
-        SetTemplatePartOpacity(key, "MintAgentGlyph", mintSelectionLight ? 1 : 0);
+        // Input and selection are independent. Keep an opaque center above
+        // every light carrier so status colors cannot tint the input marker.
+        if (key.Template.FindName("AgentInputDot", key) is Ellipse input)
+        {
+            var hasInput = draftState == CodexComposerDraftState.Present;
+            object brushKey = SystemParameters.HighContrast
+                ? hasInput ? SystemColors.HighlightBrushKey : SystemColors.WindowTextBrushKey
+                : hasInput ? "ComposerHasInputBrush" : "ComposerNoInputBrush";
+            input.SetResourceReference(Shape.FillProperty, brushKey);
+            input.SetResourceReference(Shape.StrokeProperty, SystemColors.WindowBrushKey);
+            input.StrokeThickness = SystemParameters.HighContrast ? 1 : 0;
+        }
         SetTemplatePartOpacity(key, "MintSeamLight", mintSelectionLight ? 1 : 0);
         SetTemplatePartOpacity(key, "MintCapReturn", mintSelectionLight ? 1 : 0);
         SetTemplatePartOpacity(key, "MintWellLight", mintSelectionLight ? 1 : 0);
@@ -3451,10 +3471,11 @@ public partial class MicroSurfaceWindow : Window
 
     internal void ApplyAgentLightingAppearance(
         int slotId,
-        AgentLightingAppearance appearance)
+        AgentLightingAppearance appearance,
+        CodexComposerDraftState draftState = CodexComposerDraftState.Unknown)
     {
         var key = _agentKeys[slotId];
-        appearance = ApplyAgentLightingAppearance(key, appearance);
+        appearance = ApplyAgentLightingAppearance(key, appearance, draftState);
 
         // The window renders all outer light before any physical key. Disable
         // the self-contained template bloom so later siblings cannot paint a

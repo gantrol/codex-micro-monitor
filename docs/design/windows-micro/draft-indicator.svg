@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="790" viewBox="0 0 1080 790" role="img" aria-labelledby="title desc">
+  <title id="title">Windows Micro 中心点输入状态设计</title>
+  <desc id="desc">使用现有中心圆点表示输入状态：默认紫色，有输入时绿色。没有附加图标。选中只改变外围效果，中心点颜色不随选中变化；任务运行灯光独立。此图为设计示意，不是应用截图。</desc>
+  <defs>
+    <g id="key">
+      <rect x="0.5" y="0.5" width="95" height="95" rx="14" fill="#F7F8F6" stroke="#DCE0DA"/>
+      <circle cx="48" cy="48" r="38" fill="#F7F8F6" stroke="#DEE2DC" stroke-width="1.2"/>
+    </g>
+    <g id="default"><circle cx="48" cy="48" r="9" fill="#685FAE"/></g>
+    <g id="present"><circle cx="48" cy="48" r="9" fill="#B9EFD2"/></g>
+    <g id="selected">
+      <rect x="1" y="1" width="94" height="94" rx="13" fill="#B9EFD2" fill-opacity="0.14" stroke="#9CDDB9" stroke-width="1.2"/>
+      <circle cx="48" cy="48" r="38" fill="#B9EFD2" fill-opacity="0.18"/>
+    </g>
+    <g id="idle"/>
+    <g id="running"><circle cx="48" cy="48" r="38" fill="#304FFE" fill-opacity="0.36"/></g>
+    <g id="approval"><circle cx="48" cy="48" r="38" fill="#FF6D00" fill-opacity="0.36"/></g>
+    <g id="question"><circle cx="48" cy="48" r="38" fill="#FFD54F" fill-opacity="0.43"/></g>
+    <g id="error"><circle cx="48" cy="48" r="38" fill="#FF0033" fill-opacity="0.36"/></g>
+    <g id="unread"><circle cx="48" cy="48" r="38" fill="#00FF4C" fill-opacity="0.36"/></g>
+    <style>
+      text { font-family: 'Microsoft YaHei UI', 'Microsoft YaHei', 'Segoe UI', sans-serif; fill: #2F3438; }
+      .muted { fill: #68726D; }
+      .small { font-size: 13px; }
+      .label { font-size: 15px; }
+      .section { font-size: 18px; font-weight: 600; }
+    </style>
+  </defs>
+  <rect width="1080" height="790" fill="#FFFFFF"/>
+  <text x="40" y="48" font-size="28" font-weight="600">中心点表示「有输入」</text>
+  <text x="40" y="76" class="label muted">默认紫点 · 有输入变绿 · 选中不改变中心点</text>
+  <text x="1040" y="47" text-anchor="end" class="small muted">2026-10-10 · 状态设计</text>
+  <path d="M40 98H1040" stroke="#E1E5E0"/>
+
+  <text x="40" y="132" class="section">输入与选中分别表达</text>
+  <g transform="translate(110 158) scale(1.45)"><use href="#key"/><use href="#default"/></g>
+  <g transform="translate(350 158) scale(1.45)"><use href="#key"/><use href="#selected"/><use href="#default"/></g>
+  <g transform="translate(590 158) scale(1.45)"><use href="#key"/><use href="#present"/></g>
+  <g transform="translate(830 158) scale(1.45)"><use href="#key"/><use href="#selected"/><use href="#present"/></g>
+  <g text-anchor="middle" class="label">
+    <text x="179.6" y="327">无输入 · 未选中</text>
+    <text x="419.6" y="327">无输入 · 已选中</text>
+    <text x="659.6" y="327">有输入 · 未选中</text>
+    <text x="899.6" y="327">有输入 · 已选中</text>
+  </g>
+  <path d="M40 355H1040" stroke="#E1E5E0"/>
+
+  <text x="40" y="390" class="section">任务灯光与中心点并存</text>
+  <text x="1040" y="390" text-anchor="end" class="small muted">默认窗口比例 · 键帽 72 × 72</text>
+  <text x="236" y="429" text-anchor="middle" class="label">空闲</text>
+  <text x="384" y="429" text-anchor="middle" class="label">运行中</text>
+  <text x="532" y="429" text-anchor="middle" class="label">待审批</text>
+  <text x="680" y="429" text-anchor="middle" class="label">待回答</text>
+  <text x="828" y="429" text-anchor="middle" class="label">错误</text>
+  <text x="976" y="429" text-anchor="middle" class="label">未读</text>
+  <text x="40" y="489" class="label">无输入</text>
+  <text x="40" y="591" class="label">有输入</text>
+  <g transform="translate(200 447) scale(0.75)"><use href="#key"/><use href="#idle"/><use href="#default"/></g>
+  <g transform="translate(348 447) scale(0.75)"><use href="#key"/><use href="#running"/><use href="#default"/></g>
+  <g transform="translate(496 447) scale(0.75)"><use href="#key"/><use href="#approval"/><use href="#default"/></g>
+  <g transform="translate(644 447) scale(0.75)"><use href="#key"/><use href="#question"/><use href="#default"/></g>
+  <g transform="translate(792 447) scale(0.75)"><use href="#key"/><use href="#error"/><use href="#default"/></g>
+  <g transform="translate(940 447) scale(0.75)"><use href="#key"/><use href="#unread"/><use href="#default"/></g>
+  <g transform="translate(200 549) scale(0.75)"><use href="#key"/><use href="#idle"/><use href="#present"/></g>
+  <g transform="translate(348 549) scale(0.75)"><use href="#key"/><use href="#running"/><use href="#present"/></g>
+  <g transform="translate(496 549) scale(0.75)"><use href="#key"/><use href="#approval"/><use href="#present"/></g>
+  <g transform="translate(644 549) scale(0.75)"><use href="#key"/><use href="#question"/><use href="#present"/></g>
+  <g transform="translate(792 549) scale(0.75)"><use href="#key"/><use href="#error"/><use href="#present"/></g>
+  <g transform="translate(940 549) scale(0.75)"><use href="#key"/><use href="#unread"/><use href="#present"/></g>
+
+  <path d="M40 647H1040" stroke="#E1E5E0"/>
+  <g transform="translate(48 668) scale(0.6)"><use href="#key"/><use href="#present"/></g>
+  <text x="128" y="687" class="label">最小窗口 · 中心点约 10.8 DIP</text>
+  <text x="128" y="713" class="small muted">沿用现有圆点尺寸与位置</text>
+  <path d="M566 666V728" stroke="#E1E5E0"/>
+  <text x="600" y="687" class="label">任务提示 / 无障碍状态</text>
+  <text x="600" y="713" class="small muted">运行中，有输入 / Running, draft</text>
+  <path d="M40 744H1040" stroke="#E1E5E0"/>
+  <text x="40" y="771" class="small muted">矢量设计示意；外围灯光简化。文字标签仅用于评审。已接入持久化草稿读取，未进行 UI 手动测试。</text>
+</svg>
