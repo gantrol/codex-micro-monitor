@@ -6,6 +6,17 @@ Set-StrictMode -Version Latest
 $root = Split-Path -Parent $PSScriptRoot
 [xml]$metadata = Get-Content -LiteralPath (Join-Path $root 'Version.props') -Raw
 $version = [string]$metadata.Project.PropertyGroup.Version
+[xml]$dependencies = Get-Content -LiteralPath (Join-Path $root 'Directory.Packages.props') -Raw
+$controlVersion = [string]$dependencies.Project.PropertyGroup.CodexControlVersion
+$controlPackages = foreach ($id in @('CodexControl', 'CodexControl.Windows')) {
+    $path = Join-Path $root ".artifacts/control-packages/$id.$controlVersion.nupkg"
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Import the pinned control packages first: $path" }
+    $path
+}
+$controlPackageKey = ($controlPackages | ForEach-Object {
+    (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash.Substring(0, 16).ToLowerInvariant()
+}) -join '-'
+$restorePackagesPath = Join-Path $root ".artifacts/nuget-packages/$controlVersion-$controlPackageKey"
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $root "dist/github/$version/compact" }
 $output = [IO.Path]::GetFullPath($OutputDirectory)
 if ($output -match '(?i)trash') { throw 'Unsupported output path.' }
@@ -15,7 +26,8 @@ New-Item -ItemType Directory -Path $payload -Force | Out-Null
 
 dotnet publish (Join-Path $root 'src/CodexMicro.Desktop/CodexMicro.Desktop.csproj') `
     -c Release -r win-x64 --self-contained false -o $payload `
-    -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false --nologo -v minimal
+    -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false `
+    "-p:RestorePackagesPath=$restorePackagesPath" --nologo -v minimal
 if ($LASTEXITCODE -ne 0) { throw 'Compact desktop publish failed.' }
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $payload
 @"

@@ -14,6 +14,10 @@ $controlPackages = foreach ($id in @('CodexControl', 'CodexControl.Windows')) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Import the pinned control packages first: $path" }
     $path
 }
+$controlPackageKey = ($controlPackages | ForEach-Object {
+    (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash.Substring(0, 16).ToLowerInvariant()
+}) -join '-'
+$restorePackagesPath = Join-Path $root ".artifacts/nuget-packages/$controlVersion-$controlPackageKey"
 $destination = if ($OutputDirectory) {
     [IO.Path]::GetFullPath($OutputDirectory)
 } else {
@@ -30,7 +34,8 @@ foreach ($entry in @(
     @{ Project='src/CodexMicro.Desktop/CodexMicro.Desktop.csproj'; Output=$desktop },
     @{ Project='src/CodexMicro.Plugin/CodexMicro.Plugin.csproj'; Output=(Join-Path $plugin 'bin') }
 )) {
-    dotnet publish (Join-Path $root $entry.Project) -c Release -r $Runtime --self-contained false -o $entry.Output -p:PublishSingleFile=true --nologo -v minimal
+    dotnet publish (Join-Path $root $entry.Project) -c Release -r $Runtime --self-contained false `
+        -o $entry.Output -p:PublishSingleFile=true "-p:RestorePackagesPath=$restorePackagesPath" --nologo -v minimal
     if ($LASTEXITCODE -ne 0) { throw "Publish failed: $($entry.Project)" }
 }
 Copy-Item -Path (Join-Path $root 'plugins/codex-micro-keypad/*') -Destination $plugin -Recurse

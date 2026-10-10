@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "codex-micro-keypad",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A Windows companion inspired by Codex Micro: task status, model controls and usage at a glance, without a virtual HID driver.",
   "author": {
     "name": "gantrol"

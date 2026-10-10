@@ -38,10 +38,15 @@ if (-not (Test-Path -LiteralPath $makePri)) { throw "Missing SDK tool: $makePri"
 
 [xml]$dependencies = Get-Content -LiteralPath (Join-Path $root 'Directory.Packages.props') -Raw
 $controlVersion = [string]$dependencies.Project.PropertyGroup.CodexControlVersion
-foreach ($id in @('CodexControl', 'CodexControl.Windows')) {
+$controlPackages = foreach ($id in @('CodexControl', 'CodexControl.Windows')) {
     $dependency = Join-Path $root ".artifacts/control-packages/$id.$controlVersion.nupkg"
     if (-not (Test-Path -LiteralPath $dependency)) { throw "Import the pinned dependency first: $dependency" }
+    $dependency
 }
+$controlPackageKey = ($controlPackages | ForEach-Object {
+    (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash.Substring(0, 16).ToLowerInvariant()
+}) -join '-'
+$restorePackagesPath = Join-Path $root ".artifacts/nuget-packages/$controlVersion-$controlPackageKey"
 
 if (-not $OutputDirectory) {
     $OutputDirectory = Join-Path $root "dist/store/$PackageVersion/$([Guid]::NewGuid().ToString('N').Substring(0, 8))"
@@ -56,7 +61,8 @@ New-Item -ItemType Directory -Path $images -Force | Out-Null
 # Keep the runtime in the package; installation must not download .NET.
 dotnet publish (Join-Path $root 'src/CodexMicro.Desktop/CodexMicro.Desktop.csproj') `
     -c Release -r win-x64 --self-contained true -o $payload `
-    -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false --nologo -v minimal
+    -p:PublishSingleFile=false -p:DebugType=None -p:DebugSymbols=false `
+    "-p:RestorePackagesPath=$restorePackagesPath" --nologo -v minimal
 if ($LASTEXITCODE -ne 0) { throw 'Desktop publish failed.' }
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $payload
 
