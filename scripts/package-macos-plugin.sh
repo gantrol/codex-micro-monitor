@@ -32,7 +32,7 @@ manifest = json.loads(p.read_text())
 manifest['version'] = version
 manifest['description'] = 'Native macOS Codex Micro preview: task activity, model controls and guarded composer actions, without a virtual HID driver.'
 interface = manifest['extensions']['com.openai']['interface']
-interface['longDescription'] = 'A macOS 14+ preview for Apple silicon and Intel Macs. Requires the local Codex desktop app. Native composer controls require Accessibility permission and an unambiguous target; blank-draft modes use observed native controls or configured shortcuts with readback. Some controls remain pending live acceptance. No Micro hardware, Windows runtime or virtual HID driver is required. Independent third-party project, not affiliated with or endorsed by OpenAI or Work Louder.'
+interface['longDescription'] = 'A macOS 14+ preview for Apple silicon and Intel Macs. Requires the local Codex desktop app. Native composer controls require Accessibility permission and an unambiguous target; blank-draft model and reasoning update user-saved-config directly with native readback, while Fast and Plan use observed native controls or configured shortcuts. Some controls remain pending live acceptance. No Micro hardware, Windows runtime or virtual HID driver is required. Independent third-party project, not affiliated with or endorsed by OpenAI or Work Louder.'
 # The product source screenshots show the released Windows build.
 interface.pop('screenshots', None)
 p.write_text(json.dumps(manifest, indent=2, ensure_ascii=False)+'\n')

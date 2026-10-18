@@ -5,28 +5,21 @@ import MicroShared
 protocol DesktopCoreAccess:Sendable {
     func execute(_ operation:String,arguments:[String:Any]) async throws -> [String:Any]
     func captureDraftConfiguration() async throws -> DraftConfigurationSnapshot?
-    func readDraftConfiguration() async throws -> DraftConfigurationSnapshot
-    func writeDraftConfiguration(_ value:DraftConfigurationSnapshot) async throws -> Bool
+    func readDraftConfiguration() async throws -> DraftConfigurationSnapshot?
+    func writeDraftConfiguration(_ snapshot:DraftConfigurationSnapshot) async throws
     func invalidateUserSavedConfig() async throws -> Bool
     func close() async
 }
 extension DesktopCoreAccess {
     func captureDraftConfiguration() async throws -> DraftConfigurationSnapshot? { nil }
-    func readDraftConfiguration() async throws -> DraftConfigurationSnapshot { throw CodexClientError.unsupported("Draft configuration observation is unavailable.") }
-    func writeDraftConfiguration(_ value:DraftConfigurationSnapshot) async throws -> Bool { false }
+    func readDraftConfiguration() async throws -> DraftConfigurationSnapshot? { nil }
+    func writeDraftConfiguration(_ snapshot:DraftConfigurationSnapshot) async throws {}
     func invalidateUserSavedConfig() async throws -> Bool { false }
 }
 extension CodexClient:DesktopCoreAccess {}
 
 /// One dispatch contract for Catalyst and the plugin's native MCP process.
 actor DesktopBackend {
-    private struct DraftSelection {
-        let model:String
-        let effort:String
-        let position:Int
-        let count:Int
-    }
-
     private let core:any DesktopCoreAccess
     private let ui:MacUIController
     private var models: [[String: Any]] = []
@@ -48,165 +41,21 @@ actor DesktopBackend {
 
     func close() async { ui.close(); models = [];rosterIdentity=nil;rosterRevision += 1; await core.close() }
 
-    private func draftSelection(_ result:[String:Any]) throws -> (DraftSelection,[String:Any]) {
-        guard result["verified"] as? Bool == true,
-              let raw=result["selection"] as? [String:Any],let model=raw["model"] as? String,
-              let effort=raw["effort"] as? String,let position=raw["position"] as? Int,
-              let count=raw["count"] as? Int,position > 0,count > 0,position <= count,
-              let state=result["state"] as? [String:Any],state["targetToken"] as? String != nil else {
-            throw CodexClientError.outcomeUnknown
-        }
-        return (.init(model:model,effort:effort,position:position,count:count),state)
-    }
-
-    private func inspectDraft(arguments:[String:Any],verification:VerifiedClientRoute?) async throws -> (DraftSelection,[String:Any]) {
-        guard let token=arguments["target_token"] as? String else {throw CodexClientError.staleTarget}
-        var input:[String:Any]=["target_token":token,"native_composer":arguments["native_composer"] as? Bool == true]
-        if let expected=arguments["expected_settings"] {input["expected_settings"]=expected}
-        if let deadline=arguments["input_deadline_uptime"] {input["input_deadline_uptime"]=deadline}
-        return try draftSelection(await ui.execute("get_keypad_draft_selection",arguments:input,models:models,verification:verification))
-    }
-
-    private func refreshDraft(_ state:[String:Any],nativeComposer:Bool,verification:VerifiedClientRoute?) async throws -> [String:Any] {
-        guard let token=state["targetToken"] as? String else {throw CodexClientError.staleTarget}
-        let result=try await ui.execute("refresh_keypad_draft_target",arguments:["target_token":token,"native_composer":nativeComposer],models:models,verification:verification)
-        guard result["verified"] as? Bool == true,let next=result["state"] as? [String:Any],next["targetToken"] as? String != nil else {
-            throw CodexClientError.outcomeUnknown
-        }
-        return next
-    }
-
-    private func waitForDraftConfiguration(model:String,effort:String) async throws -> DraftConfigurationSnapshot {
-        let end=ProcessInfo.processInfo.systemUptime+4
-        var last:DraftConfigurationSnapshot?
-        repeat {
-            try Task.checkCancellation()
-            last=try await core.readDraftConfiguration()
-            if last?.model == model,last?.effort == effort {return last!}
-            try await Task.sleep(for:.milliseconds(100))
-        } while ProcessInfo.processInfo.systemUptime < end
-        throw CodexClientError.outcomeUnknown
-    }
-
-    private func verifiedDraftConfigurationChange(_ operation:String,arguments:[String:Any],observed:[String:Any],verification:VerifiedClientRoute?) async throws -> [String:Any]? {
-        // The App Server has no semantic owner for an unsent blank draft. Use
-        // its official config writer as a seed, then require the foreground
-        // renderer's own Power callback to persist an independently observed
-        // transition before reporting success.
-        guard ["set_keypad_draft_model","set_keypad_draft_reasoning"].contains(operation),
-              arguments["native_composer"] as? Bool != true,observed["draft"] as? Bool == true else {return nil}
-
-        guard let previous=try await core.captureDraftConfiguration() else {return nil}
-        let (initial,inspectedState)=try await inspectDraft(arguments:arguments,verification:verification)
-
-        var targetModel=initial.model
-        var requestedEffort=arguments["effort"] as? String
-        if operation == "set_keypad_draft_model" {
-            if let quick=arguments["quick_models"] as? [[String:Any]] {
-                guard quick.count == 2,let first=quick[0]["model"] as? String,let second=quick[1]["model"] as? String else {
-                    throw CodexClientError.invalid("Invalid Quick model profile.")
-                }
-                let useSecond=initial.model == first && (first != second || initial.effort == quick[0]["effort"] as? String)
-                let preset=quick[useSecond ? 1:0]
-                guard let model=preset["model"] as? String else {throw CodexClientError.invalid("Invalid Quick model profile.")}
-                targetModel=model;requestedEffort=preset["effort"] as? String
-            } else {
-                guard let model=arguments["model"] as? String else {throw CodexClientError.invalid("Missing model selection.")}
-                targetModel=model
-            }
-        }
-        guard let definition=models.first(where:{$0["model"] as? String == targetModel && $0["hidden"] as? Bool != true}) else {
-            throw CodexClientError.invalid("Model is unavailable.")
-        }
-        let efforts=(definition["supportedReasoningEfforts"] as? [[String:Any]] ?? []).compactMap {$0["reasoningEffort"] as? String}
-        guard Set(efforts).count == efforts.count,!efforts.isEmpty else {throw CodexClientError.unavailable("Native effort catalog is unavailable.")}
-        if operation == "set_keypad_draft_reasoning",let direction=arguments["direction"] as? Int {
-            guard [-1,1].contains(direction),targetModel == initial.model,let at=efforts.firstIndex(of:initial.effort) else {
-                throw CodexClientError.staleTarget
-            }
-            requestedEffort=efforts[max(0,min(efforts.count-1,at+direction))]
-        }
-        let targetEffort=requestedEffort ?? (targetModel == initial.model && efforts.contains(initial.effort) ? initial.effort:definition["defaultReasoningEffort"] as? String)
-        guard let targetEffort,let targetIndex=efforts.firstIndex(of:targetEffort) else {
-            throw CodexClientError.invalid("Unsupported native effort.")
-        }
-
-        if initial.model == targetModel,initial.effort == targetEffort,
-           previous.model == targetModel,previous.effort == targetEffort {
-            var result:[String:Any]=["applied":false,"verified":true,"state":inspectedState]
-            result["rendererVerified"]=true;result["verificationSource"]="native-menu-and-config-match"
-            return result
-        }
-        guard efforts.count > 1 else {throw CodexClientError.unavailable("This model has no independent Power transition to verify.")}
-
-        let seedEffort:String
-        let probeEffort:String
-        let nativeFinalEffort:String?
-        if targetIndex == 0 {
-            guard efforts[1] != "ultra" else {throw CodexClientError.unavailable("This Power range cannot be changed without a user confirmation.")}
-            seedEffort=efforts[1];probeEffort=targetEffort;nativeFinalEffort=nil
-        } else {
-            seedEffort=targetEffort;probeEffort=efforts[targetIndex-1]
-            nativeFinalEffort=["max","ultra"].contains(targetEffort) ? nil:targetEffort
-        }
-
-        // Unlike Windows HID, macOS can address the focused Power item
-        // directly, so keep the user's encoder mode unchanged throughout.
-        let seed=DraftConfigurationSnapshot(model:targetModel,effort:seedEffort,encoderMode:previous.encoderMode)
-        var ownedConfiguration:DraftConfigurationSnapshot?
-        var nativeMutationConfirmed=false
-        var nativeInputAttempted=false
-        do {
-            ownedConfiguration=seed
-            guard try await core.writeDraftConfiguration(seed) else {return nil}
-            guard try await core.invalidateUserSavedConfig() else {throw CodexClientError.outcomeUnknown}
-            var state=try await refreshDraft(inspectedState,nativeComposer:false,verification:verification)
-            guard let token=state["targetToken"] as? String else {throw CodexClientError.staleTarget}
-            nativeInputAttempted=true
-            let probe=try await ui.execute("set_keypad_draft_reasoning",arguments:[
-                "target_token":token,"native_composer":false,"model":targetModel,"effort":probeEffort,
-                "seed_model":targetModel,"seed_effort":seedEffort
-            ],models:models,verification:verification)
-            guard probe["verified"] as? Bool == true,let probeState=probe["state"] as? [String:Any] else {throw CodexClientError.outcomeUnknown}
-            let observedProbe=try await waitForDraftConfiguration(model:targetModel,effort:probeEffort)
-            ownedConfiguration=observedProbe;nativeMutationConfirmed=true;state=probeState
-
-            if let nativeFinalEffort {
-                guard let finalToken=state["targetToken"] as? String else {throw CodexClientError.staleTarget}
-                let final=try await ui.execute("set_keypad_draft_reasoning",arguments:[
-                    "target_token":finalToken,"native_composer":false,"model":targetModel,"effort":nativeFinalEffort,
-                    "seed_model":targetModel,"seed_effort":probeEffort
-                ],models:models,verification:verification)
-                guard final["verified"] as? Bool == true,let finalState=final["state"] as? [String:Any] else {throw CodexClientError.outcomeUnknown}
-                ownedConfiguration=try await waitForDraftConfiguration(model:targetModel,effort:targetEffort)
-                state=finalState
-            }
-
-            let target=DraftConfigurationSnapshot(model:targetModel,effort:targetEffort,encoderMode:previous.encoderMode)
-            guard try await core.writeDraftConfiguration(target) else {throw CodexClientError.outcomeUnknown}
-            ownedConfiguration=target
-            guard try await core.invalidateUserSavedConfig() else {throw CodexClientError.outcomeUnknown}
-            state=try await refreshDraft(state,nativeComposer:false,verification:verification)
-            guard let inspectedToken=state["targetToken"] as? String else {throw CodexClientError.staleTarget}
-            let (confirmed,finalState)=try await inspectDraft(arguments:["target_token":inspectedToken,"native_composer":false],verification:verification)
-            guard confirmed.model == targetModel,confirmed.effort == targetEffort,
-                  try await core.readDraftConfiguration() == target else {throw CodexClientError.outcomeUnknown}
-            var result:[String:Any]=["applied":true,"verified":true,"state":finalState]
-            result["rendererVerified"]=true;result["verificationSource"]="native-config-roundtrip"
-            return result
-        } catch {
-            let current=try? await core.readDraftConfiguration()
-            if !nativeInputAttempted,!nativeMutationConfirmed,current == ownedConfiguration {
-                _=try? await core.writeDraftConfiguration(previous)
-                _=try? await core.invalidateUserSavedConfig()
-            }
-            if nativeInputAttempted || nativeMutationConfirmed {throw CodexClientError.outcomeUnknown}
-            throw error
-        }
-    }
-
     private func observeNative() async throws -> (state:[String:Any],verification:VerifiedClientRoute?) {
-        let state=try await ui.execute("get_keypad_ui_state",arguments:[:],models:models)
+        var state=try await ui.execute("get_keypad_ui_state",arguments:[:],models:models)
+        if state["draft"] as? Bool == true {
+            var settings = state["settings"] as? [String: Any] ?? [:]
+            if (settings["model"] == nil || settings["effort"] == nil),
+               let config = try? await core.readDraftConfiguration() {
+                if settings["model"] == nil, let model = config.model, !model.isEmpty {
+                    settings["model"] = model
+                }
+                if settings["effort"] == nil, let effort = config.effort, !effort.isEmpty {
+                    settings["effort"] = effort
+                }
+                state["settings"] = settings
+            }
+        }
         guard let raw=state["clientBindingCandidate"] as? [String:Any],let pair=ClientRoutePair(raw),
               let token=state["bindingObservationToken"] as? String else {return (state,nil)}
         guard let identity=rosterIdentity else {await ui.discardBinding(observationToken:token);return (state,nil)}
@@ -227,6 +76,146 @@ actor DesktopBackend {
             try Task.checkCancellation()
             return (state,nil)
         }
+    }
+
+    /// Blank new conversations (`draft == true`) on macOS bind their model and
+    /// reasoning effort directly to `user-saved-config` (`config.toml`).
+    /// Updating `config.toml` and broadcasting `query-cache-invalidate` for
+    /// `["user-saved-config"]` directly updates the draft composer on screen
+    /// without popping open or stepping the native UI Power picker control.
+    private func directDraftConfigurationChange(
+        _ operation:String,
+        arguments:[String:Any],
+        observed:[String:Any],
+        verification:VerifiedClientRoute?
+    ) async throws -> [String:Any]? {
+        guard ["set_keypad_draft_model","set_keypad_draft_reasoning"].contains(operation),
+              arguments["native_composer"] as? Bool != true,
+              observed["draft"] as? Bool == true else {return nil}
+        guard let previous = try await core.captureDraftConfiguration() else {return nil}
+        guard let token = arguments["target_token"] as? String else {throw CodexClientError.staleTarget}
+        let observedSettings = observed["settings"] as? [String:Any] ?? [:]
+        if let expected = arguments["expected_settings"] as? [String:Any] {
+            for (name, value) in expected where !(value is NSNull) {
+                let candidate: Any? = observedSettings[name] ?? (name == "model" ? previous.model : name == "effort" ? previous.effort : nil)
+                guard let actual = candidate as? NSObject, actual.isEqual(value) else {
+                    throw CodexClientError.staleTarget
+                }
+            }
+        }
+        let candidateModel = (observedSettings["model"] as? String) ?? previous.model ??
+            (models.first(where: { $0["hidden"] as? Bool != true })?["model"] as? String)
+        guard let initialModel = candidateModel,
+              let initialDefinition = models.first(where: { $0["model"] as? String == initialModel && $0["hidden"] as? Bool != true }) else {
+            throw CodexClientError.unavailable("Draft model configuration is unavailable.")
+        }
+        let initialEfforts = (initialDefinition["supportedReasoningEfforts"] as? [[String:Any]] ?? [])
+            .compactMap { $0["reasoningEffort"] as? String }
+        let candidateEffort = (observedSettings["effort"] as? String) ?? previous.effort ??
+            (initialDefinition["defaultReasoningEffort"] as? String) ?? initialEfforts.first
+        guard let initialEffort = candidateEffort, !initialEffort.isEmpty else {
+            throw CodexClientError.unavailable("Draft reasoning effort configuration is unavailable.")
+        }
+
+        var requestedModel = arguments["model"] as? String
+        var requestedEffort = arguments["effort"] as? String
+        if let quick = arguments["quick_models"] as? [[String:Any]] {
+            guard quick.count == 2,
+                  let first = quick[0]["model"] as? String,
+                  let second = quick[1]["model"] as? String else {
+                throw CodexClientError.invalid("Invalid Quick model profile.")
+            }
+            let useSecond = initialModel == first && (first != second || initialEffort == quick[0]["effort"] as? String)
+            let preset = quick[useSecond ? 1 : 0]
+            requestedModel = preset["model"] as? String
+            requestedEffort = preset["effort"] as? String
+        }
+        let targetModel: String
+        if operation == "set_keypad_draft_model" {
+            guard let model = requestedModel else {throw CodexClientError.invalid("Missing model selection.")}
+            targetModel = model
+        } else {
+            targetModel = initialModel
+        }
+        guard let targetDefinition = models.first(where: { $0["model"] as? String == targetModel && $0["hidden"] as? Bool != true }) else {
+            throw CodexClientError.invalid("Model is not in the current catalog.")
+        }
+        let targetEfforts = (targetDefinition["supportedReasoningEfforts"] as? [[String:Any]] ?? [])
+            .compactMap { $0["reasoningEffort"] as? String }
+        guard !targetEfforts.isEmpty else {
+            throw CodexClientError.unavailable("Native effort is unavailable.")
+        }
+        let targetEffort: String
+        if let direction = arguments["direction"] as? Int {
+            guard [-1, 1].contains(direction), let at = targetEfforts.firstIndex(of: initialEffort) else {
+                throw CodexClientError.unavailable("Native effort is unavailable.")
+            }
+            targetEffort = targetEfforts[max(0, min(targetEfforts.count - 1, at + direction))]
+        } else if let requestedEffort {
+            guard targetEfforts.contains(requestedEffort) else {
+                throw CodexClientError.invalid("Unsupported reasoning effort.")
+            }
+            targetEffort = requestedEffort
+        } else if targetModel == initialModel, targetEfforts.contains(initialEffort) {
+            targetEffort = initialEffort
+        } else if let defaultEffort = targetDefinition["defaultReasoningEffort"] as? String,
+                  targetEfforts.contains(defaultEffort) {
+            targetEffort = defaultEffort
+        } else {
+            targetEffort = targetEfforts[0]
+        }
+
+        if let deadline = arguments["input_deadline_uptime"] as? Double {
+            guard deadline.isFinite, ProcessInfo.processInfo.systemUptime <= deadline else {
+                throw CodexClientError.staleTarget
+            }
+        }
+        let confirmedSettings: [String: Any] = ["model": targetModel, "effort": targetEffort]
+        if initialModel == targetModel && initialEffort == targetEffort &&
+            previous.model == targetModel && previous.effort == targetEffort {
+            let refreshed = try await ui.execute(
+                "refresh_keypad_draft_target",
+                arguments: ["target_token": token, "confirmed_settings": confirmedSettings],
+                models: models,
+                verification: verification
+            )
+            guard let state = refreshed["state"] as? [String: Any] else {
+                throw CodexClientError.outcomeUnknown
+            }
+            return ["applied": false, "verified": true, "state": state]
+        }
+
+        var refreshArgs: [String: Any] = ["target_token": token]
+        if let deadline = arguments["input_deadline_uptime"] as? Double {
+            refreshArgs["input_deadline_uptime"] = deadline
+        }
+        let precheck = try await ui.execute("refresh_keypad_draft_target", arguments: refreshArgs, models: models, verification: verification)
+        guard let precheckState = precheck["state"] as? [String: Any],
+              let activeToken = precheckState["targetToken"] as? String else {
+            throw CodexClientError.staleTarget
+        }
+
+        let target = DraftConfigurationSnapshot(model: targetModel, effort: targetEffort, encoderMode: previous.encoderMode)
+        try await core.writeDraftConfiguration(target)
+        guard try await core.invalidateUserSavedConfig() else {
+            throw CodexClientError.outcomeUnknown
+        }
+        let refreshed = try await ui.execute(
+            "refresh_keypad_draft_target",
+            arguments: ["target_token": activeToken, "confirmed_settings": confirmedSettings],
+            models: models,
+            verification: verification
+        )
+        guard let finalState = refreshed["state"] as? [String: Any] else {
+            throw CodexClientError.outcomeUnknown
+        }
+        return [
+            "applied": true,
+            "verified": true,
+            "rendererVerified": true,
+            "verificationSource": "direct-draft-config",
+            "state": finalState
+        ]
     }
 
     func execute(_ operation: String, arguments: [String: Any]) async throws -> [String: Any] {
@@ -297,8 +286,12 @@ actor DesktopBackend {
                 guard state["archived"] as? Bool != true else { throw CodexClientError.staleTarget }
             }
             if operation.hasPrefix("set_keypad_draft_") || operation == "toggle_keypad_draft_plan" {
-                models = []
-                models = try await core.execute("get_keypad_models", arguments: [:])["data"] as? [[String: Any]] ?? []
+                do {
+                    models = try await core.execute("get_keypad_models", arguments: [:])["data"] as? [[String: Any]] ?? []
+                } catch {
+                    models = []
+                    throw error
+                }
                 let observation=try await observeNative(),observed=observation.state
                 verification=observation.verification
                 guard Self.acceptsNativeSettings(observed, arguments: arguments) else { throw CodexClientError.staleTarget }
@@ -306,8 +299,6 @@ actor DesktopBackend {
                 let id = arguments["model"] as? String ?? settings["model"] as? String
                 let model = models.first(where: { $0["model"] as? String == id && $0["hidden"] as? Bool != true })
                 if arguments["model"] is String, model == nil { throw CodexClientError.invalid("Model is not in the current catalog.") }
-                // Generic closed triggers expose no model. The native controller
-                // resolves and validates the open menu before changing settings.
                 if let model, let effort = arguments["effort"] as? String {
                     guard (model["supportedReasoningEfforts"] as? [[String: Any]] ?? []).contains(where: { $0["reasoningEffort"] as? String == effort }) else { throw CodexClientError.invalid("Unsupported reasoning effort.") }
                 }
@@ -315,8 +306,8 @@ actor DesktopBackend {
                     let tiers = model["serviceTiers"] as? [[String: Any]] ?? []
                     guard tiers.contains(where: { ["fast", "priority"].contains($0["id"] as? String ?? "") }) || (model["additionalSpeedTiers"] as? [String] ?? []).contains("fast") else { throw CodexClientError.invalid("Fast is unavailable for this model.") }
                 }
-                if let result=try await verifiedDraftConfigurationChange(operation,arguments:arguments,observed:observed,verification:verification) {
-                    return result
+                if let direct = try await directDraftConfigurationChange(operation, arguments: nativeArguments, observed: observed, verification: verification) {
+                    return direct
                 }
             }
             if operation == "submit_keypad_composer" {
@@ -337,10 +328,16 @@ actor DesktopBackend {
             }
             return result
         }
-        if operation == "get_keypad_models" { models = [] }
         var requestedRosterRevision:Int?
         if operation == "list_keypad_threads" {rosterIdentity=nil;rosterRevision += 1;requestedRosterRevision=rosterRevision}
-        var result = try await core.execute(operation, arguments: arguments)
+        let resultRead: [String: Any]
+        do {
+            resultRead = try await core.execute(operation, arguments: arguments)
+        } catch {
+            if operation == "get_keypad_models" { models = [] }
+            throw error
+        }
+        var result = resultRead
         if operation == "list_keypad_threads",requestedRosterRevision == rosterRevision,let scope=result["rosterScope"] as? String,scope.count == 64,
            scope.allSatisfy({"0123456789abcdef".contains($0)}),let context=result["contextID"] as? String,!context.isEmpty {
             rosterIdentity=(scope,context)

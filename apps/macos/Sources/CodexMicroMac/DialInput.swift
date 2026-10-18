@@ -55,7 +55,7 @@ final class DialInput: NSObject, UIGestureRecognizerDelegate {
         inspect.cancelsTouchesInView = false
         inspect.delegate = self
         view.addGestureRecognizer(inspect)
-        SecondaryClickGesture.install(on:view,target:self,action:#selector(secondaryClicked(_:)))
+        SecondaryClickGesture.install(on:view,target:self,action:#selector(secondaryClicked(_:)),delegate:self)
     }
     func begin(_ point: CGPoint) {
         cancel()
@@ -148,6 +148,6 @@ final class DialInput: NSObject, UIGestureRecognizerDelegate {
         !(gestureRecognizer is UILongPressGestureRecognizer) || (held && !tracker.dragging && !suppressedTap && !scrolling)
     }
     func gestureRecognizer(_ gestureRecognizer:UIGestureRecognizer,shouldReceive event:UIEvent) -> Bool {
-        !(gestureRecognizer is UILongPressGestureRecognizer) || !SecondaryClickGesture.matches(event)
+        gestureRecognizer is SecondaryClickGesture || !SecondaryClickGesture.matches(event)
     }
 }

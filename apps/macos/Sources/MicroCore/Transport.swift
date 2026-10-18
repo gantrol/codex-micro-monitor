@@ -302,13 +302,6 @@ final class DesktopPeer {
                     "context":["identity":readContext.identity,"executionHostKey":readContext.executionHostKey]]], until:Date().addingTimeInterval(1))
         } catch { throw CodexClientError.outcomeUnknown }
     }
-    func invalidateUserSavedConfig() throws {
-        do {
-            try write(["type":"broadcast", "method":"query-cache-invalidate", "version":0,
-                "sourceClientId":clientID, "targetClientIds":NSNull(),
-                "params":["queryKey":["user-saved-config"]]], until:Date().addingTimeInterval(1))
-        } catch { throw CodexClientError.outcomeUnknown }
-    }
     func snapshot(_ thread: String, owner: String, timeout: TimeInterval = 6) throws -> [String: Any] {
         try follow(thread, owner: owner, following: false)
         try follow(thread, owner: owner, following: true)
@@ -325,5 +318,10 @@ final class DesktopPeer {
             if let change = params["change"] as? [String: Any], change["type"] as? String == "snapshot",
                let state = change["conversationState"] as? [String: Any] { return state }
         }
+    }
+    func invalidateUserSavedConfig() throws {
+        try write(["type": "broadcast", "method": "query-cache-invalidate", "version": 0,
+            "sourceClientId": clientID,
+            "params": ["queryKey": ["user-saved-config"]]], until: Date().addingTimeInterval(1))
     }
 }

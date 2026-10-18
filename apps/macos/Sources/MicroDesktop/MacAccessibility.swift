@@ -113,12 +113,19 @@ struct AXNode {
         url = address(v(5)) ?? ""
         current = ["page", "true"].contains(v(6) as? String ?? "") || v(6) as? Bool == true
         enabled = v(7) as? Bool ?? true; focused = v(8) as? Bool ?? false
-        expanded = v(9) as? Bool; selected = (v(10) as? Bool ?? false) || (["AXRadioButton","AXCheckBox"].contains(role) && (v(13) as? NSNumber)?.intValue == 1)
+        expanded = v(9) as? Bool; selected = (v(10) as? Bool ?? false) || (["AXMenuItem","AXRadioButton","AXCheckBox"].contains(role) && (v(13) as? NSNumber)?.intValue == 1)
         var origin = CGPoint.zero, size = CGSize.zero
         if let raw = v(11), CFGetTypeID(raw as CFTypeRef) == AXValueGetTypeID() { _ = AXValueGetValue(raw as! AXValue, .cgPoint, &origin) }
         if let raw = v(12), CFGetTypeID(raw as CFTypeRef) == AXValueGetTypeID() { _ = AXValueGetValue(raw as! AXValue, .cgSize, &size) }
         rect = CGRect(origin: origin, size: size)
-        text = ["AXTextArea", "AXTextField", "AXComboBox"].contains(role) ? v(13) as? String : nil
+        let childElements = v(14) as? [AXUIElement] ?? []
+        let rawText = ["AXTextArea", "AXTextField", "AXComboBox"].contains(role) ? v(13) as? String : nil
+        if rawText != nil, classes.contains("ProseMirror"), childElements.count == 1,
+           (MacAX.value(childElements[0], "AXDOMClassList") as? [String])?.contains("placeholder") == true {
+            text = ""
+        } else {
+            text = rawText
+        }
         var range=CFRange(location:0,length:0)
         if let raw=v(keys.firstIndex(of:"AXSelectedTextRange")!),CFGetTypeID(raw as CFTypeRef) == AXValueGetTypeID(),
            AXValueGetType(raw as! AXValue) == .cfRange,AXValueGetValue(raw as! AXValue,.cfRange,&range),range.location >= 0,range.length >= 0 {
@@ -131,7 +138,7 @@ struct AXNode {
         maximum = (v(19) as? NSNumber)?.doubleValue
         var settable = DarwinBoolean(false)
         valueSettable = role == "AXSlider" && AXUIElementIsAttributeSettable(element,"AXValue" as CFString,&settable) == .success && settable.boolValue
-        children = v(14) as? [AXUIElement] ?? []
+        children = childElements
         titleElement = MacAX.element(v(21))
         linkedElements = (v(22) as? [Any] ?? []).compactMap { MacAX.element($0) }
         popupValue = v(23) as? String
@@ -189,9 +196,24 @@ struct MacUISnapshot {
     static let effortPickerNames = ["Select effort", "选择强度", "选择推理强度", "選擇推理強度", "選取推理強度"]
     static let pickerNames = modelPickerNames + effortPickerNames
     static let planNames = ["Plan", "计划", "方案", "規劃", "計劃"]
-    static let planMenuNames = planNames + ["Plan mode", "计划模式", "計劃模式", "規劃模式"]
+    static let planMenuNames = planNames + ["Plan mode", "Plan mode Turn plan mode on", "计划模式", "計劃模式", "規劃模式"]
     static let voiceNames = ["Dictate", "Start dictation", "语音输入", "听写", "聽寫"]
     static let voiceStopNames = ["Stop dictation", "停止听写", "停止聽寫"]
+
+    static func isModelMenuRoot(_ node: AXNode) -> Bool {
+        if node.role == "AXMenu" { return true }
+        return node.role == "AXGroup" && !node.identifier.hasPrefix("app-shell-tab-panel-") &&
+            node.classes.contains { $0.hasPrefix("_ModelPickerDropdownContent_") || $0.hasPrefix("_Menu_") }
+    }
+
+    static func isMenuContainer(_ node: AXNode) -> Bool {
+        if ["AXMenu", "AXList", "AXListBox"].contains(node.role) { return true }
+        return node.role == "AXGroup" && !node.identifier.hasPrefix("app-shell-tab-panel-") &&
+            node.classes.contains {
+                $0.hasPrefix("_ModelPickerDropdownContent_") || $0.hasPrefix("_Menu_") ||
+                    $0.hasPrefix("_suggestionMenu_") || $0 == "composer-home-top-menu"
+            }
+    }
 
     static func capture(context: UIRequestContext, permitMicro: Bool = true, permitBackground: Bool = false, modelLabels: [String] = []) throws -> MacUISnapshot {
         let started = ProcessInfo.processInfo.systemUptime
@@ -209,6 +231,7 @@ struct MacUISnapshot {
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 0.25)
         _ = AXUIElementSetAttributeValue(root, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+        _ = AXUIElementSetAttributeValue(root, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
         guard let window = MacAX.element(MacAX.value(root, "AXFocusedWindow")) ?? MacAX.element(MacAX.value(root, "AXMainWindow")) else { throw NativeObservationFailure.windowUnavailable }
         guard MacAX.value(window, "AXMinimized") as? Bool != true else { throw NativeObservationFailure.windowMinimized }
         var nodes: [AXNode] = [], pending: [(AXUIElement, Int?)] = [(window, nil)], index = 0
@@ -245,8 +268,8 @@ struct MacUISnapshot {
             DesktopRouteObservation.document(app:app,root:root,window:window)
         let route = Self.observeRoute(nodes:nodes,composer:composer,container:container,controls:controls,
             fallbackDocument:fallbackDocument,modelLabels:modelLabels)
-        let menuItems = visible.filter { nodes[$0].enabled && ["AXMenuItem", "AXRadioButton", "AXCheckBox"].contains(nodes[$0].role) && Self.hasAncestor($0, nodes: nodes, matching: { ["AXMenu", "AXList", "AXListBox"].contains($0.role) }) }
-        let blocked = visible.contains { nodes[$0].role == "AXSheet" || nodes[$0].role == "AXDialog" || nodes[$0].subrole == "AXDialog" }
+        let menuItems = visible.filter { nodes[$0].enabled && ["AXMenuItem", "AXRadioButton", "AXCheckBox"].contains(nodes[$0].role) && Self.hasAncestor($0, nodes: nodes, matching: Self.isMenuContainer) && !Self.hasAncestor($0, nodes: nodes, matching: { $0.classes.contains("app-shell-left-panel") || $0.classes.contains("sidebar-item") }) }
+        let blocked = visible.contains { nodes[$0].role == "AXSheet" || nodes[$0].role == "AXDialog" || nodes[$0].subrole == "AXDialog" || nodes[$0].subrole == "AXApplicationDialog" }
         var snapshot = Self(app: app, root: root, window: window, nodes: nodes, composer: composer, container: container,
             thread: route.threadID, draft: route.draft, route: route.key, selectionKnown: route.known,
             nativeFallback: route.allowsNativeComposer(selectedSidebarCount: active.count),
@@ -343,9 +366,9 @@ struct MacUISnapshot {
     }
     var modelMenu: Int? {
         guard let trigger = picker, trigger.expanded == true else { return nil }
-        let candidates=nodes.indices.filter { nodes[$0].role == "AXMenu" &&
+        let candidates=nodes.indices.filter { Self.isModelMenuRoot(nodes[$0]) &&
             nodes[$0].rect.width > 0 && nodes[$0].rect.height > 0 &&
-            !Self.hasAncestor($0,nodes:nodes,matching:{$0.role == "AXMenu"}) }
+            !Self.hasAncestor($0,nodes:nodes,matching:Self.isModelMenuRoot) }
         switch (treeIndex ?? AXTreeIndex(nodes)).linkedMenu(for: trigger, nodes: nodes) {
         case .menu(let linked):
             return candidates.contains(linked) ? linked : nil
@@ -370,8 +393,79 @@ struct MacUISnapshot {
         return nodes.indices.filter { index in
             let node=nodes[index]
             return node.enabled && ["AXMenuItem","AXRadioButton","AXCheckBox","AXRow","AXButton"].contains(node.role) &&
-                Self.hasAncestor(index,nodes:nodes,matching:{["AXMenu","AXList","AXListBox"].contains($0.role)})
+                Self.hasAncestor(index,nodes:nodes,matching:Self.isMenuContainer) &&
+                !Self.hasAncestor(index,nodes:nodes,matching:{ $0.classes.contains("app-shell-left-panel") || $0.classes.contains("sidebar-item") })
         }
+    }
+    static func activateComposerMenuItem(
+        matching predicate: (AXNode, MacUISnapshot) -> Bool,
+        initial: MacUISnapshot,
+        io: NativeUIAccess,
+        context: UIRequestContext,
+        capture: () throws -> MacUISnapshot,
+        mutation: () -> Void
+    ) throws {
+        guard let item = initial.unique(initial.composerMenuItems, matching: { predicate($0, initial) }) else {
+            throw CodexClientError.staleTarget
+        }
+        let usesSuggestionHighlight = initial.composerMenuItems.contains {
+            initial.nodes[$0].classes.contains("bg-primary-ghost-hover")
+        }
+        if !usesSuggestionHighlight {
+            let ready = try capture()
+            guard ready.composerMenuItems.contains(where: {
+                MacAX.same(ready.nodes[$0].element, item.element) && ready.nodes[$0].enabled && ready.nodes[$0].name == item.name
+            }) else { throw CodexClientError.staleTarget }
+            mutation()
+            try io.press(item.element)
+            return
+        }
+        for _ in 0..<12 {
+            try context.check()
+            let state = try capture()
+            guard let target = state.unique(state.composerMenuItems, matching: { predicate($0, state) }) else {
+                throw CodexClientError.staleTarget
+            }
+            if target.classes.contains("bg-primary-ghost-hover") {
+                mutation()
+                try io.send(.init(key: 36, flags: []), initial.app.processIdentifier) {
+                    let current = try capture()
+                    guard io.foreground() == initial.app.processIdentifier,
+                          MacAX.same(initial.window, current.window),
+                          let active = current.unique(current.composerMenuItems, matching: { predicate($0, current) }),
+                          active.classes.contains("bg-primary-ghost-hover") else {
+                        throw CodexClientError.staleTarget
+                    }
+                }
+                return
+            }
+            let previousHover = state.composerMenuItems.first { state.nodes[$0].classes.contains("bg-primary-ghost-hover") }
+                .map { state.nodes[$0].element }
+            mutation()
+            try io.send(.init(key: 125, flags: []), initial.app.processIdentifier) {
+                let current = try capture()
+                guard io.foreground() == initial.app.processIdentifier,
+                      MacAX.same(initial.window, current.window),
+                      !current.composerMenuItems.isEmpty else {
+                    throw CodexClientError.staleTarget
+                }
+            }
+            let end = ProcessInfo.processInfo.systemUptime + 1.0
+            var moved = false
+            repeat {
+                try context.check()
+                let next = try capture()
+                let currentHover = next.composerMenuItems.first { next.nodes[$0].classes.contains("bg-primary-ghost-hover") }
+                    .map { next.nodes[$0].element }
+                if let currentHover, !MacAX.same(currentHover, previousHover) {
+                    moved = true
+                    break
+                }
+                Thread.sleep(forTimeInterval: 0.03)
+            } while ProcessInfo.processInfo.systemUptime < end
+            if !moved { throw CodexClientError.outcomeUnknown }
+        }
+        throw CodexClientError.outcomeUnknown
     }
     var sketchOpen: Bool { nodes.contains { $0.enabled && $0.button && $0.named(Self.sketchCloseNames) } }
     var reviewOpen: Bool { nodes.contains { ["AXRadioButton", "AXTab", "AXButton"].contains($0.role) && $0.selected && $0.named(["Review", "审查", "审阅"]) } }

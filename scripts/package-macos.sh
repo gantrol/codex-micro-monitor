@@ -62,11 +62,33 @@ done
 /usr/bin/iconutil -c icns "$task_icons" -o "$task_app/Contents/Resources/AppIcon.icns"
 /usr/bin/plutil -lint "$task_app/Contents/Info.plist"
 /usr/bin/codesign --force --sign "$task_sign_identity" "$task_bridge"
-/usr/bin/codesign --force --sign "$task_sign_identity" "$task_app"
+task_widget="$task_app/Contents/PlugIns/MicroMonitorWidget.appex"
+task_group="$(/usr/libexec/PlistBuddy -c 'Print :MicroWidgetAppGroup' "$task_app/Contents/Info.plist")"
+task_team="${task_group%%.*}"
+if [[ "$task_sign_identity" != - ]]; then
+  task_signed_team="$(/usr/bin/codesign --display --verbose=4 "$task_bridge" 2>&1 | /usr/bin/sed -n 's/^TeamIdentifier=//p')"
+  [[ "$task_signed_team" == "$task_team" ]] || { echo 'The signing team must match DEVELOPMENT_TEAM for widget data sharing.' >&2; exit 1; }
+fi
+for task_kind in App Widget; do
+  task_entitlements="$task_stage/Micro${task_kind}.entitlements"
+  /usr/bin/plutil -convert xml1 -o "$task_entitlements" "$task_root/apps/macos/Packaging/Micro${task_kind}.entitlements"
+  if [[ "$task_sign_identity" == - ]]; then
+    /usr/libexec/PlistBuddy -c 'Delete :com.apple.security.application-groups' "$task_entitlements"
+  else
+    /usr/libexec/PlistBuddy -c "Set :com.apple.security.application-groups:0 $task_group" "$task_entitlements"
+  fi
+done
+if [[ "$task_sign_identity" == - ]]; then
+  /usr/libexec/PlistBuddy -c 'Delete :MicroWidgetAppGroup' "$task_app/Contents/Info.plist"
+  /usr/libexec/PlistBuddy -c 'Delete :MicroWidgetAppGroup' "$task_widget/Contents/Info.plist"
+fi
+/usr/bin/codesign --force --sign "$task_sign_identity" --entitlements "$task_stage/MicroWidget.entitlements" "$task_widget"
+/usr/bin/codesign --force --sign "$task_sign_identity" --entitlements "$task_stage/MicroApp.entitlements" "$task_app"
 /usr/bin/codesign --verify --deep --strict "$task_app"
 /usr/bin/codesign --display -r - "$task_app"
 /usr/bin/lipo -archs "$task_app/Contents/MacOS/CodexMicroMac"
 /usr/bin/lipo -archs "$task_bridge/Contents/MacOS/MicroDesktop"
+/usr/bin/lipo -archs "$task_widget/Contents/MacOS/MicroMonitorWidget"
 
 # Both destinations are generated build artifacts inside this repository.
 if [[ -L "$task_output/Codex Micro Monitor.app" ]]; then

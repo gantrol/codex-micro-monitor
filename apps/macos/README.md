@@ -1,14 +1,14 @@
 # Codex Micro macOS · 控制预览版
 
-macOS 14+，UIKit / Mac Catalyst 与原生 AppKit 桥接，无外部 Swift Package 依赖。当前源码候选版本 **`1.0.0-macos-preview.34`**，新候选输出到 `dist/macos/preview.34/universal/`。保持 Windows Micro 的 590×610 画布、键帽、双页、旋钮和灯光设计。候选代码与构建检查不代表当前运行进程已更新或真实 Codex 已验收。
+macOS 14+，UIKit / Mac Catalyst 与原生 AppKit 桥接，无外部 Swift Package 依赖。当前版本 **`1.0.5-macos-preview.35`**，默认输出到 `dist/macos/universal/`。保持 Windows Micro 的 590×610 画布、键帽、双页、旋钮和灯光设计。
 
-## 已知问题：新会话设置仍未联通（2026-10-06）
+## 新会话（空白草稿）设置设计（preview.35）
 
-当前实机日志已能把新建页识别为 `kind=draft`，但同一快照仍为 `modelPickerAvailable=false`、`pickerCandidates=0`。因此模型、Fast 和思考强度在派发前就没有原生目标；[官方 Codex app-server 文档](https://developers.openai.com/siwc/token-sharing-open-source/codex-app-server)也将 `model/list` 定义为目录而非授权判断，它不能替代当前 Codex 输入框里的模型控件。命令键为了保留右键编辑始终接收点击，但不可用动作的 `prepareKey` 为 `nil`，所以会出现“按得下去但没有业务效果”。Plan 有独立快捷键／添加菜单路径，不代表模型控件已经恢复。
+空白草稿（`draft=true`）的模型与思考强度直接通过 `config/batchWrite` 更新 `~/.codex/config.toml` 的 `model` / `model_reasoning_effort`，并向本机 Codex IPC 广播 `query-cache-invalidate`（`queryKey: ["user-saved-config"]`，`version: 0`），随后从原生模型选择器按钮（闭合态或已展开态）回读确认，无需弹出 Power 滑块或执行任何来回调节。
 
-此前同 WebArea 回退与 `pickerSource` 诊断没有在当前 Codex 实机结构中找到候选，仍属于未完成的兼容尝试。摇杆导航的未知结果现会自动重新观察并解除全局控制锁，但不会重放动作，也不能证明原导航已生效。此前 371 项 Swift 回归使用合成 AX 树，只验证控制器逻辑；当前新会话与摇杆仍需真实 AX 证据和端到端验收。
+空白草稿的 Fast（`service_tier`）与 Plan 保持原生控件 / 快捷键路径：Codex 渲染层在切换过一次 Fast 后会将速度保存在内存 Jotai override atom 中并覆盖 `config.toml` 的 `service_tier`，且闭合的模型按钮不暴露当前速度状态，因此不能仅靠 `user-saved-config` 广播修改或回读 Fast。
 
-当前 `ax-relations-r2` 候选接入同作用域的 `AXTitleUIElement` 标签、缺少 `AXExpanded` 的 popup 发现和导航后的有限瞬态重读，并修复附件 r1 的菜单关联回归：已解析的非菜单关联不再阻断明确展开的唯一可见菜单；缺失、隐藏或多个关联菜单仍拒绝使用。展开推断与菜单选择共用关系判定，显式 `AXExpanded=false` 保持优先。13 项针对性组件回归已通过，包含正式控制器的 Fast、MIND、模型设置回读。候选输出为 `dist/macos/ax-relations-r2/universal/`，仍沿用 preview.34 应用版本，用观察日志中的 `adapter=ax-relations-r2` 和 `BuildIdentity.json` 核对实际进程。真实 Codex 访问被电脑操作工具拒绝，不能据此删除本节已知问题；完整验证入口见 [tests/macos](../../tests/macos/README.md)。
+原 `ax-relations-r2` 接入同作用域的 `AXTitleUIElement` 标签、缺少 `AXExpanded` 的 popup 发现、去掉 `GPT-` 前缀后的空格模型名（如 `GPT-5.6 Terra High`）识别和导航后的有限瞬态重读，并修复非菜单关联回归：已解析的非菜单关联不再阻断明确展开的唯一可见菜单；缺失、隐藏或多个关联菜单仍拒绝使用。完整验证入口见 [tests/macos](../../tests/macos/README.md)。
 
 preview.34 处理新会话控制失效的三个边界：原生观察保留辅助功能拒绝及输入框／模型控件缺失的具体原因；支持主页内容旁的底部输入框，要求同一原生 WebArea、唯一主页容器和完整输入控件，排除面板输入框；IPC following 只用于监控，不再自动生成当前会话或控制目标。原生状态变化记录到 `com.gantrol.codex-micro-monitor` / `native-observation`，不记录输入文字、会话内容或 token 值。
 
@@ -23,6 +23,18 @@ preview.33 修复新建后旧会话 ID 被原生/IPC 轮询重新填回的问题
 当前工作区已将 UIKit 展示改为 `MicroViewModel` / `MicroViewState`，应用调度、身份与活动分别由 `MicroSession`、`ConversationContextStore`、`ActivityStore` 管理。原来的 `MicroModel` 仅保留兼容别名。未读状态由 `UnreadStateStore` 合并持久化及带 revision 的 IPC 证据；已确认的人工未读操作有回执屏障，client 关联与焦点绿灯判定共用身份层。具体根因、生命周期边界和诊断字段见[架构记录](../../docs/architecture/macos-current-conversation-id.zh-CN.md)。
 
 本轮独立构建在 `dist/macos/mvvm-refactor/universal/`，仍沿用 preview.34 版本标识，没有发布新版本或替换运行中的应用。临时签名候选仅用于构建和隔离进程验证，未进行真实 UI 验收。
+
+## 第二屏桌面小组件
+
+`MicroMonitorWidget` 是原生 macOS WidgetKit 扩展，随 Catalyst 主程序打包。提供大号桌面／通知中心组件，复用 Micro 外壳边框、14 个任务键和灯效；组件底板与画布透明，键帽保留原有材质。左下保留额度圆盘与连接灯，点击刷新，不提供悬停模型显示、旋转手势或模型切换。右下 Codex 键只唤起 Codex，不发送消息。任务键沿用第二屏顺序、当前选择和状态颜色；点击有精确会话 ID 的任务键后，主程序重新核对账号、host、存储范围及任务可用性，再打开对应 Codex 会话。任务和 Codex 入口不会主动置前 Micro 面板；空槽或自定义命令槽打开 Micro 第二屏，不直接执行命令。
+
+主程序通过 App Group 原子写入图片、额度和任务元数据，最多每五秒合并一次变化，并合并 WidgetKit 刷新请求；隐藏窗口时继续观察，睡眠时停止、唤醒后恢复。额度圆盘通过 App Intent 读取最新共享快照，不打开主窗口。退出 Micro 后停止采集；超过十五分钟的快照显示无状态灯、未知额度的键盘，不保留过期任务入口。系统实际刷新频率由 WidgetKit 决定，不保证逐帧或逐秒同步。组件不访问 Codex IPC、辅助功能或对话正文。快照格式已更新为版本 2，升级后须重新启动新版 Micro 才会发布新快照。
+
+安装带组件的签名应用并启动 Micro 后，在 macOS「编辑小组件」中搜索 `Codex Micro` 添加大号组件。应用和扩展的 `DEVELOPMENT_TEAM` 必须一致；使用 Apple 支持的 `<Team ID>.com.gantrol.codex-micro-monitor` App Group。临时签名包会移除该权限及共享路径，仅用于构建验证，不能验证数据同步。
+
+构建入口：`scripts/package-macos.sh universal second-screen-widget.2`。资源由主程序的离屏 `--export-widget-artwork apps/macos/Sources/MicroMonitorWidget/Resources` 入口生成，随后运行 `python3 scripts/generate-macos-project.py` 更新资源引用。`WidgetPreview.png` 为组件库示例灯态与额度，不是实际任务数据；`WidgetNeutral.png` 用于未连接及过期快照。新增代码没有增加测试文件或执行真实 UI 操作；构建、签名与既有自动化回归不替代桌面组件添加、刷新和点击的实机验收。
+
+修订候选已通过 Universal Release 构建、嵌套严格签名、ZIP 完整性及资源一致性检查；33 项既有观察调度、身份生命周期、应用唤起、恢复和任务范围回归通过，15 个插件源文件同步检查通过。透明资源已生成，桌面实际透明呈现和点击仍未实机验收。产物位于 `dist/macos/second-screen-widget.2/universal/`，没有安装或替换当前运行的 Micro。
 
 ## 功能与门禁
 
@@ -42,7 +54,7 @@ preview.33 修复新建后旧会话 ID 被原生/IPC 轮询重新填回的问题
 | 前台目标与 Composer | 原生 Accessibility | 精确路由 UUID、同一窗口与输入框；草稿要求主页容器证据 |
 | 当前输入框提交 | 原生发送控件 + IPC 空闲检查 | 15 秒目标令牌、原文重验；拦截待审批及未确认提交；观察输入清空与新回合 |
 | 侧栏、前后导航、输入区选择、滚动 | Accessibility | 唯一控件、窗口身份和操作后回读；不猜坐标 |
-| 空白草稿模型、effort、Fast、Plan | 原生菜单 / 用户配置的快捷键 | 设计路径；当前实机模型触发器为 0 个候选，模型、effort、Fast 尚不可用；Plan 有独立路径 |
+| 空白草稿模型、effort、Fast、Plan | 模型与 effort：`config/batchWrite` + `query-cache-invalidate`（version 0）；Fast 与 Plan：原生菜单 / 用户配置的快捷键 | 空白草稿模型与 effort 直接更新 `user-saved-config` 并从闭合按钮回读，无需弹出控件；Fast（渲染层内存状态覆盖 `service_tier` 且闭合按钮不暴露速度）与 Plan 保持原生控件 / 快捷键路径 |
 | Skill 插入 | 原生 HTML 剪贴板 | 进程锁、changeCount 与格式恢复；插入后复制 mention atom，逐项核对 name / path；无法结构确认时结果未知且不重试 |
 | Sketch | Composer 添加菜单 | 必须观察到绘图编辑器；菜单打开不算成功 |
 | MIC | Codex 原生听写控件 | 控件及麦克风权限必须可用；实时语音未接入 |
@@ -137,7 +149,7 @@ rollout、未读全局文件和账号文件使用 vnode 事件监听，40 ms 合
 - 已确认的原生 client 会话路由可使用白旋钮导航；每次操作重读原生目标并核对 token 和会话路由。只有输入框、没有明确路由的回退仍限于设置动作。
 - 已有会话的强度手势合并 80 ms、唯一写入者、5 秒有效期、回读后继续。设置写入结果未知时只重新读取状态，成功后恢复控制；不重发原请求。发送、Fork、审批等其他结果未知仍需主动刷新。
 - Windows 配置中空的默认动作按键帽解析；无效的显式绑定仍禁用。已有会话未显式保存 effort 时使用实时目录默认值，MIND± 在上下限显示当前档位；A/B 同模型不同强度也按有效值比较。不可用按键图标变淡，右键仍可编辑。
-- 原生前台识别支持 Codex 去掉 GPT 前缀后的显示名和新版中英文强度名称；不把中文「极高」误识别成 Ultra。空白草稿的强度、Fast 和 Plan 支持原生 Power / Speed / Plan 控件；已配置快捷键仍可使用。
+- 原生前台识别支持 Codex 去掉 GPT 前缀后的显示名和新版中英文强度名称；不把中文「极高」误识别成 Ultra。空白草稿的模型与强度直接通过 `config/batchWrite` + `query-cache-invalidate`（version 0）更新并从原生按钮回读，无需弹出 Power 控件；草稿的 Fast、Plan 及无 `user-saved-config` 绑定的客户端输入框支持原生 Power / Speed / Plan 控件；已配置快捷键仍可使用。
 
 ### 设置与键位编辑（preview.11）
 

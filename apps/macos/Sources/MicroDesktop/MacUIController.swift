@@ -31,7 +31,6 @@ final class MacUIController: @unchecked Sendable {
         "insert_keypad_skill", "insert_keypad_preset_text", "open_keypad_sketch", "set_keypad_draft_model", "set_keypad_draft_reasoning",
         "set_keypad_draft_fast", "toggle_keypad_draft_plan", "toggle_keypad_dictation",
         "toggle_keypad_pin", "copy_keypad_markdown", "archive_keypad_thread", "toggle_keypad_terminal", "open_keypad_browser", "open_keypad_side_chat", "open_keypad_feedback", "open_keypad_files", "open_keypad_photos", "open_keypad_branch", "open_keypad_pull_request", "open_keypad_draft_pull_request", "open_keypad_commit", "open_keypad_merge_pull_request", "run_keypad_environment_action"]
-    private static let draftTransactionOperations:Set<String>=["get_keypad_draft_selection","refresh_keypad_draft_target"]
     private static let threadMenuOperations:Set<String>=["toggle_keypad_pin","copy_keypad_markdown","archive_keypad_thread","open_keypad_side_chat"]
     private static let gitOperations:[String:NativeGitWorkflow.Action]=["open_keypad_merge_pull_request":.mergePullRequest,"open_keypad_commit":.commit,"open_keypad_branch":.branch,"open_keypad_pull_request":.pullRequest,"open_keypad_draft_pull_request":.draftPullRequest]
     private static let panelOperations:Set<String>=["toggle_keypad_terminal","open_keypad_browser"]
@@ -102,7 +101,9 @@ final class MacUIController: @unchecked Sendable {
         let reason=state["reason"] as? String ?? ""
         let route=state["routeAvailable"] as? Bool == true,known=state["selectionKnown"] as? Bool == true,focused=state["appFocused"] as? Bool == true
         let code=state["failureCode"] as? String ?? "none",source=state["routeSource"] as? String ?? "none"
-        let summary="available=\(available) accessibility=\(accessibility) kind=\(kind) routeAvailable=\(route) selectionKnown=\(known) appFocused=\(focused) \(flags) \(picker) \(relationships) home=\(home) source=\(source) failure=\(code)"
+        let nodeCount=diagnostics["nodeCount"] as? Int ?? 0
+        let composerCandidates=diagnostics["composerCandidates"] as? Int ?? 0
+        let summary="available=\(available) accessibility=\(accessibility) kind=\(kind) routeAvailable=\(route) selectionKnown=\(known) appFocused=\(focused) nodes=\(nodeCount) composerCandidates=\(composerCandidates) \(flags) \(picker) \(relationships) home=\(home) source=\(source) failure=\(code)"
         let identity=summary+" "+reason
         if identity != lastObservationSummary {
             lastObservationSummary=identity
@@ -155,7 +156,7 @@ final class MacUIController: @unchecked Sendable {
         } else { observation = nil }
         var settings=Self.settings(state,models:models),settingsAt=now
         var source="native-observation"
-        if let confirmed { settings=confirmed.merging(settings) { _,observed in observed };source="native-menu-readback" }
+        if let confirmed { settings=settings.merging(confirmed) { _,confirmedValue in confirmedValue };source="native-menu-readback" }
         else if let old=lease,now-old.settingsAt <= 15,old.snapshot.sameTarget(state,text:true),old.snapshot.settings as NSDictionary == state.settings as NSDictionary,
                 let id=old.settings["model"] as? String,models.contains(where:{$0["model"] as? String == id}),settings["model"] == nil || settings["effort"] == nil {
             settings=old.settings.merging(settings) { _,observed in observed };settingsAt=old.settingsAt;source="recent-native-readback"
@@ -300,7 +301,6 @@ final class MacUIController: @unchecked Sendable {
             }
         }
         if before.nativeComposer || before.clientThreadID != nil, !operation.hasPrefix("set_keypad_draft_"), operation != "toggle_keypad_draft_plan",
-           !Self.draftTransactionOperations.contains(operation),
            !(operation == "navigate_keypad_ui" && Self.dialNavigationActions.contains(a["action"] as? String ?? "") && Self.canNavigateDial(before)) {
             throw CodexClientError.unavailable("This native composer has no exact chat ID; only settings controls are available.")
         }
@@ -350,18 +350,49 @@ final class MacUIController: @unchecked Sendable {
         }
         do {
             guard !before.blocked, before.editor != nil || (Self.threadMenuOperations.contains(operation) && before.threadMenuTrigger != nil) || ((Self.panelOperations.contains(operation) || Self.gitOperations[operation] != nil || operation == "run_keypad_environment_action") && before.thread != nil) || (operation == "open_keypad_feedback" && before.selectionKnown && before.route != nil && before.route != "conflict") else { throw CodexClientError.staleTarget }
+            if operation == "refresh_keypad_draft_target" {
+                guard before.draft else { throw CodexClientError.staleTarget }
+                func observeDraft() throws -> MacUISnapshot {
+                    try context.check()
+                    if let deadline = a["input_deadline_uptime"] as? Double, !deadline.isFinite || ProcessInfo.processInfo.systemUptime > deadline { throw CodexClientError.staleTarget }
+                    let current = try (io.observe ?? io.capture)(context, models.flatMap(Self.modelLabels))
+                    guard MacAX.same(before.window, current.window), before.app.processIdentifier == current.app.processIdentifier,
+                          !current.blocked, before.sameTarget(current, text: true), current.draft else { throw CodexClientError.staleTarget }
+                    return current
+                }
+                var current = try observeDraft()
+                var confirmed = Self.settings(current, models: models)
+                if let overrides = a["confirmed_settings"] as? [String: Any] {
+                    let deadline = ProcessInfo.processInfo.systemUptime + 1.0
+                    var matched = false
+                    while true {
+                        if let selected = Self.selection(current, models: models) {
+                            let modelMatches = (overrides["model"] as? String).map { selected.model == $0 } ?? true
+                            let effortMatches = (overrides["effort"] as? String).map { selected.effort == nil || selected.effort == $0 } ?? true
+                            if modelMatches && effortMatches {
+                                matched = true
+                                break
+                            }
+                        } else {
+                            matched = true
+                            break
+                        }
+                        guard ProcessInfo.processInfo.systemUptime < deadline else { break }
+                        Thread.sleep(forTimeInterval: 0.02)
+                        current = try observeDraft()
+                    }
+                    guard matched else { throw CodexClientError.outcomeUnknown }
+                    confirmed = Self.settings(current, models: models)
+                    for (key, value) in overrides { confirmed[key] = value }
+                }
+                return ["verified": true, "state": project(current, models: models, confirmed: confirmed, verification: verification)]
+            }
             if operation == "submit_keypad_composer", a["activation_only"] as? Bool == true || !targetWasForeground(before.app) {
                 // Restoring focus consumes this press; a later foreground press sends.
                 try front(); lease = nil
                 return ["activated":true,"submitted":false,"verified":true,"state":project(try fresh(),models:models)]
             }
             try front()
-            if operation == "refresh_keypad_draft_target" {
-                let current=try fresh()
-                let matchingKind=a["native_composer"] as? Bool == true ? current.nativeComposer:current.draft
-                guard matchingKind,current.menuItems.isEmpty else {throw CodexClientError.staleTarget}
-                return ["verified":true,"state":project(current,models:models,verification:verification)]
-            }
             guard before.settings as NSDictionary == (try fresh()).settings as NSDictionary else { throw CodexClientError.staleTarget }
             var after: MacUISnapshot
             switch operation {
@@ -461,7 +492,7 @@ final class MacUIController: @unchecked Sendable {
                         let node = current.nodes[choices[selected]]
                         // Sending, dictation and purchases are separate explicit operations.
                         let isModel = models.contains { model in
-                            [model["model"] as? String, model["displayName"] as? String].compactMap { $0 }.contains { Self.prefix(node.name, $0) }
+                            Self.modelLabels(model).contains { Self.prefix(node.name, $0) }
                         }
                         guard MacAX.same(node.element, current.picker?.element) || node.named(MacUISnapshot.addNames + MacUISnapshot.sketchNames) || isModel else {
                             throw CodexClientError.unavailable("Use the dedicated command or Codex menu for this action.")
@@ -489,11 +520,23 @@ final class MacUIController: @unchecked Sendable {
             case "open_keypad_sketch":
                 var current = try fresh()
                 if !current.sketchOpen {
-                    guard current.menuItems.isEmpty, let button = current.unique(current.controls, matching: { $0.enabled && $0.named(MacUISnapshot.addNames) }) else { throw CodexClientError.unavailable("The composer add menu is unavailable.") }
+                    guard current.menuItems.isEmpty, current.composerMenuItems.isEmpty, let button = current.unique(current.controls, matching: { $0.enabled && $0.named(MacUISnapshot.addNames) }) else { throw CodexClientError.unavailable("The composer add menu is unavailable.") }
                     try press(button)
-                    current = try wait { !$0.menuItems.isEmpty }
-                    guard let sketch = current.unique(current.menuItems, matching: { $0.named(MacUISnapshot.sketchNames) }) else { throw CodexClientError.unavailable("Sketch is unavailable in this composer.") }
-                    try press(sketch)
+                    current = try wait { !$0.menuItems.isEmpty || !$0.composerMenuItems.isEmpty }
+                    let items = Array(Set(current.menuItems + current.composerMenuItems))
+                    guard let sketch = current.unique(items, matching: { $0.named(MacUISnapshot.sketchNames) }) else { throw CodexClientError.unavailable("Sketch is unavailable in this composer.") }
+                    if current.composerMenuItems.contains(where: { MacAX.same(current.nodes[$0].element, sketch.element) }) {
+                        try MacUISnapshot.activateComposerMenuItem(
+                            matching: { node, _ in node.named(MacUISnapshot.sketchNames) },
+                            initial: current,
+                            io: io,
+                            context: context,
+                            capture: { try fresh() },
+                            mutation: { mutated = true }
+                        )
+                    } else {
+                        try press(sketch)
+                    }
                 }
                 after = try wait({ $0.sketchOpen }, preserveTarget: false)
             case "insert_keypad_skill":
@@ -511,7 +554,7 @@ final class MacUIController: @unchecked Sendable {
                 guard let button = current.unique(current.controls, matching: { $0.enabled && $0.named(labels) }) else { throw CodexClientError.unavailable("Native dictation is unavailable.") }
                 try press(button)
                 after = try wait({ state in state.controls.contains { state.nodes[$0].named(MacUISnapshot.voiceStopNames) } != wasRecording }, preserveTarget: false)
-            case "get_keypad_draft_selection", "set_keypad_draft_model", "set_keypad_draft_reasoning", "set_keypad_draft_fast", "toggle_keypad_draft_plan":
+            case "set_keypad_draft_model", "set_keypad_draft_reasoning", "set_keypad_draft_fast", "toggle_keypad_draft_plan":
                 let matchingKind = a["native_composer"] as? Bool == true ? before.nativeComposer : before.draft
                 guard matchingKind, before.menuItems.isEmpty else { throw CodexClientError.staleTarget }
                 var current=try fresh()
@@ -559,18 +602,7 @@ final class MacUIController: @unchecked Sendable {
                         }
                     }
                 }
-                if operation == "get_keypad_draft_selection" {
-                    current=try openPicker()
-                    try verifyExpected(current)
-                    guard let selected=Self.selection(current,models:models),let effort=selected.effort,
-                          let position=selected.position,let count=selected.count else {
-                        throw CodexClientError.unavailable("Native model and Power selection are unavailable.")
-                    }
-                    let confirmed=Self.settings(current,models:models)
-                    after=try closePicker()
-                    return ["verified":true,"selection":["model":selected.model,"effort":effort,"position":position,"count":count],
-                            "state":project(after,models:models,confirmed:confirmed,verification:verification)]
-                } else if operation == "toggle_keypad_draft_plan" {
+                if operation == "toggle_keypad_draft_plan" {
                     // Plan does not require a resolved model or a Power value.
                     if let expected=(a["expected_settings"] as? [String:Any])?["collaborationMode"] as? NSDictionary,
                        expected != Self.settings(current,models:models)["collaborationMode"] as? NSDictionary { throw CodexClientError.staleTarget }
@@ -581,10 +613,22 @@ final class MacUIController: @unchecked Sendable {
                     } else {
                         guard let add=current.unique(current.controls,matching:{$0.enabled && $0.named(MacUISnapshot.addNames)}) else { throw CodexClientError.unavailable("Plan control is unavailable.") }
                         openedAdd=true; try press(add); current=try wait { !$0.composerMenuItems.isEmpty }
-                        guard let plan=current.unique(current.composerMenuItems,matching:{ node in
-                            current.strings(under:node.element).contains { text in MacUISnapshot.planMenuNames.contains { $0.caseInsensitiveCompare(text.trimmingCharacters(in:.whitespacesAndNewlines)) == .orderedSame } }
-                        }) else { throw CodexClientError.unavailable("Plan is unavailable in the composer menu.") }
-                        try press(plan)
+                        let matchesPlanItem: (AXNode, MacUISnapshot) -> Bool = { node, state in
+                            state.strings(under:node.element).contains { text in
+                                let trimmed = text.trimmingCharacters(in:.whitespacesAndNewlines)
+                                return MacUISnapshot.planMenuNames.contains { $0.caseInsensitiveCompare(trimmed) == .orderedSame } ||
+                                    ["Plan mode ", "计划模式 ", "計劃模式 ", "規劃模式 "].contains { trimmed.lowercased().hasPrefix($0.lowercased()) }
+                            }
+                        }
+                        guard current.unique(current.composerMenuItems,matching:{ matchesPlanItem($0, current) }) != nil else { throw CodexClientError.unavailable("Plan is unavailable in the composer menu.") }
+                        try MacUISnapshot.activateComposerMenuItem(
+                            matching: matchesPlanItem,
+                            initial: current,
+                            io: io,
+                            context: context,
+                            capture: { try fresh() },
+                            mutation: { mutated = true }
+                        )
                     }
                     after=try wait { $0.plan != before.plan && $0.menuItems.isEmpty && $0.composerMenuItems.isEmpty }
                 } else if operation == "set_keypad_draft_fast" {
@@ -612,17 +656,24 @@ final class MacUIController: @unchecked Sendable {
                             }
                         } else {
                             current=try openPicker()
-                            guard let speed=current.unique(current.menuItems+current.controls,matching: { node in
-                                node.named(["Speed","速度"]) || ["Speed ","速度 "].contains(where:{node.name.hasPrefix($0)})
-                            }) else { throw CodexClientError.unavailable("Native Speed menu is unavailable.") }
-                            try press(speed); current=try wait { Self.speedChoices($0).count >= 2 }
-                            let choices=Self.speedChoices(current)
-                            guard let at=choices.firstIndex(where:{$0.1 == initial}) else { throw CodexClientError.staleTarget }
-                            let next=toggle ? choices[(at+1)%choices.count] : choices.first(where: { ($0.1 != .standard) == desired })
-                            guard let next else { throw CodexClientError.unavailable("Requested speed is unavailable.") }
-                            try press(next.0)
-                            current=try wait { $0.picker?.expanded != true || Self.speed($0) == next.1 }
-                            if Self.speed(current) == nil { current=try openPicker() }
+                            let toggleNames=["Enable standard mode","启用标准模式","啟用標準模式","Enable fast mode","启用快速模式","啟用快速模式"]
+                            if let directToggle=current.unique(current.menuItems+current.controls,matching:{$0.enabled && $0.named(toggleNames)}) {
+                                try press(directToggle)
+                                current=try wait { $0.picker?.expanded != true || Self.speed($0).map { $0 != initial } == true }
+                                if Self.speed(current) == nil { current=try openPicker() }
+                            } else {
+                                guard let speed=current.unique(current.menuItems+current.controls,matching: { node in
+                                    node.named(["Speed","速度"]) || ["Speed ","速度 "].contains(where:{node.name.hasPrefix($0)})
+                                }) else { throw CodexClientError.unavailable("Native Speed menu is unavailable.") }
+                                try press(speed); current=try wait { Self.speedChoices($0).count >= 2 }
+                                let choices=Self.speedChoices(current)
+                                guard let at=choices.firstIndex(where:{$0.1 == initial}) else { throw CodexClientError.staleTarget }
+                                let next=toggle ? choices[(at+1)%choices.count] : choices.first(where: { ($0.1 != .standard) == desired })
+                                guard let next else { throw CodexClientError.unavailable("Requested speed is unavailable.") }
+                                try press(next.0)
+                                current=try wait { $0.picker?.expanded != true || Self.speed($0) == next.1 }
+                                if Self.speed(current) == nil { current=try openPicker() }
+                            }
                         }
                         current=try wait { state in
                             guard let value=Self.speed(state) else { return false }
@@ -640,9 +691,6 @@ final class MacUIController: @unchecked Sendable {
                     current=try openPicker()
                     try verifyExpected(current)
                     var selected=Self.selection(current,models:models)
-                    if let seedModel=a["seed_model"] as? String,let seedEffort=a["seed_effort"] as? String {
-                        guard selected?.model == seedModel,selected?.effort == seedEffort else {throw CodexClientError.staleTarget}
-                    }
                     var requestedModel=a["model"] as? String
                     var requestedEffort=a["effort"] as? String
                     if let quick=a["quick_models"] as? [[String:Any]] {
@@ -685,14 +733,11 @@ final class MacUIController: @unchecked Sendable {
                     }
                     if let requested,initial.effort != requested {
                         guard efforts.contains(requested) else { throw CodexClientError.invalid("Unsupported native effort.") }
-                        if a["seed_model"] == nil,let slider=current.powerSlider,slider.valueSettable,
+                        if let slider=current.powerSlider,slider.valueSettable,
                            let value=NativeComposerSelection.sliderValue(selection:initial,effort:requested,models:models,minimum:slider.minimum,maximum:slider.maximum) {
                             _=try fresh();mutated=true;try io.set(slider.element,"AXValue",NSNumber(value:value))
                             current=try wait {Self.selection($0,models:models)?.effort == requested}
                         } else {
-                            // The verified blank-draft transaction never trusts
-                            // AXValue: it can move the accessibility proxy without
-                            // invoking the renderer's setting callback.
                             for _ in 0..<efforts.count {
                                 guard let value=Self.selection(current,models:models),value.model == initial.model,
                                       let effort=value.effort,let at=efforts.firstIndex(of:effort),let to=efforts.firstIndex(of:requested) else { throw CodexClientError.staleTarget }

@@ -256,7 +256,12 @@ final class NativeComposerReplayTests:XCTestCase {
     func testDescendantHelpAndPowerAnnouncementsResolveSelection() {
         let model=NativeTraceRig.models
         XCTAssertEqual(NativeComposerSelection.parse(["Select model","6.1-sol","Extra high"],models:model)?.effort,"xhigh")
+        XCTAssertEqual(NativeComposerSelection.parse(["GPT-6.1 Sol High"],models:model),NativeComposerSelection.Selection(model:"gpt-6.1-sol",effort:"high"))
+        XCTAssertEqual(NativeComposerSelection.parse(["6.1 Sol","Extra high"],models:model),NativeComposerSelection.Selection(model:"gpt-6.1-sol",effort:"xhigh"))
         XCTAssertEqual(NativeComposerSelection.power(["Power","6.1-sol high, 3 of 4"],models:model)?.position,3)
+        XCTAssertEqual(NativeComposerSelection.power(["Power","6.1 Sol high, 3 of 4"],models:model)?.position,3)
+        XCTAssertTrue(MacUISnapshot.matchesPicker(["GPT-6.1 Sol High"],modelLabels:model.flatMap(NativeComposerSelection.labels)))
+        XCTAssertTrue(MacUISnapshot.matchesPicker(["6 Luna Low"],modelLabels:model.flatMap(NativeComposerSelection.labels)))
         XCTAssertNil(NativeComposerSelection.parse(["Select model"],models:model))
         XCTAssertNil(NativeComposerSelection.parse(["6.1-sol high 4 of 4"],models:model))
         XCTAssertNil(NativeComposerSelection.parse(["6.1-sol high","6-luna low"],models:model))

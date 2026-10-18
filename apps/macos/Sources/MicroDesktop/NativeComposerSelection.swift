@@ -13,12 +13,31 @@ enum NativeComposerSelection {
     private static let positionPatterns=["(?<![0-9])([0-9]+)\\s+of\\s+([0-9]+)(?![0-9])", "第\\s*([0-9]+)\\s*[项項個]\\s*[，,]\\s*共\\s*([0-9]+)\\s*[项項個]"]
     enum Speed: String { case standard, fast, ultrafast }
 
+    private static func formattedDisplayNames(_ raw: String) -> [String] {
+        let trimmed = String(raw.drop(while: { $0.isWhitespace }))
+        guard trimmed.lowercased().hasPrefix("gpt") else { return [raw] }
+        let startsWithGptDigit = trimmed.range(of: "^gpt-[0-9]", options: [.regularExpression, .caseInsensitive]) != nil
+        let separator = startsWithGptDigit ? " " : "-"
+        let words = raw.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+        let formatted = words.map { word -> String in
+            let parts = word.split(separator: "-", omittingEmptySubsequences: false).enumerated().map { index, part -> String in
+                let token = String(part)
+                if token.lowercased() == "gpt" { return "GPT" }
+                if token.lowercased() == "oai" { return "OAI" }
+                if index > 0, let first = token.first { return String(first).uppercased() + token.dropFirst() }
+                return token
+            }.joined(separator: separator)
+            return parts.replacingOccurrences(of: "^GPT (?=[0-9])", with: "GPT-", options: .regularExpression)
+        }.joined(separator: " ")
+        let stripped = formatted.replacingOccurrences(of: "^GPT-", with: "", options: [.regularExpression, .caseInsensitive])
+        return stripped != formatted ? [raw, formatted, stripped] : [raw, formatted]
+    }
     static func labels(_ model: [String:Any]) -> [String] {
-        let names=[model["model"] as? String,model["displayName"] as? String].compactMap { $0 }
+        let names = [model["model"] as? String, model["displayName"] as? String].compactMap { $0 }.flatMap(formattedDisplayNames)
         return Array(Set(names + names.compactMap { name in
             for prefix in ["gpt-", "gpt "] where name.lowercased().hasPrefix(prefix) { return String(name.dropFirst(prefix.count)) }
             return nil
-        }))
+        })).filter { !$0.isEmpty }
     }
     private static func matches(_ text: String, labels: [(String,String)]) -> Set<String> {
         let candidates=labels.flatMap { id,label -> [(String,NSRange)] in
@@ -40,7 +59,7 @@ enum NativeComposerSelection {
         }
         let ids=matches(text,labels:modelLabels)
         guard ids.count == 1, let id=ids.first, let model=models.first(where:{$0["model"] as? String == id}) else { return nil }
-        let translated:[String:[String]]=["none":["None","无","無"],"minimal":["Minimal","最低","极低","極低"],"low":["Low","Light","低","轻度","輕度"],"medium":["Medium","中","中等"],"high":["High","高"],"xhigh":["Extra high","超高","极高","極高"],"max":["Max","最高"],"ultra":["Ultra"]]
+        let translated:[String:[String]]=["none":["None","无","無"],"minimal":["Minimal","最低","极低","極低"],"low":["Low","Light","低","轻度","輕度"],"medium":["Medium","Standard","中","中等","标准","標準"],"high":["High","Extended","高","扩展","擴展","延伸"],"xhigh":["Extra high","XHigh","超高","极高","極高"],"max":["Max","最高"],"ultra":["Ultra"]]
         let efforts=(model["supportedReasoningEfforts"] as? [[String:Any]] ?? []).compactMap { $0["reasoningEffort"] as? String }
         let found=matches(text,labels:efforts.flatMap { effort in ((translated[effort] ?? [])+[effort]).map { (effort,$0) } })
         guard found.count <= 1 else { return nil }

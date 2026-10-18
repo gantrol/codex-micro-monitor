@@ -118,6 +118,7 @@ struct MicroViewState {
     private var subscriptions = Set<AnyCancellable>()
     private var presentationScheduled = false
     private var lifecycleRevision = 0
+    private var widgetLifecycleRevision = 0
     private var closingTransport: Task<Void, Never>?
 
     init(settings: Settings, session: MicroSession? = nil) {
@@ -199,6 +200,7 @@ struct MicroViewState {
     }
     func stop() {
         lifecycleRevision += 1
+        widgetLifecycleRevision += 1
         session.stop()
         guard closingTransport == nil else { return }
         let session = self.session
@@ -222,6 +224,30 @@ struct MicroViewState {
         return session.prepareTask(index, open: open)
     }
     func select(_ id: String, open: Bool = false) { session.select(id, open: open) }
+    func openWidgetThread(_ id: String, scope: String) async {
+        let revision = widgetLifecycleRevision
+        await closingTransport?.value
+        guard !Task.isCancelled, revision == widgetLifecycleRevision else { return }
+        closingTransport = nil
+        session.start()
+        // A cold widget launch can arrive during the catalogue's initial read.
+        if session.refreshing {
+            for await refreshing in session.$refreshing.values {
+                if !refreshing || Task.isCancelled { break }
+            }
+        } else { await session.refresh() }
+        guard !Task.isCancelled, revision == widgetLifecycleRevision, MicroWidgetSnapshot.scopeID(session.rosterScope) == scope,
+              let row = session.knownThreads.first(where: { $0.id == id }), session.canOpen(row) else { return }
+        session.select(id, open: true)
+    }
+    func activateCodexFromWidget() async {
+        let revision = widgetLifecycleRevision
+        await closingTransport?.value
+        guard !Task.isCancelled, revision == widgetLifecycleRevision else { return }
+        closingTransport = nil
+        session.start()
+        session.activateCodex()
+    }
     func markUnread(_ row: ThreadRow) { session.markUnread(row) }
     func binding(for key: String) -> [String: Any]? { viewState.bindings[KeySlots.id(key)] }
     func keycap(for key: String) -> String { viewState.keycaps[KeySlots.id(key)] ?? key }

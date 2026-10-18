@@ -73,18 +73,24 @@ enum NativeFilePicker {
         // Retain the unique owned popup even if the requested item is absent.
         let roots=Set(opened.composerMenuItems.compactMap { index -> Int? in
             var parent=opened.nodes[index].parent
+            var candidate:Int?
             while let at=parent {
-                if ["AXMenu","AXList","AXListBox"].contains(opened.nodes[at].role) {return at}
+                if MacUISnapshot.isMenuContainer(opened.nodes[at]) {candidate=at}
                 parent=opened.nodes[at].parent
             }
-            return nil
+            return candidate
         })
         guard roots.count == 1,let root=roots.first else {throw CodexClientError.unavailable("The composer menu is ambiguous.")}
         popup=opened.nodes[root].element
-        guard let item=opened.unique(opened.composerMenuItems,matching:{$0.enabled && $0.named(kind.items)}) else {throw CodexClientError.unavailable("The requested attachment command is unavailable in this composer.")}
-        let ready=try capture()
-        guard ready.composerMenuItems.contains(where:{MacAX.same(ready.nodes[$0].element,item.element) && ready.nodes[$0].enabled && ready.nodes[$0].name == item.name}) else {throw CodexClientError.staleTarget}
-        mutation();try io.press(item.element)
+        guard opened.unique(opened.composerMenuItems,matching:{$0.enabled && $0.named(kind.items)}) != nil else {throw CodexClientError.unavailable("The requested attachment command is unavailable in this composer.")}
+        try MacUISnapshot.activateComposerMenuItem(
+            matching: { node, _ in node.enabled && node.named(kind.items) },
+            initial: opened,
+            io: io,
+            context: context,
+            capture: capture,
+            mutation: mutation
+        )
         try waitPicker()
         popup=nil
         return "menu"

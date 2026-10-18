@@ -210,6 +210,8 @@ import Combine
     private var sections:[String:UIView]=[:]
     private var editor:KeyEditorViewController?
     private var lastSignature=""
+    private var pendingSection:String?
+    private var lastScrollSize:CGSize = .zero
 
     init(settings:Settings,model:MicroViewModel) {
         self.settings=settings; self.model=model
@@ -253,6 +255,12 @@ import Combine
         refresh()
     }
     override func viewDidAppear(_ animated:Bool) { super.viewDidAppear(animated); becomeFirstResponder() }
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard scroll.bounds.size != lastScrollSize else { return }
+        lastScrollSize=scroll.bounds.size
+        scrollToPendingSection()
+    }
     override var canBecomeFirstResponder:Bool { true }
     override var keyCommands:[UIKeyCommand]? {
         [UIKeyCommand(input:UIKeyCommand.inputEscape,modifierFlags:[],action:#selector(escape)),
@@ -445,14 +453,21 @@ import Combine
     }
     func open(key:String?,section:String?) {
         loadViewIfNeeded(); view.layoutIfNeeded()
-        if let key { editKey(key) }
-        else if let section, let target=sections[section] {
-            let top=target.convert(target.bounds,to:content).minY+12
-            let limit=max(0,scroll.contentSize.height-scroll.bounds.height)
-            scroll.setContentOffset(CGPoint(x:0,y:min(limit,max(0,top))),animated:false)
-            scroll.layoutIfNeeded()
+        if let key { pendingSection=nil; editKey(key) }
+        else if let section {
+            pendingSection=section
+            lastScrollSize=scroll.bounds.size
+            scrollToPendingSection()
         }
         becomeFirstResponder()
+    }
+    private func scrollToPendingSection() {
+        guard let section=pendingSection, let target=sections[section] else { return }
+        content.layoutIfNeeded(); scroll.layoutIfNeeded()
+        let top=target.convert(target.bounds,to:content).minY+12
+        let limit=max(0,scroll.contentSize.height-scroll.bounds.height)
+        scroll.setContentOffset(CGPoint(x:0,y:min(limit,max(0,top))),animated:false)
+        scroll.layoutIfNeeded()
     }
     private func editKey(_ key:String) {
         guard editor == nil, model.layoutAvailable || settings.layout.keys[KeySlots.id(key)] != nil else { return }

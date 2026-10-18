@@ -35,20 +35,33 @@ import OSLog
         if let scrollMonitor { NSEvent.removeMonitor(scrollMonitor) }
         // Local to Micro's window. Consume only events claimed by a visible dial,
         // so Catalyst cannot dispatch the same wheel movement a second time.
-        scrollMonitor=NSEvent.addLocalMonitorForEvents(matching:.scrollWheel) { [weak self] event in
+        var consumedSecondary = false
+        scrollMonitor=NSEvent.addLocalMonitorForEvents(matching:[.scrollWheel, .rightMouseDown, .rightMouseUp, .leftMouseDown, .leftMouseUp]) { [weak self] event in
             guard let self,let window=self.window,event.window === window,window.isVisible,
                   let content=window.contentView,content.bounds.width>0,content.bounds.height>0 else { return event }
+            if event.type == .rightMouseUp || event.type == .leftMouseUp {
+                guard consumedSecondary else { return event }
+                consumedSecondary = false
+                return nil
+            }
             let point=content.convert(event.locationInWindow,from:nil)
             let x=(point.x-content.bounds.minX)/content.bounds.width
             let y=(point.y-content.bounds.minY)/content.bounds.height
+            let ny=content.isFlipped ? y : 1-y
+            if event.type == .rightMouseDown || (event.type == .leftMouseDown && event.modifierFlags.contains(.control)) {
+                consumedSecondary = input(x,ny,0,0,false,"secondary")
+                return consumedSecondary ? nil : event
+            }
+            guard event.type == .scrollWheel else { return event }
+            if event.phase == .mayBegin { return event }
             let phase:String
             if !event.momentumPhase.isEmpty { phase="momentum" }
             else if event.phase.contains(.cancelled) { phase="cancel" }
             else if event.phase.contains(.ended) { phase="end" }
-            else if event.phase.contains(.began) || event.phase.contains(.mayBegin) { phase="begin" }
+            else if event.phase.contains(.began) { phase="begin" }
             else if event.phase.contains(.changed) || event.phase.contains(.stationary) { phase="change" }
             else { phase="wheel" }
-            return input(x,content.isFlipped ? y : 1-y,event.scrollingDeltaX,event.scrollingDeltaY,event.hasPreciseScrollingDeltas,phase) ? nil : event
+            return input(x,ny,event.scrollingDeltaX,event.scrollingDeltaY,event.hasPreciseScrollingDeltas,phase) ? nil : event
         }
     }
 
@@ -121,6 +134,7 @@ import OSLog
         observers.append(workspace.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 if self?.window?.isVisible == true { self?.permissionSetup?.resume(); self?.event?("show") }
+                else { self?.event?("wake") }
             }
         })
     }

@@ -41,7 +41,7 @@ public enum MacPreviewCapabilities {
         "conditional": ["photos require an observed Add photos item or a valid explicitly configured composer.addPhotos shortcut; no default shortcut is guessed","fork requires installed deferGoalContinuation schema; creation is read back before opening",
             "new draft and Review deep links; navigation verified only with exact native route/panel evidence",
             "foreground identity, composer submit, sidebar/history, composer selection, scrolling and Sketch require Accessibility and unambiguous native controls",
-            "blank-draft settings use observed Power, Speed and Plan controls with readback; configured shortcuts are optional",
+            "blank-draft model and reasoning update user-saved-config directly with native readback; blank-draft Fast, Plan and ID-less client composers use observed Power, Speed and Plan controls or configured shortcuts with readback",
             "ID-less composer settings additionally require one selected sidebar element plus stable window, composer and picker identities; unavailable for known non-chat or conflicting routes",
             "Skill HTML clipboard insertion preserves concurrent copies and verifies the copied-back mention name and path; unavailable structure is an unknown outcome",
             "dictation requires the actual native control and Codex microphone permission",

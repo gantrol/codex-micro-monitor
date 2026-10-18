@@ -162,7 +162,7 @@ preview.13 对 OAI / FOLD 重新执行编辑、默认动作切换、保存和实
 
 本次再次 fetch 三个远端，基线未变化。重点对照 Windows 产品层 `Services/CodexDraftComposerModelSelector.Context.cs`、`.Observation.cs`、`.Reasoning.cs` 与模型选择主流程，以及共享控制层 `CodexUiComposerModes.cs`。只看共享模式的快捷键入口会遗漏产品层 Power 原生控制，这是先前结论的不足。
 
-只读检查本机安装包静态资源：命令定义中 Fast 的含义已是 Standard / Fast / Ultrafast 三档循环；四个草稿模式命令没有默认绑定，本机也未配置这四个绑定。Power 为可聚焦控件，包含模型 / 强度 / 位置总数的可访问播报并处理左右箭头；Plan 徽标可退出模式，新增候选列表使用“Plan mode / 计划模式 / 計劃模式 / 規劃模式”。这些是静态证据，不是读取真实 AX 树，也没有修改安装包或用户快捷键。
+只读检查本机安装包静态资源：命令定义中 Fast 的含义已是 Standard / Fast / Ultrafast 三档循环；四个草稿模式命令没有默认绑定，本机也未配置这四个绑定。Mac 新会话（`draft == true`）的模型与思考强度直接绑定 `user-saved-config`（`config.toml` 的 `model` 与 `model_reasoning_effort`），通过 `config/batchWrite` 单次写入目标值并广播 `query-cache-invalidate`（`["user-saved-config"]`，`version: 0`）即可直接更新界面并从原生按钮回读，无需弹出或操作原生 Power 菜单控件，更禁止来回调节；Fast 因渲染层内存状态覆盖 `service_tier` 且闭合按钮不暴露速度档位，保留通过原生菜单／快捷键切换。原生 Power 菜单单向调节仅保留给无 `user-saved-config` 绑定的 `native_composer` 回退或隔离控制器回放。Plan 徽标可退出模式，新增候选列表使用“Plan mode / 计划模式 / 計劃模式 / 規劃模式”。这些是静态证据，不是读取真实 AX 树，也没有修改安装包或用户快捷键。
 
 | 场景 | 旧 Mac 问题 / Windows 依据 | preview.14 与回放 |
 | --- | --- | --- |
@@ -170,12 +170,12 @@ preview.13 对 OAI / FOLD 重新执行编辑、默认动作切换、保存和实
 | N02：Plan 快捷键焦点 | Windows 先定位 composer；Mac 曾直接发送 | 先聚焦同一输入框并回读，再发送 |
 | N03 / N04：Fast → Ultrafast | Bool 将两种速度折叠，变化无法确认 | 保留三档状态，菜单或快捷键路径都逐次回读 |
 | N17 / N18：指定关闭 Fast、菜单自动收起 | 一次循环可能只到 Ultrafast；关闭后通用触发器无读值 | 每次确认后继续到 Standard；必要时重开 Speed 读取 |
-| N05 / N06 / N12：MIND± | Windows Power 原生强度路径无需用户快捷键 | 按目录校验播报位置与总数，使用范围值或聚焦后的左右键；中英文与最高档无多写 |
-| N07 / N14：A/B 当前模型不可读 | 闭合触发器缺模型时猜 A/B 初值 | 打开 Power 读取真实初值后选择，N14 贯穿面板队列至原生控制器 |
+| N05 / N06 / N12：MIND± | 新会话草稿支持 `user-saved-config` 直接写入；原生回退使用单向 Power 控制 | Mac 空白新会话直接通过 `config/batchWrite` + `query-cache-invalidate` 单次更新思考强度，不弹出控件、不来回调节；原生控制器回放验证单向直达与最高档无多写 |
+| N07 / N14：A/B 当前模型不可读 | 闭合触发器缺模型时猜 A/B 初值 | 空白新会话直接读取/写入 `user-saved-config`；无配置边界时打开 Power 读取真实初值后单向选择，N14 贯穿面板队列至原生控制器 |
 | N08：模型支持集不同 | 组合请求可能部分写入 | 先验证目标模型支持请求强度，再换模型 |
-| N09 / N15：Power 冲突或外部换模型 | 旧触发器 / 缓存不能授权写入 | 权威 Power 冲突拒绝；已验证结果最多短暂保留 15 秒，后续写入必须重开回读 |
+| N09 / N15：Power 冲突或外部换模型 | 旧触发器 / 缓存不能授权写入 | 权威 Power 冲突拒绝；已验证结果最多短暂保留 15 秒 |
 | N10 / N11 / N13：目标切换、权限弹窗、缺菜单 | 与 Windows 一样保持精确目标 | 不向另一目标发键，不自动批准弹窗；只关闭自己打开且仍属于原目标的菜单 |
-| N16：选择模型二级菜单，选择后关闭 | Windows 进入 Select model 子菜单并回读 | Mac 补齐二级菜单；关闭后重开 Power 核对目标模型与强度 |
+| N16：选择模型二级菜单，选择后关闭 | Windows 进入 Select model 子菜单并回读 | 原生菜单回退支持二级菜单单向选择并核对目标模型与强度 |
 | 白旋钮连续滑动、反向 | Mac 控制期间丢弃导航输入 | 同一原生目标排队及回读，反向保序、过期 / 切换目标取消 |
 | 右键、滚轮、触控板 | 次要按钮可能进入主按压追踪 | 主控件拒绝次要按钮，菜单取消待定主按；6 点阈值 / 12 点档距 / 默认方向与 Windows 一致 |
 | LAB / SETUP / APPS | Mac 未接入；安装包支持 settings / skills 深链 | 三键帽分别验证默认动作与保存后路由；指定 Codex 应用打开，页面回读与启动接受分开 |

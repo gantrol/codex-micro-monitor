@@ -5,6 +5,12 @@ import Darwin
 struct MicroEntry {
     @MainActor static func main() {
         signal(SIGPIPE,SIG_IGN)
+        if let index=CommandLine.arguments.firstIndex(of:"--export-widget-artwork") {
+            guard CommandLine.arguments.indices.contains(index+1) else { exit(2) }
+            do { try WidgetArtwork.export(to: URL(fileURLWithPath: CommandLine.arguments[index+1], isDirectory: true)) }
+            catch { fputs("Widget artwork export failed: \(error.localizedDescription)\n", stderr); exit(1) }
+            return
+        }
         if let index=CommandLine.arguments.firstIndex(of:"--export-design") {
             guard CommandLine.arguments.indices.contains(index+1) else { fputs("--export-design requires an output directory.\n",stderr); exit(2) }
             do {

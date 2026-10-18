@@ -2,21 +2,24 @@ import UIKit
 import Combine
 
 final class ShellView: UIView {
+    var transparentPanel = false
     override init(frame: CGRect) { super.init(frame: frame); isOpaque = false; backgroundColor = .clear; isUserInteractionEnabled = false; contentMode = .redraw }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override func draw(_ rect: CGRect) {
         guard let c = UIGraphicsGetCurrentContext() else { return }
         let s = contentScaleFactor
         let outer = Paint.rect(23,23,544,564)
-        Paint.effect(c,box:outer.offsetBy(dx:0,dy:7),radius:30,scale:s,opacity:0.29) { Paint.shape($0,outer.offsetBy(dx:0,dy:7),66,color:0x526E7B80) }
-        Paint.shade(c,outer,66,[Stop(0xE4FFFFFF,0),Stop(0xD6F7FAF9,0.48),Stop(0xC8E8F0EF,0.78),Stop(0xB8C7D3D3,1)])
+        if !transparentPanel {
+            Paint.effect(c,box:outer.offsetBy(dx:0,dy:7),radius:30,scale:s,opacity:0.29) { Paint.shape($0,outer.offsetBy(dx:0,dy:7),66,color:0x526E7B80) }
+            Paint.shade(c,outer,66,[Stop(0xE4FFFFFF,0),Stop(0xD6F7FAF9,0.48),Stop(0xC8E8F0EF,0.78),Stop(0xB8C7D3D3,1)])
+        }
         Paint.stroke(c,outer,66,0xD9FFFFFF,2)
         c.saveGState(); c.clip(to:Paint.rect(25,25,540,560))
         c.saveGState(); c.setAlpha(0.94)
         Paint.shade(c,Paint.rect(29,29,532,551),61,[Stop(0xFFFFFFFF,0),Stop(0xB8DFF8F3,0.16),Stop(0x76FFFFFF,0.46),Stop(0x8BC6EEE5,0.78),Stop(0xD6FFFFFF,1)],diagonal:true,stroke:2); c.restoreGState()
-        Paint.shape(c,Paint.rect(35,35,520,540),56,color:0x14748788)
+        if !transparentPanel { Paint.shape(c,Paint.rect(35,35,520,540),56,color:0x14748788) }
         Paint.shade(c,Paint.rect(35,35,520,540),56,[Stop(0x78FFFFFF,0),Stop(0x5EACBDBB,0.58),Stop(0x75859498,1)],stroke:1)
-        Paint.shade(c,Paint.rect(43,43,504,524),50,[Stop(0xF4FFFFFF,0),Stop(0xEEF8FAF8,0.5),Stop(0xE9F1F5F2,0.82),Stop(0xE3E1EAE8,1)])
+        if !transparentPanel { Paint.shade(c,Paint.rect(43,43,504,524),50,[Stop(0xF4FFFFFF,0),Stop(0xEEF8FAF8,0.5),Stop(0xE9F1F5F2,0.82),Stop(0xE3E1EAE8,1)]) }
         Paint.stroke(c,Paint.rect(43,43,504,524),50,0xA8FFFFFF,1)
         c.saveGState(); c.setAlpha(0.15)
         Paint.shade(c,Paint.rect(113,562,364,5),3,[Stop(0x0098E8D5,0),Stop(0xA598E8D5,0.48),Stop(0x0098E8D5,1)],horizontal:true); c.restoreGState()
@@ -299,6 +302,8 @@ final class HardwareControl: UIControl {
     let settings: Settings
     let model: MicroViewModel
     private var settingsPage: SettingsViewController?
+    private let widgetPublisher = WidgetPublisher()
+    private var widgetNavigation: Task<Void, Never>?
     init() {
         let settings = Settings(); self.settings = settings; model = MicroViewModel(settings:settings)
         super.init(nibName:nil,bundle:nil)
@@ -371,11 +376,16 @@ final class HardwareControl: UIControl {
             self?.routeScroll(x:x,y:y,dx:dx,dy:dy,precise:precise,phase:phase) ?? false
         }
         model.objectWillChange.receive(on:DispatchQueue.main).sink { [weak self] _ in self?.update() }.store(in:&subscriptions)
+        model.$viewState.sink { [weak self] state in self?.widgetPublisher.update(state) }.store(in: &subscriptions)
         settings.objectWillChange.receive(on:DispatchQueue.main).sink { [weak self] _ in self?.cancelDialGestures(); self?.model.preferencesChanged(); self?.configure(); self?.update() }.store(in:&subscriptions)
         Desktop.services?.install { [weak self] event in
             guard let self else { return }
             switch event {
-            case "hide","sleep": self.closeSettings(); self.cancelDialGestures(); self.dismiss(animated:false); self.model.stop(); Task { await self.model.closeTransport() }
+            case "hide","sleep":
+                self.closeSettings(); self.cancelDialGestures(); self.dismiss(animated:false)
+                self.widgetNavigation?.cancel()
+                if event == "sleep" || !self.widgetPublisher.available { self.model.stop(); Task { await self.model.closeTransport() } }
+            case "wake": if self.widgetPublisher.available { self.model.start() }
             case "show": self.model.start()
             case "observationChanged": self.model.recoverObservation()
             case "refresh": Task { await self.model.refresh(); self.model.refreshControls() }
@@ -425,6 +435,25 @@ final class HardwareControl: UIControl {
         if phase == "momentum" { return nativeScrollOwned }
         if phase == "begin" || phase == "wheel" { nativeScrollOwned=false }
         guard settingsPage == nil,presentedViewController == nil,!canvas.isHidden,view.window != nil else { return false }
+        if phase == "secondary" {
+            let point=CGPoint(x:view.bounds.minX+x*view.bounds.width,y:view.bounds.minY+y*view.bounds.height)
+            guard let hit=view.hitTest(point,with:nil) else { return false }
+            let controls:[HardwareControl]=[dial,quota]
+            if let control=controls.first(where: { !$0.isHidden && (hit === $0 || hit.isDescendant(of:$0)) }) {
+                cancelDialGestures()
+                control.input.inspect?()
+                return true
+            }
+            var v:UIView?=hit
+            while let current=v, current !== canvas {
+                if current is UIControl { return false }
+                v=current.superview
+            }
+            guard v === canvas else { return false }
+            cancelDialGestures()
+            Desktop.services?.showMenu()
+            return true
+        }
         if phase == "begin" || phase == "wheel" || (phase == "change" && nativeScrollControl == nil) {
             let point=CGPoint(x:view.bounds.minX+x*view.bounds.width,y:view.bounds.minY+y*view.bounds.height)
             let hit=view.hitTest(point,with:nil)
@@ -474,8 +503,8 @@ final class HardwareControl: UIControl {
             key.isEnabled=model.canUseTask(i)
             key.accessibilityLabel=model.taskLabel(at:i); key.accessibilityValue=tr(light.signal.rawValue)
             key.requiredTapCount=settings.layout.singleTapAgentKeys ? 1 : 2
-            key.selectOnly={ [weak self] in self?.model.prepareTask(i,open:false)?() }
-            key.prepare={ [weak self] in self?.model.prepareTask(i) }
+            key.selectOnly={ [weak self] in self?.widgetNavigation?.cancel(); self?.model.prepareTask(i,open:false)?() }
+            key.prepare={ [weak self] in self?.widgetNavigation?.cancel(); return self?.model.prepareTask(i) }
             key.edit = row.flatMap { row in model.canUseTask(i) && model.canMarkUnread(row) ? { [weak self] in
                 guard let self,self.model.canUseTask(i),self.model.taskRow(at:i)?.id == row.id else {return}
                 self.model.markUnread(row)
@@ -542,9 +571,34 @@ final class HardwareControl: UIControl {
         }
     }
     func open(_ url:URL) {
+        if url.scheme == "codex-micro-monitor", url.host == "widget" {
+            guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return }
+            let items = parts.queryItems ?? []
+            guard Set(items.map(\.name)).count == items.count,
+                  items.allSatisfy({ ["thread", "scope", "action"].contains($0.name) }) else { return }
+            let id = items.first { $0.name == "thread" }?.value
+            let scope = items.first { $0.name == "scope" }?.value
+            let action = items.first { $0.name == "action" }?.value
+            guard id.map({ UUID(uuidString: $0) != nil }) ?? true,
+                  (id == nil) == (scope == nil),
+                  action == nil || (action == "activateCodex" && id == nil) else { return }
+            loadViewIfNeeded(); closeSettings(); cancelDialGestures()
+            model.monitor = true
+            if action == nil && id == nil { Desktop.services?.showWindow() }
+            update()
+            widgetNavigation?.cancel()
+            widgetNavigation = Task { [weak self] in
+                guard let self else { return }
+                if action == "activateCodex" { await self.model.activateCodexFromWidget() }
+                else if let id, let scope { await self.model.openWidgetThread(id, scope: scope) }
+                else { await self.model.refresh() }
+            }
+            return
+        }
         guard let parts=URLComponents(url:url,resolvingAgainstBaseURL:false),parts.scheme=="codex-micro-monitor",parts.host=="show" else { return }
         let ids=parts.queryItems?.filter { $0.name=="thread" }.compactMap(\.value) ?? []
         guard ids.count<=1, ids.first.map({UUID(uuidString:$0) != nil}) ?? true else { return }
+        widgetNavigation?.cancel()
         Desktop.services?.showWindow(); if let id=ids.first { model.select(id) }
     }
     private func showSettings(key:String? = nil, section:String? = nil) {

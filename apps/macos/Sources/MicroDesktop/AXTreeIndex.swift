@@ -33,13 +33,20 @@ struct AXTreeIndex {
         case unavailable
     }
 
+    func isMenuRoot(_ index: Int, nodes: [AXNode]) -> Bool {
+        let node = nodes[index]
+        if node.role == "AXMenu" { return true }
+        return node.role == "AXGroup" && !node.identifier.hasPrefix("app-shell-tab-panel-") &&
+            node.classes.contains { $0.hasPrefix("_ModelPickerDropdownContent_") || $0.hasPrefix("_Menu_") }
+    }
+
     func linkedMenu(for node: AXNode, nodes: [AXNode]) -> MenuRelationship {
         var menu: Int?
         for element in node.linkedElements {
             // Missing references may be menus being rebuilt. Do not discard
             // them and authorize a different menu from partial evidence.
             guard let at = index(of: element, nodes: nodes) else { return .unavailable }
-            guard nodes[at].role == "AXMenu" else { continue }
+            guard isMenuRoot(at, nodes: nodes) else { continue }
             guard menu == nil || menu == at else { return .unavailable }
             menu = at
         }

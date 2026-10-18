@@ -4,9 +4,8 @@ import MicroShared
 public struct DraftConfigurationSnapshot: Equatable, Sendable {
     public let model: String?
     public let effort: String?
-    public let encoderMode: String?
-
-    public init(model: String?, effort: String?, encoderMode: String?) {
+    public let encoderMode: String
+    public init(model: String?, effort: String?, encoderMode: String = "composer-navigation") {
         self.model = model
         self.effort = effort
         self.encoderMode = encoderMode
@@ -39,28 +38,11 @@ public actor CodexClient {
         }, onCancel: { context.cancel() })
     }
 
-    public func close() async {
-        activity.close()
-        await withCheckedContinuation { continuation in
-            queue.async { [worker] in worker.close(); continuation.resume() }
-        }
-    }
-
     public func captureDraftConfiguration() async throws -> DraftConfigurationSnapshot? {
-        let context = OperationContext()
-        return try await withTaskCancellationHandler(operation: {
-            try await withCheckedThrowingContinuation { continuation in
-                queue.async { [worker] in
-                    do {
-                        try context.check()
-                        continuation.resume(returning: try worker.captureDraftConfiguration(context: context))
-                    } catch { continuation.resume(throwing: error) }
-                }
-            }
-        }, onCancel: { context.cancel() })
+        try await readDraftConfiguration()
     }
 
-    public func readDraftConfiguration() async throws -> DraftConfigurationSnapshot {
+    public func readDraftConfiguration() async throws -> DraftConfigurationSnapshot? {
         let context = OperationContext()
         return try await withTaskCancellationHandler(operation: {
             try await withCheckedThrowingContinuation { continuation in
@@ -74,14 +56,15 @@ public actor CodexClient {
         }, onCancel: { context.cancel() })
     }
 
-    public func writeDraftConfiguration(_ value: DraftConfigurationSnapshot) async throws -> Bool {
+    public func writeDraftConfiguration(_ snapshot: DraftConfigurationSnapshot) async throws {
         let context = OperationContext()
-        return try await withTaskCancellationHandler(operation: {
-            try await withCheckedThrowingContinuation { continuation in
+        try await withTaskCancellationHandler(operation: {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 queue.async { [worker] in
                     do {
                         try context.check()
-                        continuation.resume(returning: try worker.writeDraftConfiguration(value, context: context))
+                        try worker.writeDraftConfiguration(snapshot, context: context)
+                        continuation.resume()
                     } catch { continuation.resume(throwing: error) }
                 }
             }
@@ -100,6 +83,13 @@ public actor CodexClient {
                 }
             }
         }, onCancel: { context.cancel() })
+    }
+
+    public func close() async {
+        activity.close()
+        await withCheckedContinuation { continuation in
+            queue.async { [worker] in worker.close(); continuation.resume() }
+        }
     }
 }
 
@@ -132,70 +122,6 @@ private final class ControlWorker: @unchecked Sendable {
             cursor = next
         }
         throw CodexClientError.invalid("Codex model catalog exceeds the page limit.")
-    }
-
-    func readDraftConfiguration(context: OperationContext) throws -> DraftConfigurationSnapshot {
-        let result = try catalog.call("config/read", params: ["includeLayers": false], context: context)
-        guard let config = result["config"] as? [String: Any] else {
-            throw CodexClientError.invalid("Missing Codex configuration.")
-        }
-        let desktop = config["desktop"] as? [String: Any]
-        let layout = desktop?["codex-micro-layout"] as? [String: Any]
-        return .init(
-            model: config["model"] as? String,
-            effort: config["model_reasoning_effort"] as? String,
-            encoderMode: layout?["encoderMode"] as? String)
-    }
-
-    func captureDraftConfiguration(context: OperationContext) throws -> DraftConfigurationSnapshot {
-        let requirements = try catalog.call("configRequirements/read", params: [:], context: context)
-        guard let rawRequirements = requirements["requirements"] else {
-            throw CodexClientError.invalid("Missing Codex configuration requirements.")
-        }
-        if !(rawRequirements is NSNull) {
-            guard let object = rawRequirements as? [String: Any] else {
-                throw CodexClientError.invalid("Invalid Codex configuration requirements.")
-            }
-            if let rawModels = object["models"], !(rawModels is NSNull) {
-                guard let managedModels = rawModels as? [String: Any] else {
-                    throw CodexClientError.invalid("Invalid managed model requirements.")
-                }
-                if let newThread = managedModels["newThread"], !(newThread is NSNull) {
-                    throw CodexClientError.unsupported("Managed new-chat model settings cannot be changed by Micro.")
-                }
-            }
-        }
-        let auth = try catalog.call("getAuthStatus", params: ["includeToken": false, "refreshToken": false], context: context)
-        guard let method = auth["authMethod"] as? String else {
-            throw CodexClientError.invalid("Codex authentication status is unavailable.")
-        }
-        guard method.caseInsensitiveCompare("copilot") != .orderedSame else {
-            throw CodexClientError.unsupported("Copilot-managed new-chat settings cannot be changed by Micro.")
-        }
-        return try readDraftConfiguration(context: context)
-    }
-
-    func writeDraftConfiguration(_ value: DraftConfigurationSnapshot, context: OperationContext) throws -> Bool {
-        func edit(_ key: String, _ raw: String?) -> [String: Any] {
-            ["keyPath": key, "value": raw.map { $0 as Any } ?? JSON.null, "mergeStrategy": raw == nil ? "replace" : "upsert"]
-        }
-        let result = try catalog.batchWrite(edits: [
-            edit("model", value.model),
-            edit("model_reasoning_effort", value.effort),
-            edit("desktop.codex-micro-layout.encoderMode", value.encoderMode)
-        ], context: context)
-        guard result["status"] as? String == "ok" else {
-            throw CodexClientError.rejected("Codex did not accept the draft configuration write.")
-        }
-        guard try readDraftConfiguration(context: context) == value else { throw CodexClientError.outcomeUnknown }
-        return true
-    }
-
-    func invalidateUserSavedConfig(context: OperationContext) throws -> Bool {
-        let peer = try DesktopPeer(context: context)
-        defer { peer.close() }
-        try peer.invalidateUserSavedConfig()
-        return true
     }
 
     func execute(_ name: String, arguments a: [String: Any], context: OperationContext) throws -> [String: Any] {
@@ -724,5 +650,40 @@ private final class ControlWorker: @unchecked Sendable {
             (state["threadRuntimeStatus"] as? [String: Any])?["type"] as? String == "idle" &&
             (state["requests"] as? [[String: Any]] ?? []).isEmpty &&
             submissions.allSatisfy { $0["terminal"] as? Bool == true }
+    }
+
+    func readDraftConfiguration(context: OperationContext) throws -> DraftConfigurationSnapshot {
+        let result = try catalog.call("config/read", params: ["includeLayers": false], context: context)
+        try catalog.assertStorageCurrent()
+        guard let config = result["config"] as? [String: Any] else {
+            throw CodexClientError.invalid("Missing Codex configuration.")
+        }
+        let desktop = config["desktop"] as? [String: Any] ?? [:]
+        let layout = desktop["codex-micro-layout"] as? [String: Any] ?? [:]
+        return DraftConfigurationSnapshot(
+            model: config["model"] as? String,
+            effort: config["model_reasoning_effort"] as? String,
+            encoderMode: layout["encoderMode"] as? String ?? "composer-navigation"
+        )
+    }
+
+    func writeDraftConfiguration(_ snapshot: DraftConfigurationSnapshot, context: OperationContext) throws {
+        let edits: [[String: Any]] = [
+            ["keyPath": "model", "mergeStrategy": "replace", "value": snapshot.model ?? JSON.null],
+            ["keyPath": "model_reasoning_effort", "mergeStrategy": "replace", "value": snapshot.effort ?? JSON.null],
+        ]
+        _ = try catalog.batchWrite(edits: edits, context: context)
+        let readback = try readDraftConfiguration(context: context)
+        guard readback.model == snapshot.model, readback.effort == snapshot.effort else {
+            throw CodexClientError.outcomeUnknown
+        }
+    }
+
+    func invalidateUserSavedConfig(context: OperationContext) throws -> Bool {
+        let peer = try DesktopPeer(context: context)
+        defer { peer.close() }
+        try peer.invalidateUserSavedConfig()
+        _ = try? peer.pollBroadcast(waitMilliseconds: 25)
+        return true
     }
 }

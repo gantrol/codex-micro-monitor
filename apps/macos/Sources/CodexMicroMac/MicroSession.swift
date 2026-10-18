@@ -680,6 +680,7 @@ import OSLog
         }
         if Date().timeIntervalSince(lastCatalog) > 60 {
             do {
+                let wasEmpty = models.isEmpty
                 let catalog = try await client.execute("get_keypad_models", arguments: [:])
                 guard !Task.isCancelled, generation == lifecycle else { return }
                 modelNames = Dictionary((catalog["data"] as? [[String: Any]] ?? []).compactMap { row in
@@ -688,6 +689,7 @@ import OSLog
                 }, uniquingKeysWith: { first, _ in first })
                 var seen: Set<String> = []
                 models = (catalog["data"] as? [[String: Any]] ?? []).compactMap(ModelChoice.init).filter { seen.insert($0.id).inserted }
+                if wasEmpty, !models.isEmpty { observations.wake(.native) }
             } catch {
                 guard !Task.isCancelled, generation == lifecycle else { return }
                 models = []; modelNames = [:]
@@ -1122,7 +1124,7 @@ import OSLog
         openGlobalPage("open_keypad_settings",arguments:["section":"codex-micro"])
     }
     func unavailableInput() { controlError=foreground["reason"] as? String ?? tr("controlNotReady") }
-    private func activateCodex() {
+    func activateCodex() {
         guard !activating else { return }
         activating = true; controlError = nil; foregroundRequestRevision += 1
         let generation = lifecycle
