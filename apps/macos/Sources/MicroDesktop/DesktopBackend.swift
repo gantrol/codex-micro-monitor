@@ -182,7 +182,11 @@ actor DesktopBackend {
             guard let state = refreshed["state"] as? [String: Any] else {
                 throw CodexClientError.outcomeUnknown
             }
-            return ["applied": false, "verified": true, "state": state]
+            var response: [String: Any] = ["applied": false, "verified": true, "state": state]
+            if operation == "set_keypad_draft_reasoning", arguments["direction"] != nil {
+                response["boundaryReached"] = true
+            }
+            return response
         }
 
         var refreshArgs: [String: Any] = ["target_token": token]
@@ -347,8 +351,9 @@ actor DesktopBackend {
             // A deep link acknowledgment is distinct from observing its route.
             let id = result["threadId"] as? String
             do {
-                for _ in 0..<6 {
+                for attempt in 0..<8 {
                     try Task.checkCancellation()
+                    try await Task.sleep(for: .milliseconds(attempt == 0 ? 60 : 80))
                     let state = try await ui.execute("get_keypad_ui_state", arguments: [:], models: models)
                     result["foreground"] = state
                     if operation == "new_keypad_thread" ? state["draft"] as? Bool == true : state["threadId"] as? String == id && id != nil {
@@ -356,11 +361,10 @@ actor DesktopBackend {
                         result["foreground"] = state
                         if result["navigation_verified"] as? Bool == true { break }
                     }
-                    if let reason=state["reason"] as? String {result["followupError"]=reason}
+                    result["followupError"] = state["reason"] as? String
                     // Permission denial is not a slow navigation. Preserve its
                     // cause and let the ordinary foreground observer recover later.
                     if state["accessibility"] as? Bool == false {break}
-                    try await Task.sleep(for: .milliseconds(150))
                 }
             } catch { result["followupError"] = error.localizedDescription }
             if result["navigation_verified"] as? Bool == true {result["followupError"]=nil}

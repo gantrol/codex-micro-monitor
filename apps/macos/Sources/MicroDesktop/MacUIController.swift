@@ -756,7 +756,11 @@ final class MacUIController: @unchecked Sendable {
                     // omits it; a subsequent action opens and rechecks Power.
                     let actual=Self.settings(after,models:models)
                     guard actual.allSatisfy({ key,value in confirmed[key].map { (value as? NSObject)?.isEqual($0) == true } ?? true }) else { throw CodexClientError.outcomeUnknown }
-                    return ["applied":true,"verified":true,"state":project(after,models:models,confirmed:confirmed,verification:verification)]
+                    var response: [String: Any] = ["applied":true,"verified":true,"state":project(after,models:models,confirmed:confirmed,verification:verification)]
+                    if operation == "set_keypad_draft_reasoning", a["direction"] != nil, initial.effort == requested {
+                        response["boundaryReached"] = true
+                    }
+                    return response
                 }
             default: throw CodexClientError.unsupported("Unsupported native operation.")
             }
