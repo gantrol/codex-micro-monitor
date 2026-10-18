@@ -39,9 +39,9 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1005.35</string>
+	<string>1005.36</string>
 	<key>CodexMicroReleaseVersion</key>
-	<string>1.0.5-macos-preview.35</string>
+	<string>1.0.5-macos-preview.36</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>MicroWidgetAppGroup</key>

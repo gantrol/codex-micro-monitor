@@ -1,6 +1,23 @@
 # Codex Micro macOS · 控制预览版
 
-macOS 14+，UIKit / Mac Catalyst 与原生 AppKit 桥接，无外部 Swift Package 依赖。当前版本 **`1.0.5-macos-preview.35`**，默认输出到 `dist/macos/universal/`。保持 Windows Micro 的 590×610 画布、键帽、双页、旋钮和灯光设计。
+macOS 14+，UIKit / Mac Catalyst 与原生 AppKit 桥接，无外部 Swift Package 依赖。当前版本 **`1.0.5-macos-preview.36`**，默认输出到 `dist/macos/universal/`。保持 Windows Micro 的 590×610 画布、键帽、双页、旋钮和灯光设计。
+
+## 同步 Windows 1.0.1–1.0.5 新增特性与跨端改进记录（2026-10-18）
+
+本轮将 Windows `1.0.1`–`1.0.5` 的五项演进同步至 macOS，并记录 Windows 可反向借鉴的 macOS 设计：
+
+- **1.0.1（`10c7740`）Pro 账号隐藏 5 小时窗口**：当 `account/rateLimits/read` 返回 `planType == "pro"` 时，额度圆盘与列表隐藏 5h（`primary`）窗口，仅展示 7d（`secondary`）窗口。
+- **1.0.2（`4b0f48e`）任务键中心点绑定输入框草稿**：取消任务键“选中且非运行态显示薄荷中心点”的旧规则；中心圆点固定表达持久化输入框草稿（读取 `.codex-global-state.json` 的 `electron-persisted-atom-state` 下 `composer-prompt-drafts-v2` / `v1` 及附加草稿记录），无草稿时恒为紫点 `#685FAE`，有草稿时为薄荷绿点 `#B9EFD2`，主面板、设置预览与桌面小组件一致。
+- **1.0.3（`ca6bc9c`）`MIND+` / `MIND-` 极值边界视觉反馈**：当思考强度已处于当前模型最高档继续按 `MIND+` 时，滑轨图标主色短暂变为红色 `#BE4238`（900 ms）；已处于最低档继续按 `MIND-` 时短暂变为绿色 `#2F7D46`（900 ms）。反向调节成功或切换目标立即清除。
+- **1.0.4（`8e83151`）额度耗尽时显示 Credit 余额**：当任一可用额度窗口剩余百分比 `<= 0` 且存在有效 `credits` 数据时，额度圆盘顶部切换显示 `Credits` 与紧凑余额（如 `240`、`1.5k`、`∞`），余额耗尽且非无限时以琥珀色高亮。
+- **1.0.5（`89e748f`）按回合对齐桌面活动流与日志、`server_overloaded` 珊瑚橙灯及元数据裁剪**：
+  - `ActivityMonitor` 与 `RolloutReader` 按 `resumeState`、canonical `turnHistory` 尾部 `exhausted` 分片及最新 `turnID` 对齐实时运行态与本地日志，禁止旧回合的错误或待回答问题跨回合污染当前回合；
+  - 区分 `systemError` 中的 `server_overloaded`（珊瑚橙 `#FF8A80`，`.overloaded`）与一般错误（红灯 `.error`）；
+  - 处理 `ipc-connection-reset` 与 `thread-stream-following-status-requested` 重建订阅基线，并在 `ActivityPatch` 中将 `turns` / `turnHistory` 裁剪为仅保留回合状态与错误码元数据。
+- **记录 Windows 可同步 / 借鉴的 macOS 改进**：
+  1. **空白新会话（`draft=true`）模型与思考强度免控件直写**：Windows 目前（`CodexDraftComposerModelSelector`）在新会话中切换模型或调节 `MIND±` 仍需通过 UIA 点开模型菜单和操作滑块。可改为对齐 macOS：通过 App Server `config/batchWrite` 直接写入 `model` / `model_reasoning_effort`，并向本机 IPC 广播 `query-cache-invalidate`（`queryKey: ["user-saved-config"]`，`version: 0`），直接从闭合的原生模型按钮回读确认，彻底省去弹窗闪烁；Fast（渲染层内存 Jotai override 覆盖 `service_tier` 且闭合按钮不暴露速度）与 Plan 则继续保持原生控件 / 快捷键路径。
+  2. **闭合模型按钮去前缀与空格模型名匹配**：Codex 闭合模型选择器会省略 `GPT-` 前缀或将连字符显示为空格（如 `5.6 Terra High`、`5.4-Mini High`），Windows 原生回读可直接复用该归一化匹配，避免因闭合按钮文本格式差异而额外展开菜单。
+  3. **客户端路由到正式 UUID 的持久化状态辅助核验**：Windows 当前除 UIA 外主要依赖增量扫描主进程日志文件（`CodexDesktopRouteReader`），可参考 macOS 结合 `.codex-global-state.json` 中 `client-thread-bindings-v1` / `thread-client-id-v1:local%3A<UUID>` 与 `thread/read` 的只读核验，作为日志轮转或缺失时的轻量补充。
 
 ## 新会话（空白草稿）设置设计（preview.35）
 
