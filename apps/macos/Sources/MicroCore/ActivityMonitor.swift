@@ -28,6 +28,8 @@ final class ActivityMonitor: @unchecked Sendable {
     private var streamContext: OperationContext?
     private var unreadStamp = ""
     private var unread: Set<String>?
+    private var draftThreads: Set<String> = []
+    private var lastDraftTracked: Set<String> = []
     private var unreadState = UnreadStateStore()
     private var unreadEvidence: [String: [String: Any]] = [:]
     private var authStamp = ""
@@ -48,6 +50,7 @@ final class ActivityMonitor: @unchecked Sendable {
             if self.contextID != contextID || self.identity != identity || !self.contextValid {
                 self.rollouts.reset(); self.signals = [:]; self.attention=[:]; self.desktop = [:]
                 self.unreadState.reset(); self.unreadEvidence = [:]; self.unreadStamp = ""; self.unread = nil
+                self.draftThreads = []; self.lastDraftTracked = []
             }
             self.contextID = contextID; self.rows = compact;self.priority=priority
             self.authStamp = Self.fileStamp(CodexStorage.root.appendingPathComponent("auth.json")); self.contextValid = true
@@ -76,7 +79,7 @@ final class ActivityMonitor: @unchecked Sendable {
             self.rows = []; self.desktop = [:]; self.signals = [:];self.attention=[:]; self.localObservations=[:];self.rolloutOffset=0;self.rollouts.reset()
             self.selectedThread=nil; self.visibleContexts=[]; self.visibilityKnown=false
             self.streamConnected = false; self.refreshedAt = 0
-            self.identity = nil; self.unread = nil; self.unreadStamp = ""; self.contextID = ""; self.revision += 1
+            self.identity = nil; self.unread = nil; self.unreadStamp = ""; self.draftThreads = []; self.lastDraftTracked = []; self.contextID = ""; self.revision += 1
         }
     }
 
@@ -93,7 +96,7 @@ final class ActivityMonitor: @unchecked Sendable {
                         "title":value["title"] ?? ""]
                 }
                 continuation.resume(returning: ["contextID": self.contextID,
-                "revision": self.revision, "unreadEvidence": self.unreadEvidence, "signals": self.signals,"attention":self.attention, "watching": self.timer != nil, "contextValid": self.contextValid,
+                "revision": self.revision, "unreadEvidence": self.unreadEvidence, "signals": self.signals,"attention":self.attention, "drafts": Array(self.draftThreads).sorted(), "watching": self.timer != nil, "contextValid": self.contextValid,
                 "visibleContexts":self.visibleContexts, "visibilityKnown":self.visibilityKnown,
                 "settings":settings,
                 "streamConnected": self.streamConnected, "streamError": self.streamError, "desktopThreads": self.desktop.count, "watchedFiles": self.files.count,
@@ -165,14 +168,20 @@ final class ActivityMonitor: @unchecked Sendable {
     private func refresh() {
         guard timer != nil else { return }
         if Self.fileStamp(CodexStorage.root.appendingPathComponent("auth.json")) != authStamp {
-            contextValid = false; identity = nil; unread = nil; desktop = [:]; unreadState.reset(); unreadEvidence = [:]; visibleContexts=[]; visibilityKnown=false
+            contextValid = false; identity = nil; unread = nil; draftThreads = []; lastDraftTracked = []; desktop = [:]; unreadState.reset(); unreadEvidence = [:]; visibleContexts=[]; visibilityKnown=false
             if !signals.isEmpty || !attention.isEmpty { signals = [:];attention=[:]; revision += 1 }
             return
         }
         let global = CodexStorage.root.appendingPathComponent(".codex-global-state.json")
         let stamp = Self.fileStamp(global)
-        if stamp != unreadStamp { unreadStamp = stamp; unread = CodexStorage.unread(identity: identity) }
+        let globalChanged = stamp != unreadStamp
+        if globalChanged { unreadStamp = stamp; unread = CodexStorage.unread(identity: identity) }
         let tracked = Set(rows.compactMap { $0["id"] as? String }).union(selectedThread.map { [$0] } ?? []).union(desktop.keys)
+        var nextDrafts = draftThreads
+        if globalChanged || tracked != lastDraftTracked {
+            lastDraftTracked = tracked
+            nextDrafts = CodexStorage.composerDrafts(ids: tracked) ?? []
+        }
         unreadState.retain(tracked)
         unreadState.observePersistent(unread, ids: tracked, at: ProcessInfo.processInfo.systemUptime)
         let context = OperationContext(timeout: 2)
@@ -195,10 +204,26 @@ final class ActivityMonitor: @unchecked Sendable {
             let local=localObservations[id]
             let observed = desktop[id]
             let requests = observed?["requests"] as? [[String: Any]] ?? []
-            let runtime = observed?["threadRuntimeStatus"] as? [String: Any] ?? row["status"] as? [String:Any] ?? [:]
+            let catalogStatus = row["status"] as? [String:Any] ?? [:]
+            let runtime = observed?["threadRuntimeStatus"] as? [String: Any] ?? catalogStatus
             let flags = runtime["activeFlags"] as? [String] ?? []
-            let rawType=runtime["type"] as? String ?? "unknown"
-            let type = ["active","idle","systemError"].contains(rawType) ? rawType:local?.status ?? "unknown"
+            let type: String
+            let errorCode: String?
+            if let observed {
+                let desktopRuntime = Self.resolveDesktopRuntime(observed)
+                let sameTurn = !desktopRuntime.hasCurrentTurn || (desktopRuntime.turnID != nil && desktopRuntime.turnID == local?.turnID)
+                let rawType = ["active", "idle", "systemError"].contains(desktopRuntime.type) ? desktopRuntime.type : (catalogStatus["type"] as? String ?? "unknown")
+                var resolved = ["active", "idle", "systemError"].contains(rawType) ? rawType : (sameTurn && (local?.status == "idle" || local?.status == "systemError") ? local!.status : "unknown")
+                if resolved == "idle", sameTurn, local?.status == "systemError" { resolved = "systemError" }
+                type = resolved
+                errorCode = resolved == "systemError" ? (desktopRuntime.errorCode ?? (sameTurn ? local?.errorCode : nil) ?? (catalogStatus["errorCode"] as? String)) : nil
+            } else {
+                let rawType = catalogStatus["type"] as? String ?? "unknown"
+                var resolved = ["active", "idle", "systemError"].contains(rawType) ? rawType : (local?.status == "idle" || local?.status == "systemError" ? local!.status : "unknown")
+                if resolved == "idle", local?.status == "systemError" { resolved = "systemError" }
+                type = resolved
+                errorCode = resolved == "systemError" ? ((catalogStatus["errorCode"] as? String) ?? local?.errorCode) : nil
+            }
             let hasQuestion = requests.contains { $0["method"] as? String == "item/tool/requestUserInput" } ||
                 flags.contains("waitingOnUserInput") || (type == "active" && local?.pendingQuestion == true)
             let hasApproval = flags.contains("waitingOnApproval") || requests.contains {
@@ -206,13 +231,61 @@ final class ActivityMonitor: @unchecked Sendable {
             }
             let hasUnread = unreadState.value(for: id) ?? false
             nextAttention[id]=TaskAttention.classify(status:["type":type],question:hasQuestion,approval:hasApproval,unread:hasUnread).rawValue
-            next[id]=TaskLampSignal.classify(status:["type":type],question:hasQuestion,approval:hasApproval,unread:hasUnread).rawValue
+            next[id]=TaskLampSignal.classify(status:["type":type],question:hasQuestion,approval:hasApproval,unread:hasUnread,errorCode:errorCode).rawValue
         }
         let evidence = Dictionary(uniqueKeysWithValues: tracked.map { ($0, unreadState.evidence(for: $0)) })
-        if signals != next || attention != nextAttention || !JSON.same(unreadEvidence, evidence) {
-            signals = next; attention = nextAttention; unreadEvidence = evidence; revision += 1
+        if signals != next || attention != nextAttention || draftThreads != nextDrafts || !JSON.same(unreadEvidence, evidence) {
+            signals = next; attention = nextAttention; draftThreads = nextDrafts; unreadEvidence = evidence; revision += 1
         }
         refreshedAt = ProcessInfo.processInfo.systemUptime
+    }
+
+    static func resolveDesktopRuntime(_ state: [String: Any]) -> (type: String, turnID: String?, errorCode: String?, hasCurrentTurn: Bool) {
+        let runtime = state["threadRuntimeStatus"] as? [String: Any] ?? [:]
+        let rawType = runtime["type"] as? String ?? "unknown"
+        if rawType == "systemError" {
+            let latest = latestTurn(from: state)
+            return ("systemError", latest?.turnID, (runtime["errorCode"] as? String) ?? latest?.errorCode, latest != nil)
+        }
+        let resumeState = state["resumeState"] as? String
+        if resumeState == "resumed" {
+            let submissions = state["unconfirmedTurnSubmissions"] as? [[String: Any]] ?? []
+            if submissions.contains(where: { ($0["terminal"] as? Bool) != true }) {
+                return ("active", nil, nil, true)
+            }
+            if let latest = latestTurn(from: state) {
+                let turnType: String
+                switch latest.status {
+                case "inProgress": turnType = "active"
+                case "completed", "interrupted": turnType = "idle"
+                case "failed": turnType = "systemError"
+                default: turnType = "unknown"
+                }
+                return (turnType, latest.turnID, turnType == "systemError" ? latest.errorCode : nil, true)
+            }
+        } else if resumeState == "resuming", rawType != "active" {
+            return ("unknown", nil, nil, false)
+        }
+        let latest = latestTurn(from: state)
+        return (rawType, latest?.turnID, nil, latest != nil)
+    }
+
+    private static func latestTurn(from state: [String: Any]) -> (turnID: String?, status: String?, errorCode: String?)? {
+        let turn: [String: Any]?
+        if let history = state["turnHistory"] as? [String: Any], history["kind"] as? String == "canonical" {
+            guard let canonical = history["history"] as? [String: Any],
+                  let islands = canonical["islands"] as? [[String: Any]], let island = islands.last,
+                  (island["newerBoundary"] as? [String: Any])?["status"] as? String == "exhausted",
+                  let entries = island["entries"] as? [[String: Any]], let key = entries.last?["value"] as? String,
+                  let entities = canonical["entitiesByKey"] as? [String: Any] else { return nil }
+            turn = entities[key] as? [String: Any]
+        } else {
+            turn = (state["turns"] as? [[String: Any]])?.last
+        }
+        guard let turn else { return nil }
+        let errorObj = turn["error"] as? [String: Any]
+        let errorCode = (errorObj?["codexErrorInfo"] as? String) ?? (errorObj?["code"] as? String)
+        return (turn["turnId"] as? String, turn["status"] as? String, errorCode)
     }
 
     private static func fileStamp(_ url: URL) -> String {
@@ -264,7 +337,8 @@ final class ActivityMonitor: @unchecked Sendable {
         var lastDiscovery:[String:TimeInterval]=[:]
         var streamFailure: Error?
         let fields: Set<String> = ["threadRuntimeStatus", "requests", "hasUnreadTurn", "title",
-            "latestModel", "latestReasoningEffort", "latestThreadSettings", "latestCollaborationMode"]
+            "latestModel", "latestReasoningEffort", "latestThreadSettings", "latestCollaborationMode",
+            "resumeState", "unconfirmedTurnSubmissions", "turns", "turnHistory"]
         func publishVisibility() {
             let ids=Array(Set(visibleByClient.values.map(\.thread))).sorted(), known=visibilityKnown
             queue.async { [weak self] in
@@ -291,6 +365,19 @@ final class ActivityMonitor: @unchecked Sendable {
             }
         }
         peer.onBroadcast = { [weak self] message in
+            if message["method"] as? String == "ipc-connection-reset" {
+                visibleByClient = [:]; visibilityKnown = false; publishVisibility()
+                lastDiscovery = [:]
+                for id in Array(owners.keys) { forget(id) }
+                return
+            }
+            if message["method"] as? String == "thread-stream-following-status-requested",
+               let source = message["sourceClientId"] as? String, source != peer.identity,
+               let parameters = message["params"] as? [String: Any], parameters["hostId"] as? String == "local",
+               let id = parameters["conversationId"] as? String {
+                if owners[id] != nil { forget(id); lastDiscovery[id] = nil }
+                return
+            }
             if message["method"] as? String == "client-status-changed", let parameters=message["params"] as? [String:Any],
                parameters["status"] as? String == "disconnected", let client=parameters["clientId"] as? String {
                 visibleByClient[client]=nil; publishVisibility()
@@ -321,7 +408,7 @@ final class ActivityMonitor: @unchecked Sendable {
             var unreadObserved = false
             if change["type"] as? String == "snapshot", let value = change["conversationState"] as? [String: Any] {
                 guard revisions[id].map({ revision > $0 }) ?? true else { return }
-                state[id] = value.filter { fields.contains($0.key) }; revisions[id] = revision
+                state[id] = ActivityPatch.filterMetadata(value, path: [], fields: fields) as? [String: Any]; revisions[id] = revision
                 unreadObserved = true
                 // Parse accepted replies before dropping the large history.
                 let path = rows.first { $0["id"] as? String == id }?["path"] as? String
@@ -340,13 +427,13 @@ final class ActivityMonitor: @unchecked Sendable {
                     for patch in patches {
                         let path = try ActivityPatch.path(patch["path"])
                         if path.isEmpty || path.first == "hasUnreadTurn" { unreadObserved = true }
-                        if path.isEmpty || fields.contains(path[0]) { value = try ActivityPatch.apply(patch, path: path, to: value) }
+                        if ActivityPatch.retain(path, fields: fields) { value = try ActivityPatch.apply(patch, path: path, to: value, fields: fields) }
                         // Only an accepted steering reply needs a fresh snapshot.
                         // Streaming token/content patches do not cause polling.
                         if path.last == "status", patch["value"] as? String == "accepted" { snapshots.insert(id) }
                         if let item = patch["value"] as? [String: Any], item["type"] as? String == "userMessage" { snapshots.insert(id) }
                     }
-                    state[id] = value.filter { fields.contains($0.key) }; revisions[id] = revision
+                    state[id] = ActivityPatch.filterMetadata(value, path: [], fields: fields) as? [String: Any]; revisions[id] = revision
                 } catch { snapshots.insert(id); revisions[id] = nil; state[id] = nil }
             }
             let observation = state[id]
@@ -418,6 +505,61 @@ final class ActivityMonitor: @unchecked Sendable {
 }
 
 private enum ActivityPatch {
+    static func retain(_ path: [String], fields: Set<String>) -> Bool {
+        guard let root = path.first else { return true }
+        guard fields.contains(root) else { return false }
+        switch root {
+        case "unconfirmedTurnSubmissions":
+            return path.count <= 2 || (path.count == 3 && (path[2] == "terminal" || path[2] == "length"))
+        case "turns":
+            if path.count <= 2 { return true }
+            if path.count == 3 { return ["turnId", "status", "error", "length"].contains(path[2]) }
+            if path.count == 4 && path[2] == "error" { return ["codexErrorInfo", "code"].contains(path[3]) }
+            return false
+        case "turnHistory":
+            if path.count == 1 { return true }
+            if path.count == 2 { return ["kind", "history"].contains(path[1]) }
+            guard path[1] == "history" else { return false }
+            if path.count == 3 { return ["entitiesByKey", "islands"].contains(path[2]) }
+            if path[2] == "entitiesByKey" {
+                if path.count == 4 { return true }
+                if path.count == 5 { return ["turnId", "status", "error"].contains(path[4]) }
+                if path.count == 6 && path[4] == "error" { return ["codexErrorInfo", "code"].contains(path[5]) }
+                return false
+            }
+            if path[2] == "islands" {
+                if path.count == 4 { return true }
+                if path.count >= 5 && path[4] == "newerBoundary" { return true }
+                if path.count == 5 && path[4] == "entries" { return true }
+                if path.count == 6 && path[4] == "entries" { return true }
+                if path.count == 7 && path[4] == "entries" && path[6] == "value" { return true }
+                return false
+            }
+            return false
+        default:
+            return true
+        }
+    }
+
+    static func filterMetadata(_ value: Any, path: [String], fields: Set<String>) -> Any {
+        if let object = value as? [String: Any] {
+            var filtered: [String: Any] = [:]
+            for (key, child) in object {
+                let childPath = path + [key]
+                if retain(childPath, fields: fields) {
+                    filtered[key] = filterMetadata(child, path: childPath, fields: fields)
+                }
+            }
+            return filtered
+        }
+        if let array = value as? [Any] {
+            return array.enumerated().map { index, child in
+                filterMetadata(child, path: path + [String(index)], fields: fields)
+            }
+        }
+        return value
+    }
+
     static func path(_ raw: Any?) throws -> [String] {
         if let array = raw as? [Any] {
             return try array.map {
@@ -429,14 +571,15 @@ private enum ActivityPatch {
         guard let pointer = raw as? String, pointer.isEmpty || pointer.hasPrefix("/") else { throw CodexClientError.invalid("Invalid state patch path.") }
         return pointer.isEmpty ? [] : pointer.dropFirst().components(separatedBy: "/").map { $0.replacingOccurrences(of: "~1", with: "/").replacingOccurrences(of: "~0", with: "~") }
     }
-    static func apply(_ patch: [String: Any], path: [String], to state: [String: Any]) throws -> [String: Any] {
+    static func apply(_ patch: [String: Any], path: [String], to state: [String: Any], fields: Set<String>) throws -> [String: Any] {
         guard let operation = patch["op"] as? String, ["add", "replace", "remove"].contains(operation),
               operation == "remove" || patch["value"] != nil, path.count <= 32 else { throw CodexClientError.invalid("Invalid state patch.") }
+        let filteredValue = operation == "remove" ? JSON.null : filterMetadata(patch["value"] ?? JSON.null, path: path, fields: fields)
         func edit(_ node: Any, _ offset: Int) throws -> Any {
-            if offset == path.count { return patch["value"] ?? JSON.null }
+            if offset == path.count { return filteredValue }
             let key = path[offset], leaf = offset == path.count - 1
             if var object = node as? [String: Any] {
-                if leaf { if operation == "remove" { object[key] = nil } else { object[key] = patch["value"] } }
+                if leaf { if operation == "remove" { object[key] = nil } else { object[key] = filteredValue } }
                 else { guard let child = object[key] else { throw CodexClientError.invalid("Missing patch parent.") }; object[key] = try edit(child, offset + 1) }
                 return object
             }
@@ -444,7 +587,7 @@ private enum ActivityPatch {
                 if leaf, key == "length", let count = patch["value"] as? Int, count >= 0, count <= array.count { return Array(array.prefix(count)) }
                 let index = key == "-" ? array.count : Int(key) ?? -1
                 guard index >= 0, index <= array.count else { throw CodexClientError.invalid("Invalid patch index.") }
-                if leaf, operation == "add" { array.insert(patch["value"]!, at: index) }
+                if leaf, operation == "add" { array.insert(filteredValue, at: index) }
                 else {
                     guard index < array.count else { throw CodexClientError.invalid("Missing patch item.") }
                     if leaf, operation == "remove" { array.remove(at: index) }

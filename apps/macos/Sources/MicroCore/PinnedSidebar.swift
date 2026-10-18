@@ -58,7 +58,7 @@ struct PinnedSidebarPreferences:Equatable {
         let file=root.appendingPathComponent(".codex-global-state.json")
         guard !file.path.localizedCaseInsensitiveContains("trash") else {throw CodexClientError.invalid("Unsupported sidebar storage path.")}
         guard FileManager.default.fileExists(atPath:file.path) else {return .init()}
-        return try .init(global:JSON.object(CodexStorage.read(file,limit:16*1024*1024)),root:root,migrationRoot:migrationRoot)
+        return try .init(global:CodexStorage.globalState(root:root),root:root,migrationRoot:migrationRoot)
     }
 }
 

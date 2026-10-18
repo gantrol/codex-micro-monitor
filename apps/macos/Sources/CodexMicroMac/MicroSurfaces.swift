@@ -126,11 +126,11 @@ enum Paint {
         }
         c.restoreGState()
     }
-    static func glyph(_ c: CGContext, _ name: String, in rect: CGRect, color: UInt32 = 0xFF171717, reasoningPosition: CGFloat? = nil) {
+    static func glyph(_ c: CGContext, _ name: String, in rect: CGRect, color: UInt32 = 0xFF171717, reasoningPosition: CGFloat? = nil, feedbackColor: UInt32? = nil) {
         guard let transform = KeycapGlyph.transform(name, in: rect) else { return }
         c.saveGState(); c.concatenate(transform)
         if ReasoningGlyph.names.contains(name) {
-            ReasoningGlyph.draw(c, name: name, position: reasoningPosition ?? ReasoningGlyph.rest(name))
+            ReasoningGlyph.draw(c, name: name, position: reasoningPosition ?? ReasoningGlyph.rest(name), feedbackColor: feedbackColor)
         } else {
             c.setFillColor(UIColor(argb: color).cgColor)
             if let path=KeycapGlyph.presetPaths[name] {c.addPath(path);c.fillPath()}
@@ -143,7 +143,7 @@ enum Paint {
 }
 
 struct LightState: Equatable {
-    let signal: TaskSignal; let selected: Bool
+    let signal: TaskSignal; let selected: Bool; var hasDraft: Bool = false
     var active: Bool { ![.unknown, .idle].contains(signal) }
     var neutral: Bool { selected && !active }
     var color: UInt32 {
@@ -153,6 +153,7 @@ struct LightState: Equatable {
         case .waiting: return 0xFFFF6D00
         case .question: return 0xFFFFD54F
         case .unread: return 0xFF00FF4C
+        case .overloaded: return 0xFFFF8A80
         case .error: return 0xFFFF0033
         default: return 0x008DB5FF
         }
@@ -197,7 +198,7 @@ struct LightState: Equatable {
         }
     }
     static func cap(task: Bool, width: CGFloat, light: LightState, hover: Bool, scale: CGFloat) -> UIImage {
-        image("cap:\(task):\(light.signal):\(light.selected):\(hover)", width: width, scale: scale) { c in
+        image("cap:\(task):\(light.signal):\(light.selected):\(light.hasDraft):\(hover)", width: width, scale: scale) { c in
             let r = task ? Paint.rect(0,0,96,96) : Paint.rect(0.5,0.5,width-1,93.5)
             let shadow = r.offsetBy(dx: 0, dy: task ? 2 : 1)
             Paint.effect(c,box:shadow,radius:task ? 3 : 2,scale:scale,opacity:task ? (light.neutral ? 0.05 : 0.20) : 0.12) {
@@ -238,12 +239,10 @@ struct LightState: Equatable {
             Paint.shade(c,well,38,[Stop(task && light.neutral ? 0x0A747B77 : 0x28747B77,0),Stop(task && light.neutral ? 0x05747B77 : 0x14747B77,0.42),Stop(0x8CFFFFFF,0.58),Stop(0xCCFFFFFF,1)],diagonal:true,stroke:1.6)
             c.restoreGState()
             if task {
-                let dot = Paint.rect(39,39,18,18), color: UInt32 = light.neutral ? 0xFFB9EFD2 : 0xFF685FAE
-                c.saveGState(); c.setAlpha(light.neutral ? 1 : 0.6)
-                Paint.effect(c,box:dot,radius:4,scale:scale,opacity:0.38 * (light.neutral ? 1 : 0.6)) { Paint.ellipse($0,dot,color) }
+                let dot = Paint.rect(39,39,18,18), color: UInt32 = light.hasDraft ? 0xFFB9EFD2 : 0xFF685FAE
+                Paint.effect(c,box:dot,radius:4,scale:scale,opacity:0.38) { Paint.ellipse($0,dot,color) }
                 Paint.ellipse(c,dot,color)
-                if light.neutral { Paint.stroke(c,dot,9,0x28939A96,0.8) }
-                c.restoreGState()
+                if light.hasDraft { Paint.stroke(c,dot,9,0x28939A96,0.8) }
             }
         }
     }

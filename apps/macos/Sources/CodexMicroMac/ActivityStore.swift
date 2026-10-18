@@ -13,6 +13,8 @@ struct ActivityStore {
     private(set) var liveSettings: [String: [String: Any]] = [:]
     private(set) var visibleCandidates: [String] = []
     private(set) var visibilityKnown = false
+    private(set) var drafts: Set<String> = []
+    private(set) var draftsKnown = false
     private(set) var streamConnected = false
     private var confirmations: [String: Int] = [:]
     private var minimumRevision = -1
@@ -22,7 +24,7 @@ struct ActivityStore {
     /// Transient read failure does not erase a confirmed-write barrier.
     mutating func disconnect() {
         signals = [:]; attention = [:]; unreadEvidence = [:]; liveSettings = [:]
-        visibleCandidates = []; visibilityKnown = false; streamConnected = false
+        visibleCandidates = []; visibilityKnown = false; drafts = []; draftsKnown = false; streamConnected = false
     }
 
     @discardableResult
@@ -36,6 +38,10 @@ struct ActivityStore {
         liveSettings = snapshot["settings"] as? [String: [String: Any]] ?? [:]
         visibleCandidates = snapshot["visibleContexts"] as? [String] ?? []
         visibilityKnown = snapshot["visibilityKnown"] as? Bool ?? false
+        if let rawDrafts = snapshot["drafts"] as? [String] {
+            drafts = Set(rawDrafts)
+            draftsKnown = true
+        }
         streamConnected = snapshot["streamConnected"] as? Bool ?? false
         confirmations = confirmations.filter { id, receipt in
             if receipt >= 0 { return incoming < receipt }
@@ -55,6 +61,7 @@ struct ActivityStore {
     mutating func remove(_ id: String) {
         signals[id] = nil; attention[id] = nil; unreadEvidence[id] = nil
         liveSettings[id] = nil; confirmations[id] = nil
+        drafts.remove(id)
         visibleCandidates.removeAll { $0 == id }
     }
 
@@ -67,6 +74,10 @@ struct ActivityStore {
     func attention(for id: String, fallback: TaskAttention) -> TaskAttention {
         let raw = attention[id] ?? fallback
         return confirmations[id] != nil && raw != .waiting ? .unread : raw
+    }
+
+    func hasDraft(for id: String, fallback: Bool) -> Bool {
+        draftsKnown ? drafts.contains(id) : fallback
     }
 }
 

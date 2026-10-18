@@ -27,6 +27,7 @@ struct MicroViewState {
     let controlError: String?
     let encoderMode: String?
     let reasoningFeedback: String?
+    let reasoningBoundaryDirection: Int?
     let rosterScope: String?
     let selectedID: String?
     let displayedThreadID: String?
@@ -37,6 +38,7 @@ struct MicroViewState {
     let currentEffort: String
     let selectedTitle: String
     let quota: String
+    let creditBalance: CreditBalance?
     let collaborationMode: String?
     let contextSource: ConversationContextStore.Source
     let currentDefinition: ModelChoice?
@@ -52,6 +54,7 @@ struct MicroViewState {
     let slots: [String: [String: Any]]
     let tasks: [TaskSlot]
     let lamps: [String: TaskLampPresentation]
+    let drafts: Set<String>
     let unreadActions: Set<String>
     let keycaps: [String: String]
     let bindings: [String: [String: Any]]
@@ -71,6 +74,7 @@ struct MicroViewState {
         controlError = session.controlError
         encoderMode = session.encoderMode
         reasoningFeedback = session.reasoningFeedback
+        reasoningBoundaryDirection = session.reasoningBoundaryDirection
         rosterScope = session.rosterScope
         selectedID = session.selectedID
         displayedThreadID = session.displayedThreadID
@@ -81,6 +85,7 @@ struct MicroViewState {
         currentEffort = session.currentEffort
         selectedTitle = session.selectedTitle
         quota = session.quota
+        creditBalance = session.creditBalance
         collaborationMode = session.collaborationMode
         contextSource = session.contextSource
         currentDefinition = session.currentDefinition
@@ -102,6 +107,7 @@ struct MicroViewState {
         // keys; evaluating every row on every activity tick would block UIKit.
         let displayed = tasks.compactMap(\.row)
         lamps = Dictionary(displayed.map { ($0.id, session.lampPresentation(for: $0)) }, uniquingKeysWith: { first, _ in first })
+        drafts = Set(displayed.filter(session.hasDraft).map(\.id))
         unreadActions = Set(displayed.filter(session.canMarkUnread).map(\.id))
         keycaps = Dictionary(uniqueKeysWithValues: KeySlots.defaults.keys.map { ($0, session.keycap(for: $0)) })
         bindings = Dictionary(uniqueKeysWithValues: KeySlots.defaults.keys.compactMap { key in
@@ -154,6 +160,7 @@ struct MicroViewState {
     var controlError: String? { viewState.controlError }
     var encoderMode: String? { viewState.encoderMode }
     var reasoningFeedback: String? { viewState.reasoningFeedback }
+    var reasoningBoundaryDirection: Int? { viewState.reasoningBoundaryDirection }
     var rosterScope: String? { viewState.rosterScope }
     var selectedID: String? { viewState.selectedID }
     var displayedThreadID: String? { viewState.displayedThreadID }
@@ -164,6 +171,7 @@ struct MicroViewState {
     var currentEffort: String { viewState.currentEffort }
     var selectedTitle: String { viewState.selectedTitle }
     var quota: String { viewState.quota }
+    var creditBalance: CreditBalance? { viewState.creditBalance }
     var collaborationMode: String? { viewState.collaborationMode }
     var contextSource: ConversationContextStore.Source { viewState.contextSource }
     var currentDefinition: ModelChoice? { viewState.currentDefinition }
@@ -184,6 +192,7 @@ struct MicroViewState {
     func canUseTask(_ index: Int) -> Bool { viewState.tasks.indices.contains(index) && viewState.tasks[index].enabled }
     func canMarkUnread(_ row: ThreadRow) -> Bool { viewState.unreadActions.contains(row.id) }
     func displaySignal(for row: ThreadRow) -> TaskSignal { viewState.lamps[row.id]?.displayed ?? .unknown }
+    func hasDraft(for row: ThreadRow) -> Bool { viewState.drafts.contains(row.id) }
 
     // User intents pass through the coordinator, which revalidates captured
     // identities, generations and leases immediately before dispatch.

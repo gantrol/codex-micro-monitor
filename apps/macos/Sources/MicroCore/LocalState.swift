@@ -9,6 +9,19 @@ struct CodexReadContext: Equatable {
 }
 
 enum CodexStorage {
+    private struct GlobalStateStamp: Equatable {
+        let path: String
+        let dev: dev_t
+        let ino: ino_t
+        let size: off_t
+        let mtimeSec: Int
+        let mtimeNsec: Int
+        let ctimeSec: Int
+        let ctimeNsec: Int
+    }
+    private static let globalStateLock = NSLock()
+    private static var cachedGlobalState: (stamp: GlobalStateStamp, value: [String: Any])?
+
     static var root: URL {
         URL(fileURLWithPath: ProcessInfo.processInfo.environment["CODEX_HOME"] ??
             FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex").path,
@@ -31,6 +44,41 @@ enum CodexStorage {
         let data = try handle.read(upToCount: limit + 1) ?? Data()
         guard data.count <= limit else { throw CodexClientError.invalid("Codex local state exceeds the size limit.") }
         return data
+    }
+
+    static func globalState(root: URL = root, limit: Int = 16 * 1024 * 1024) throws -> [String: Any] {
+        let url = root.appendingPathComponent(".codex-global-state.json")
+        guard !url.path.localizedCaseInsensitiveContains("trash") else {
+            throw CodexClientError.invalid("Unsupported Codex storage path.")
+        }
+        let fd = Darwin.open(url.path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK)
+        guard fd >= 0 else { throw CodexClientError.unavailable("Codex local state is unavailable.") }
+        defer { Darwin.close(fd) }
+        var info = stat()
+        guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
+              info.st_uid == getuid(), info.st_size <= limit else {
+            throw CodexClientError.invalid("Unsupported Codex local state file.")
+        }
+        let stamp = GlobalStateStamp(
+            path: url.path, dev: info.st_dev, ino: info.st_ino, size: info.st_size,
+            mtimeSec: info.st_mtimespec.tv_sec, mtimeNsec: info.st_mtimespec.tv_nsec,
+            ctimeSec: info.st_ctimespec.tv_sec, ctimeNsec: info.st_ctimespec.tv_nsec
+        )
+        globalStateLock.lock()
+        if let cached = cachedGlobalState, cached.stamp == stamp {
+            let value = cached.value
+            globalStateLock.unlock()
+            return value
+        }
+        globalStateLock.unlock()
+        let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: false)
+        let data = try handle.read(upToCount: limit + 1) ?? Data()
+        guard data.count <= limit else { throw CodexClientError.invalid("Codex local state exceeds the size limit.") }
+        let parsed = try JSON.object(data)
+        globalStateLock.lock()
+        cachedGlobalState = (stamp, parsed)
+        globalStateLock.unlock()
+        return parsed
     }
 
     static func hash(_ parts: [Any]) -> String? {
@@ -65,8 +113,7 @@ enum CodexStorage {
     }
 
     static func unread(identity: String?) -> Set<String>? {
-        guard let bytes = try? read(root.appendingPathComponent(".codex-global-state.json"), limit: 16 * 1024 * 1024),
-              let global = try? JSON.object(bytes) else { return nil }
+        guard let global = try? globalState() else { return nil }
         if let raw = global["electron-thread-read-state-v1"] {
             guard let state = raw as? [String: Any], state["version"] as? Int == 1,
                   let identity, let identities = state["unreadByIdentity"] as? [String: Any],
@@ -82,11 +129,78 @@ enum CodexStorage {
         // into a modern identity or treated as proof that a chat is unread.
         return nil
     }
+
+    private static let composerContentBearingNodeTypes: Set<String> = [
+        "atMention", "skillMention", "agentMention", "appMention", "pluginMention",
+        "browserSkillMention", "browserTabMention", "richLink", "pageReferenceMention",
+        "pageTaskMention", "resourceMention", "image", "horizontal_rule"
+    ]
+
+    static func composerDrafts(ids: Set<String>) -> Set<String>? {
+        guard !ids.isEmpty else { return [] }
+        guard let global = try? globalState(),
+              let atoms = global["electron-persisted-atom-state"] as? [String: Any] else { return nil }
+        // Prefer v2 as a whole dictionary. If v2 exists, do not fall back to v1
+        // per-thread because v1 can retain stale entries after a draft is cleared.
+        let v2Raw = atoms["composer-prompt-drafts-v2"]
+        let prompts: [String: Any]?
+        if let v2 = v2Raw as? [String: Any] {
+            prompts = v2
+        } else if v2Raw == nil || v2Raw is NSNull {
+            prompts = atoms["composer-prompt-drafts-v1"] as? [String: Any]
+        } else {
+            prompts = nil
+        }
+        let pullRequests = atoms["composer-pull-request-attachment-drafts-v1"] as? [String: Any]
+        let annotations = atoms["composer-response-annotation-drafts-v1"] as? [String: Any]
+        let suggestions = atoms["composer-presentation-suggestion-drafts-v1"] as? [String: Any]
+        guard prompts != nil || pullRequests != nil || annotations != nil || suggestions != nil else { return nil }
+
+        func hasText(_ raw: String?) -> Bool {
+            guard let raw else { return false }
+            return raw.unicodeScalars.contains { scalar in
+                !scalar.properties.isWhitespace && scalar.value != 0x200B && scalar.value != 0xFEFF
+            }
+        }
+        func hasDocumentContent(_ node: [String: Any], depth: Int) -> Bool {
+            guard depth <= 64 else { return false }
+            let type = node["type"] as? String ?? ""
+            if type == "text" { return hasText(node["text"] as? String) }
+            if composerContentBearingNodeTypes.contains(type) { return true }
+            if let content = node["content"] as? [[String: Any]] {
+                return content.contains { hasDocumentContent($0, depth: depth + 1) }
+            }
+            return false
+        }
+        func hasPrompt(_ raw: Any?) -> Bool {
+            if let text = raw as? String { return hasText(text) }
+            guard let dict = raw as? [String: Any] else { return false }
+            if hasPrompt(dict["draft"]) { return true }
+            if let prompt = dict["prompt"] as? [String: Any],
+               let document = prompt["document"] as? [String: Any] {
+                return hasDocumentContent(document, depth: 0)
+            }
+            return false
+        }
+
+        var result = Set<String>()
+        for id in ids where UUID(uuidString: id) != nil {
+            let key = "local:" + id
+            let present = hasPrompt(prompts?[key]) ||
+                ((pullRequests?[key] as? [String: Any])?.isEmpty == false) ||
+                ((annotations?[key] as? [Any])?.isEmpty == false) ||
+                ((suggestions?[key] as? [String: Any])?["isAttached"] as? Bool == true)
+            if present { result.insert(id) }
+        }
+        return result
+    }
 }
 
 struct RolloutObservation {
     var status = "unknown"
     var pendingQuestion = false
+    var errorCode: String? = nil
+    var turnID: String? = nil
 }
 
 /// Bounded, incremental JSONL observation. Only lifecycle and question IDs are
@@ -101,10 +215,13 @@ final class RolloutReader {
         var partial = Data()
         var dropping = false
         var status = "unknown"
+        var errorCode: String?
         var turn: String?
+        var isTerminal = false
         var questions: Set<Question> = []
         var resolved: Set<Question> = []
-        func resetTurn() { turn = nil; questions.removeAll(); resolved.removeAll() }
+        func clearQuestions() { questions.removeAll(); resolved.removeAll() }
+        func resetTurn() { turn = nil; isTerminal = false; errorCode = nil; clearQuestions() }
     }
     private var cursors: [String: Cursor] = [:]
     private let maximumLine = 256 * 1024
@@ -162,7 +279,8 @@ final class RolloutReader {
             current.modified = info.st_mtimespec
             if let acceptedState { accept(acceptedState, cursor: current) }
             guard current.offset == length else { return .init() }
-            return .init(status: current.status, pendingQuestion: current.status == "active" && !current.questions.isEmpty)
+            return .init(status: current.status, pendingQuestion: current.status == "active" && !current.questions.isEmpty,
+                         errorCode: current.errorCode, turnID: current.turn)
         } catch {
             cursors[url.path] = nil
             throw error
@@ -185,6 +303,13 @@ final class RolloutReader {
         }
     }
 
+    private static func readErrorCode(_ raw: Any?) -> String? {
+        guard let dict = raw as? [String: Any] else { return nil }
+        if let info = dict["codex_error_info"] as? String, !info.isEmpty { return info }
+        if let code = dict["code"] as? String, !code.isEmpty { return code }
+        return nil
+    }
+
     private func record(_ bytes: Data, cursor: Cursor) {
         guard let value = try? JSON.object(bytes), let payload = value["payload"] as? [String: Any] else { return }
         if value["type"] as? String == "response_item", payload["type"] as? String == "message", payload["role"] as? String == "user" {
@@ -194,12 +319,29 @@ final class RolloutReader {
         switch type {
         case "task_started":
             let turn = payload["turn_id"] as? String
-            if turn == nil || turn != cursor.turn { cursor.resetTurn() }
-            cursor.turn = turn; cursor.status = "active"
+            if let turn, turn == cursor.turn, cursor.isTerminal { return }
+            if turn == nil || turn != cursor.turn { cursor.clearQuestions() }
+            cursor.turn = turn
+            cursor.isTerminal = false
+            cursor.status = "active"
+            cursor.errorCode = nil
         case "task_complete", "turn_aborted":
-            if let turn = payload["turn_id"] as? String, let active = cursor.turn, turn != active { return }
-            cursor.status = "idle"; cursor.resetTurn()
-        case "error", "stream_error": cursor.status = "systemError"
+            let turn = payload["turn_id"] as? String
+            if let turn, let active = cursor.turn, turn != active { return }
+            // task_complete closes both successful and failed turns.
+            // Capacity failures are reported here, without a separate error event.
+            let error = payload["error"]
+            let failed = error != nil && !(error is NSNull)
+            cursor.status = failed ? "systemError" : "idle"
+            cursor.errorCode = failed ? Self.readErrorCode(error) : nil
+            cursor.clearQuestions()
+            cursor.turn = turn ?? cursor.turn
+            cursor.isTerminal = true
+        case "error", "stream_error":
+            let turn = payload["turn_id"] as? String
+            if (cursor.isTerminal && turn != nil) || (turn != nil && cursor.turn != nil && turn != cursor.turn) { return }
+            cursor.status = "systemError"
+            cursor.errorCode = Self.readErrorCode(payload)
         case "item_completed":
             guard let item = payload["item"] as? [String: Any] else { return }
             if ["UserMessage", "userMessage"].contains(item["type"] as? String ?? "") { answer(item["content"], cursor: cursor); return }
