@@ -41,6 +41,7 @@ final class ShellView: UIView {
 
 final class GlyphView: UIView {
     var name = "FAST" { didSet { if name != oldValue { resetAnimation() } } }
+    var feedbackColor: UInt32? { didSet { if oldValue != feedbackColor { setNeedsDisplay() } } }
     private var position: CGFloat?
     private var hovering = false
     private var started: CFTimeInterval = 0
@@ -70,7 +71,7 @@ final class GlyphView: UIView {
         position = rest + (end - rest) * eased; setNeedsDisplay()
         if progress >= 1 { displayLink?.invalidate(); displayLink=nil }
     }
-    override func draw(_ rect: CGRect) { if let c=UIGraphicsGetCurrentContext() { Paint.glyph(c,name,in:bounds,reasoningPosition:position) } }
+    override func draw(_ rect: CGRect) { if let c=UIGraphicsGetCurrentContext() { Paint.glyph(c,name,in:bounds,reasoningPosition:position,feedbackColor:feedbackColor) } }
 }
 
 final class SurfaceKey: UIControl {
@@ -164,6 +165,8 @@ final class HardwareControl: UIControl {
     enum Kind { case dial, joystick, quota }
     let kind: Kind
     var usage: [UsageWindow] = [] { didSet { setNeedsDisplay() } }
+    var creditText: String? { didSet { if oldValue != creditText { setNeedsDisplay() } } }
+    var creditExhausted = false { didSet { if oldValue != creditExhausted { setNeedsDisplay() } } }
     var modelID = "" { didSet { setNeedsDisplay() } }
     var effort = "" { didSet { setNeedsDisplay() } }
     var efforts:[String] = [] { didSet { if oldValue != efforts { setNeedsDisplay() } } }
@@ -293,7 +296,7 @@ final class HardwareControl: UIControl {
                 Paint.ellipse(c,r,color)
             }
             c.saveGState(); c.translateBy(x:33,y:19); c.scaleBy(x:58/52,y:58/52)
-            QuotaDrawing.draw(c,windows:usage,modelID:modelID,effort:effort,efforts:efforts,showModel:modelPreview || feedbackPreview,updating:refreshing); c.restoreGState()
+            QuotaDrawing.draw(c,windows:usage,modelID:modelID,effort:effort,efforts:efforts,showModel:modelPreview || feedbackPreview,updating:refreshing,creditText:creditText,creditExhausted:creditExhausted); c.restoreGState()
         }
     }
 }
@@ -495,13 +498,15 @@ final class HardwareControl: UIControl {
         for i in tasks.indices {
             let key=tasks[i], row=model.taskRow(at:i)
             let fresh=row.map { row in model.connected && model.knownThreads.contains { $0.id == row.id } } ?? false
-            let light=LightState(signal:row.map { model.displaySignal(for:$0) } ?? .unknown,selected:fresh && row?.id == model.displayedThreadID)
+            let hasDraft=fresh && (row.map { model.hasDraft(for:$0) } ?? false)
+            let light=LightState(signal:row.map { model.displaySignal(for:$0) } ?? .unknown,selected:fresh && row?.id == model.displayedThreadID,hasDraft:hasDraft)
             key.light=light; key.updateArt()
             wideHalos[i].image=KeyArt.halo(light,near:false,scale:key.artScale)
             halos[i].image=KeyArt.halo(light,near:true,scale:key.artScale)
             key.alpha=model.monitor ? (row==nil && model.taskCommand(at:i)==nil ? 0.42 : model.connected ? 1 : 0.58) : 1
             key.isEnabled=model.canUseTask(i)
-            key.accessibilityLabel=model.taskLabel(at:i); key.accessibilityValue=tr(light.signal.rawValue)
+            key.accessibilityLabel=model.taskLabel(at:i)
+            key.accessibilityValue=[tr(light.signal.rawValue), light.hasDraft ? tr("composerDraft") : ""].filter { !$0.isEmpty }.joined(separator:" · ")
             key.requiredTapCount=settings.layout.singleTapAgentKeys ? 1 : 2
             key.selectOnly={ [weak self] in self?.widgetNavigation?.cancel(); self?.model.prepareTask(i,open:false)?() }
             key.prepare={ [weak self] in self?.widgetNavigation?.cancel(); return self?.model.prepareTask(i) }
@@ -521,6 +526,13 @@ final class HardwareControl: UIControl {
             key.isEnabled=true; key.accessibilityHint=enabled ? model.selectedTitle : tr(binding == nil ? "emptySlot" : unsupported ? "unsupportedAction" : "controlNotReady")
             key.glyph.alpha=enabled ? 1 : 0.4
             key.glyph.name=cap=="FAST" && model.fast ? "FAST_ON" : cap
+            if cap == "MIND+" && model.reasoningBoundaryDirection == 1 {
+                key.glyph.feedbackColor = ReasoningGlyph.maxBoundaryColor
+            } else if cap == "MIND-" && model.reasoningBoundaryDirection == -1 {
+                key.glyph.feedbackColor = ReasoningGlyph.minBoundaryColor
+            } else {
+                key.glyph.feedbackColor = nil
+            }
             key.setNeedsLayout()
             key.accessibilityLabel=KeySlots.actionLabel(model.binding(for:id))
             key.accessibilityValue=cap
@@ -535,7 +547,8 @@ final class HardwareControl: UIControl {
                 }
             }
         }
-        quota.usage=model.usageWindows; quota.connected=model.connected; quota.desktopConnected=model.desktopConnected; quota.refreshing=model.refreshing || model.controlling
+        quota.usage=model.usageWindows; quota.creditText=model.creditBalance?.displayText; quota.creditExhausted=model.creditBalance?.isExhausted ?? false
+        quota.connected=model.connected; quota.desktopConnected=model.desktopConnected; quota.refreshing=model.refreshing || model.controlling
         quota.controlAttention=model.controlError != nil || model.needsControlRefresh
         quota.modelID=model.currentModel; quota.effort=model.reasoningFeedback ?? model.currentEffort
         quota.efforts=model.currentDefinition?.efforts ?? []

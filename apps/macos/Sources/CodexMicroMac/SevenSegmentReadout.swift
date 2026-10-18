@@ -1,7 +1,7 @@
 import UIKit
 
 enum QuotaDrawing {
-    static func draw(_ c: CGContext, windows: [UsageWindow], modelID:String, effort:String, efforts:[String] = [], showModel:Bool, updating:Bool) {
+    static func draw(_ c: CGContext, windows: [UsageWindow], modelID:String, effort:String, efforts:[String] = [], showModel:Bool, updating:Bool, creditText:String? = nil, creditExhausted:Bool = false) {
         let available=windows.filter(\.available)
         if showModel {
             let rank=efforts.firstIndex(of:effort)
@@ -25,6 +25,18 @@ enum QuotaDrawing {
         for (i,window) in available.enumerated() {
             let diameter:CGFloat=i==0 ? 47 : 41
             ring(c,diameter:diameter,remaining:window.remaining,accent:window.id=="primary" ? 0xFFA8C7FF : 0xFF9BDBBD)
+        }
+        if let creditText, !creditText.isEmpty, available.contains(where: { ($0.remaining ?? 1) <= 0 }) {
+            let caption = "Credits"
+            let valueAttrs:[NSAttributedString.Key:Any]=[.font:UIFont.systemFont(ofSize:15,weight:.semibold),.foregroundColor:UIColor(argb:creditExhausted ? 0xFFFF9E8B : 0xFFF7FAFF)]
+            let captionAttrs:[NSAttributedString.Key:Any]=[.font:UIFont.systemFont(ofSize:9,weight:.semibold),.foregroundColor:UIColor(argb:0xFFDDE7F2)]
+            let vs=(creditText as NSString).size(withAttributes:valueAttrs), cs=(caption as NSString).size(withAttributes:captionAttrs)
+            let scale=min(1,36/max(vs.width,cs.width),32/max(32,vs.height+cs.height))
+            c.saveGState(); c.translateBy(x:26,y:26); c.scaleBy(x:scale,y:scale)
+            (creditText as NSString).draw(at:CGPoint(x:-vs.width/2,y:-14),withAttributes:valueAttrs)
+            (caption as NSString).draw(at:CGPoint(x:-cs.width/2,y:3),withAttributes:captionAttrs)
+            c.restoreGState()
+            return
         }
         if available.count==2 {
             SevenSegment.draw(c,text:available[0].text,in:Paint.rect(9,10,27,14))

@@ -138,10 +138,11 @@ import Combine
         }
         for (index,key) in tasks.enumerated() {
             let row=model.taskRow(at:index)
-            key.light=LightState(signal:row.map { model.displaySignal(for:$0) } ?? .unknown,selected:row != nil && row?.id == model.displayedThreadID)
+            key.light=LightState(signal:row.map { model.displaySignal(for:$0) } ?? .unknown,selected:row != nil && row?.id == model.displayedThreadID,hasDraft:row.map { model.hasDraft(for:$0) } ?? false)
             key.updateArt()
         }
         quota.usage=model.usageWindows; quota.connected=model.connected; quota.desktopConnected=model.desktopConnected
+        quota.creditText=model.creditBalance?.displayText; quota.creditExhausted=model.creditBalance?.isExhausted ?? false
     }
 }
 

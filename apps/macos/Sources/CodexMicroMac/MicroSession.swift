@@ -57,6 +57,7 @@ import OSLog
     @Published private(set) var encoderMode: String?
     @Published private(set) var analogActions: [String: String] = [:]
     @Published private(set) var reasoningFeedback: String?
+    @Published private(set) var reasoningBoundaryDirection: Int?
     @Published private(set) var forkAvailable = false
     var foreground: [String: Any] {
         get { conversation.foreground }
@@ -216,6 +217,7 @@ import OSLog
     // up to ten seconds; a five-second queue deadline drops later clicks.
     private static let settingsQueueWait: TimeInterval = 60
     private var feedbackTask: Task<Void, Never>?
+    private var boundaryFeedbackTask: Task<Void, Never>?
     private var refreshingControls = false
     private var canAutomaticallyRefreshControls = false
     private static let logger = Logger(subsystem: "com.gantrol.codex-micro-monitor", category: "control")
@@ -296,6 +298,7 @@ import OSLog
     var usageWindows: [UsageWindow] {
         let buckets = usage["rateLimitsByLimitId"] as? [String: [String: Any]] ?? [:]
         let limits = buckets["codex"] ?? usage["rateLimits"] as? [String: Any] ?? [:]
+        let isPro = (limits["planType"] as? String)?.lowercased() == "pro"
         return ["primary", "secondary"].map { key in
             let window = limits[key] as? [String: Any] ?? [:]
             let used = (window["usedPercent"] as? NSNumber)?.doubleValue
@@ -307,12 +310,27 @@ import OSLog
                 else if minutes % 60 == 0 { label = String(format: tr("hours"), minutes / 60) }
                 else { label = String(format: tr("minutes"), minutes) }
             } else { label = tr(key + "Usage") }
+            if key == "primary", isPro {
+                return UsageWindow(id: key, label: label, available: false, remaining: nil, reset: nil)
+            }
             let reset = (window["resetsAt"] as? NSNumber)?.doubleValue
             return UsageWindow(id: key, label: label, available: !window.isEmpty, remaining: remaining,
                                reset: reset.flatMap { $0.isFinite ? Date(timeIntervalSince1970: $0) : nil })
         }
     }
-    var quota: String { usageWindows.first(where: { $0.remaining != nil })?.text ?? "—" }
+    var creditBalance: CreditBalance? { CreditBalance.parse(usage) }
+    var quota: String {
+        let base = usageWindows.first(where: { $0.available && $0.remaining != nil })?.text ?? "—"
+        if usageWindows.contains(where: { $0.available && ($0.remaining ?? 1) <= 0 }), let credits = creditBalance {
+            return "\(base) · Credits \(credits.displayText)"
+        }
+        return base
+    }
+
+    func hasDraft(for row: ThreadRow) -> Bool {
+        guard connected, knownThreads.contains(where: { $0.id == row.id }) else { return false }
+        return activity.hasDraft(for: row.id, fallback: row.hasDraft)
+    }
 
     func signal(for row: ThreadRow) -> TaskSignal {
         guard connected, knownThreads.contains(where: { $0.id == row.id }) else { return .unknown }
@@ -320,8 +338,9 @@ import OSLog
         if row.id == selectedID, desktopConnected {
             let approvals = state["approvals"] as? [[String: Any]] ?? []
             if let runtime = state["runtimeStatus"] as? [String: Any] {
+                let errorCode = state["errorCode"] as? String ?? runtime["errorCode"] as? String
                 fallback = TaskSignal.classify(status: runtime, question: state["hasPendingQuestion"] as? Bool ?? false,
-                    approval: !approvals.isEmpty, unread: state["hasUnreadTurn"] as? Bool ?? row.hasUnreadTurn)
+                    approval: !approvals.isEmpty, unread: state["hasUnreadTurn"] as? Bool ?? row.hasUnreadTurn, errorCode: errorCode)
             } else if !approvals.isEmpty { fallback = .waiting }
             else if state["hasPendingQuestion"] as? Bool == true { fallback = .question }
         }
@@ -435,7 +454,7 @@ import OSLog
     func stop() {
         conversation.bind(nil);clientBindingRevision += 1
         cancelDialInput()
-        feedbackTask?.cancel(); reasoningFeedback = nil
+        feedbackTask?.cancel(); reasoningFeedback = nil; clearReasoningBoundaryFeedback()
         lifecycle += 1
         selectionVersion += 1
         observationEpoch += 1; conversation.reset(); pendingNewError=nil
@@ -558,7 +577,7 @@ import OSLog
             let nativeOnly: Bool
             if case .nativeComposer = resolution { nativeOnly = true } else { nativeOnly = false }
             if !usesNativeSettings || isNativeComposer != nativeOnly || selectedID != nil {
-                selectionVersion += 1; selectionTask?.cancel()
+                selectionVersion += 1; selectionTask?.cancel(); clearReasoningBoundaryFeedback()
             }
             conversation.selectComposer(nativeOnly: nativeOnly)
             let settings = foreground["settings"] as? [String: Any] ?? [:]
@@ -566,7 +585,7 @@ import OSLog
             desktopConnected = foreground["available"] as? Bool == true && foreground["targetToken"] is String
             selectionError = nil
         case .clear:
-            if selectedID != nil || usesNativeSettings { selectionVersion += 1; selectionTask?.cancel() }
+            if selectedID != nil || usesNativeSettings { selectionVersion += 1; selectionTask?.cancel(); clearReasoningBoundaryFeedback() }
             conversation.clearTarget()
             if !state.isEmpty { state = [:] }
             desktopConnected = false
@@ -575,7 +594,7 @@ import OSLog
 
     private func clearObservedContext() {
         observationEpoch += 1; pendingNewError = nil; clientBindingRevision += 1
-        selectionVersion += 1; selectionTask?.cancel()
+        selectionVersion += 1; selectionTask?.cancel(); clearReasoningBoundaryFeedback()
         conversation.reset(); activity.disconnect()
     }
 
@@ -585,7 +604,7 @@ import OSLog
     }
 
     private func applyLiveSettings() {
-        guard !opening, !controlling, reasoningInput == nil, !usesNativeSettings,
+        guard !controlling, reasoningInput == nil, !usesNativeSettings,
               streamConnected, let id=selectedID, let settings=liveSettings[id] else { return }
         var next=state; next.merge(settings) { _, current in current }; next["threadId"]=id
         if state as NSDictionary != next as NSDictionary { state=next }
@@ -726,11 +745,12 @@ import OSLog
         guard !opening, !controlling, UUID(uuidString: id) != nil else { return }
         if source == .selected { pendingNewError=nil; foregroundRequestRevision += 1 }
         cancelDialInput()
-        feedbackTask?.cancel(); reasoningFeedback = nil
+        feedbackTask?.cancel(); reasoningFeedback = nil; clearReasoningBoundaryFeedback()
         selectionTask?.cancel()
         selectionVersion += 1
         conversation.selectThread(id, source: source, at: observationUptime())
         state = [:]; desktopConnected = false
+        applyLiveSettings()
         selectionError = nil; openError = nil; updateError()
         let generation = lifecycle
         let version = selectionVersion
@@ -741,9 +761,17 @@ import OSLog
                 defer { if generation == lifecycle { opening = false; reconcileRoster() } }
                 do {
                     let result = try await client.execute("open_keypad_thread", arguments: ["thread_id": id])
-                    if generation == lifecycle, version == selectionVersion, result["navigation_verified"] as? Bool != true {
-                        openError = result["followupError"] as? String ?? tr("unverifiedControl"); controlError = openError; needsControlRefresh = true
-                        canAutomaticallyRefreshControls = true
+                    if generation == lifecycle, version == selectionVersion {
+                        if let observed = result["foreground"] as? [String: Any] {
+                            foreground = observed
+                            if result["navigation_verified"] as? Bool == true, observed["threadId"] as? String == id {
+                                conversation.selectThread(id, source: .foreground, at: observationUptime())
+                            }
+                        }
+                        if result["navigation_verified"] as? Bool != true {
+                            openError = result["followupError"] as? String ?? tr("unverifiedControl"); controlError = openError; needsControlRefresh = true
+                            canAutomaticallyRefreshControls = true
+                        }
                     }
                 }
                 catch {
@@ -813,6 +841,22 @@ import OSLog
         }
     }
 
+    private func showReasoningBoundaryFeedback(_ direction: Int) {
+        guard direction != 0 else { return }
+        boundaryFeedbackTask?.cancel()
+        reasoningBoundaryDirection = direction > 0 ? 1 : -1
+        boundaryFeedbackTask = Task { [weak self] in
+            do { try await Task.sleep(for: .milliseconds(900)) } catch { return }
+            self?.reasoningBoundaryDirection = nil
+        }
+    }
+
+    private func clearReasoningBoundaryFeedback() {
+        boundaryFeedbackTask?.cancel()
+        boundaryFeedbackTask = nil
+        reasoningBoundaryDirection = nil
+    }
+
     func toggleFast(target: ControlTarget) {
         enqueueSetting(.fast, target: target)
     }
@@ -876,7 +920,7 @@ import OSLog
                                 throw NSError(domain:"MicroBridge",code:1,userInfo:[NSLocalizedDescriptionKey:tr("targetChanged")])
                             }
                             let next=max(0,min(definition.efforts.count-1,at+delta))
-                            if next == at { showReasoningFeedback(definition.efforts[at]); continue }
+                            if next == at { showReasoningBoundaryFeedback(delta); showReasoningFeedback(definition.efforts[at]); continue }
                             args["effort"] = definition.efforts[next]
                         }
                     }
@@ -893,7 +937,14 @@ import OSLog
                     if target.usesNativeSettings { acceptNativeSettings(observed); token = observed["targetToken"] as? String }
                     else { state = observed }
                     settings = ["model":state["model"] ?? NSNull(),"effort":state["effort"] ?? NSNull(),"serviceTier":state["serviceTier"] ?? NSNull(),"collaborationMode":state["collaborationMode"] ?? NSNull()]
-                    if case .reasoning = action { showReasoningFeedback(currentEffort) }
+                    if case .reasoning(let delta) = action {
+                        if result["boundaryReached"] as? Bool == true {
+                            showReasoningBoundaryFeedback(delta)
+                        } else {
+                            clearReasoningBoundaryFeedback()
+                        }
+                        showReasoningFeedback(currentEffort)
+                    }
                 }
             } catch {
                 if target.lifecycle == lifecycle, !(error is CancellationError) {

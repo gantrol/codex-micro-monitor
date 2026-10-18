@@ -35,12 +35,15 @@ import OSLog
             return MicroWidgetSnapshot.Key(slot: index, threadID: row?.id,
                 label: row == nil ? tr("emptySlot") : task.label,
                 signal: row.flatMap { state.lamps[$0.id]?.displayed.rawValue } ?? "unknown",
-                selected: row != nil && row?.id == state.displayedThreadID)
+                selected: row != nil && row?.id == state.displayedThreadID,
+                hasDraft: row.map { state.drafts.contains($0.id) || $0.hasDraft } ?? false)
         }
         let meter = MicroWidgetSnapshot.Meter(windows: state.connected ? state.usageWindows.map {
             .init(id: $0.id, label: $0.label, available: $0.available, remaining: $0.remaining)
         } : [], connected: state.connected, desktopConnected: state.desktopConnected,
-            attention: state.controlError != nil || state.needsControlRefresh)
+            attention: state.controlError != nil || state.needsControlRefresh,
+            creditText: state.connected ? state.creditBalance?.displayText : nil,
+            creditExhausted: state.connected && (state.creditBalance?.isExhausted ?? false))
         let changed = last?.keys != keys || last?.scope != scope || last?.connected != state.connected || last?.meter != meter
         if changed || now.timeIntervalSince(last?.updatedAt ?? .distantPast) >= 60 {
             do {
@@ -70,7 +73,7 @@ import OSLog
             shell.contentScaleFactor = scale; shell.draw(shell.bounds)
             let lights = (0..<14).map { slot -> LightState in
                 let key = keys.first { $0.slot == slot }
-                return LightState(signal: key.flatMap { TaskSignal(rawValue: $0.signal) } ?? .unknown, selected: key?.selected ?? false)
+                return LightState(signal: key.flatMap { TaskSignal(rawValue: $0.signal) } ?? .unknown, selected: key?.selected ?? false, hasDraft: key?.hasDraft ?? false)
             }
             // Match the main panel's ordering: all outer halos, all inner halos, then keycaps.
             for near in [false, true] {
@@ -92,6 +95,7 @@ import OSLog
             quota.usage = meter.windows.map { UsageWindow(id: $0.id, label: $0.label, available: $0.available, remaining: $0.remaining, reset: nil) }
             quota.connected = meter.connected; quota.desktopConnected = meter.desktopConnected
             quota.controlAttention = meter.attention
+            quota.creditText = meter.creditText; quota.creditExhausted = meter.creditExhausted
             quota.draw(quota.bounds)
             c.restoreGState()
             let side = KeycapGlyph.side(at: 1, name: "CODEX")

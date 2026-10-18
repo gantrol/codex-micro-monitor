@@ -16,16 +16,23 @@ public struct MicroWidgetSnapshot: Codable, Equatable {
         public let connected: Bool
         public let desktopConnected: Bool
         public let attention: Bool
-        public init(windows: [Window], connected: Bool, desktopConnected: Bool, attention: Bool) {
+        public let creditText: String?
+        public let creditExhausted: Bool
+        public init(windows: [Window], connected: Bool, desktopConnected: Bool, attention: Bool, creditText: String? = nil, creditExhausted: Bool = false) {
             self.windows = windows; self.connected = connected
             self.desktopConnected = desktopConnected; self.attention = attention
+            self.creditText = creditText; self.creditExhausted = creditExhausted
         }
         public static let empty = Meter(windows: [], connected: false, desktopConnected: false, attention: false)
         public var label: String {
-            windows.filter(\.available).map { window in
+            var parts = windows.filter(\.available).map { window in
                 let value = window.remaining.flatMap { $0.isFinite ? "\(Int(max(0, min(100, $0)).rounded()))%" : nil } ?? "—"
                 return "\(window.label) \(value)"
-            }.joined(separator: " · ")
+            }
+            if let creditText, windows.contains(where: { $0.available && ($0.remaining ?? 1) <= 0 }) {
+                parts.append("Credits \(creditText)")
+            }
+            return parts.joined(separator: " · ")
         }
     }
 
@@ -35,11 +42,12 @@ public struct MicroWidgetSnapshot: Codable, Equatable {
         public let label: String
         public let signal: String
         public let selected: Bool
+        public let hasDraft: Bool
         public var id: Int { slot }
 
-        public init(slot: Int, threadID: String?, label: String, signal: String, selected: Bool) {
+        public init(slot: Int, threadID: String?, label: String, signal: String, selected: Bool, hasDraft: Bool = false) {
             self.slot = slot; self.threadID = threadID; self.label = label
-            self.signal = signal; self.selected = selected
+            self.signal = signal; self.selected = selected; self.hasDraft = hasDraft
         }
     }
 
