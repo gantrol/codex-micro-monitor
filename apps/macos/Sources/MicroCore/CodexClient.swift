@@ -244,19 +244,21 @@ private final class ControlWorker: @unchecked Sendable {
                 (row["path"] as? String).map { URL(fileURLWithPath: $0).standardizedFileURL.resolvingSymlinksInPath().path }
             }))
             let unread = CodexStorage.unread(identity: identity)
+            let drafts = CodexStorage.composerDrafts(ids: observedIDs)
             var projected: [[String: Any]] = []
             for (index, row) in observed.enumerated() {
                 try context.check()
                 let id = row["id"] as! String
                 let local = index < 14 ? (try? rollouts.read(path: paths[id], thread: id, context: context)) : nil
                 let catalogStatus = row["status"] as? [String: Any] ?? [:]
-                let status = Self.status(catalogStatus, fallback: local?.status)
+                let status = Self.status(catalogStatus, fallback: local?.status, errorCode: local?.errorCode)
                 let title=(row["name"] as? String).flatMap {$0.isEmpty ? nil:$0} ?? row["preview"] as? String ?? ""
                 projected.append(["id": id, "title":title,"cwd": row["cwd"] ?? "",
-                    "status": status, "hasPendingQuestion": local?.pendingQuestion ?? false,
+                    "status": status, "errorCode": local?.errorCode ?? JSON.null as Any, "hasPendingQuestion": local?.pendingQuestion ?? false,
                     "attention":TaskAttention.classify(status:status,question:local?.pendingQuestion ?? false,unread:unread?.contains(id) ?? false).rawValue,
                     "recencyAt":TaskAttention.recency(row),
                     "hasUnreadTurn": unread.map { $0.contains(id) } ?? JSON.null as Any,
+                    "hasDraft": drafts?.contains(id) ?? false,
                     "statusSource": ["active", "idle", "systemError"].contains(catalogStatus["type"] as? String ?? "") ? "app-server" : local?.status != "unknown" && local != nil ? "rollout" : "unavailable"])
             }
             try context.check()
@@ -392,6 +394,22 @@ private final class ControlWorker: @unchecked Sendable {
             if local?.pendingQuestion == true,
                !["idle", "systemError"].contains((state["threadRuntimeStatus"] as? [String: Any])?["type"] as? String ?? "") {
                 projected["hasPendingQuestion"] = true
+            }
+            let desktopRuntime = ActivityMonitor.resolveDesktopRuntime(state)
+            let sameTurn = !desktopRuntime.hasCurrentTurn || (desktopRuntime.turnID != nil && desktopRuntime.turnID == local?.turnID)
+            var runtimeStatus = projected["runtimeStatus"] as? [String: Any] ?? [:]
+            let rawType = runtimeStatus["type"] as? String ?? desktopRuntime.type
+            if desktopRuntime.type == "systemError" || (rawType == "idle" && sameTurn && local?.status == "systemError") {
+                runtimeStatus["type"] = "systemError"
+                if let code = desktopRuntime.errorCode ?? (sameTurn ? local?.errorCode : nil) {
+                    runtimeStatus["errorCode"] = code
+                    projected["errorCode"] = code
+                }
+                projected["runtimeStatus"] = runtimeStatus
+            } else if rawType == "systemError", let code = (runtimeStatus["errorCode"] as? String) ?? desktopRuntime.errorCode ?? (sameTurn ? local?.errorCode : nil) {
+                runtimeStatus["errorCode"] = code
+                projected["errorCode"] = code
+                projected["runtimeStatus"] = runtimeStatus
             }
             try context.check()
             return projected
@@ -572,9 +590,17 @@ private final class ControlWorker: @unchecked Sendable {
         guard process.terminationStatus == 0 else { throw CodexClientError.unavailable("macOS could not open Codex. Install and open the Codex desktop app first.") }
     }
 
-    private static func status(_ observed: [String: Any], fallback: String?) -> [String: Any] {
-        if ["active", "idle", "systemError"].contains(observed["type"] as? String ?? "") { return observed }
-        return ["type": fallback ?? "unknown"]
+    private static func status(_ observed: [String: Any], fallback: String?, errorCode: String? = nil) -> [String: Any] {
+        let rawType = observed["type"] as? String ?? ""
+        if ["active", "idle", "systemError"].contains(rawType) {
+            var result = observed
+            if rawType == "idle", fallback == "systemError" { result["type"] = "systemError" }
+            if result["type"] as? String == "systemError", let errorCode, result["errorCode"] == nil { result["errorCode"] = errorCode }
+            return result
+        }
+        var result: [String: Any] = ["type": fallback == "idle" || fallback == "systemError" ? fallback! : "unknown"]
+        if result["type"] as? String == "systemError", let errorCode { result["errorCode"] = errorCode }
+        return result
     }
 
     private static func binding(_ value: Any?) -> [String: Any]? {

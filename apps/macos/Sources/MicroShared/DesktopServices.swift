@@ -48,11 +48,12 @@ public enum NativeComposerIdentity {
 }
 
 public enum TaskLampSignal:String,CaseIterable {
-    case unknown,idle,running,waiting,question,unread,error
+    case unknown,idle,running,waiting,question,unread,error,overloaded
     public init(status:[String:Any]) {self=Self.classify(status:status)}
-    public static func classify(status:[String:Any],question:Bool=false,approval:Bool=false,unread:Bool=false)->Self {
+    public static func classify(status:[String:Any],question:Bool=false,approval:Bool=false,unread:Bool=false,errorCode:String?=nil)->Self {
         let type=status["type"] as? String,flags=status["activeFlags"] as? [String] ?? []
-        if type == "systemError" {return .error}
+        let code=errorCode ?? status["errorCode"] as? String
+        if type == "systemError" {return code == "server_overloaded" ? .overloaded : .error}
         if approval || flags.contains("waitingOnApproval") {return .waiting}
         if question || flags.contains("waitingOnUserInput") {return .question}
         if type == "active" {return .running}

@@ -7,7 +7,9 @@
 "waiting" = "等待输入";
 "question" = "待回答";
 "unread" = "未读";
+"overloaded" = "服务器过载";
 "error" = "错误";
+"composerDraft" = "输入框草稿";
 "days" = "%d 天";
 "hours" = "%d 小时";
 "minutes" = "%d 分钟";

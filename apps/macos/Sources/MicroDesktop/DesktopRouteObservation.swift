@@ -1,5 +1,6 @@
 import AppKit
 import ApplicationServices
+import Darwin
 import MicroCore
 
 // The renderer uses a memory router. Its WebArea can keep the bootstrap URL
@@ -23,10 +24,16 @@ final class DesktopRouteObservation {
         var offset: UInt64
         var identity: UInt64
         var partial = Data()
+        var sealed = false
     }
     private static let shared = DesktopRouteObservation()
     private let lock = NSLock()
     private var process: String?
+    private var activeFD: Int32?
+    private var activeInode: UInt64?
+    private var activeFile: URL?
+    private var trackedFiles: [URL] = []
+    private var backfilled = false
     private var cursors: [URL: Cursor] = [:]
     private var routes: [Int: Route] = [:]
     private let timestamp: ISO8601DateFormatter = {
@@ -84,42 +91,152 @@ final class DesktopRouteObservation {
         return Snapshot(processID: app.processIdentifier, window: window, route: route)
     }
 
-    private func read(pid: Int32, launched: Date) -> String? {
-        lock.lock(); defer { lock.unlock() }
-        let identity = "\(pid):\(launched.timeIntervalSince1970)"
-        if process != identity { process = identity; cursors = [:]; routes = [:] }
+    private static func isMainThreadLog(name: String, pid: Int32) -> Bool {
+        name.hasPrefix("codex-desktop-") && name.contains("-\(pid)-t0-") && name.hasSuffix(".log")
+    }
+
+    private func track(_ url: URL) {
+        if !trackedFiles.contains(url) {
+            trackedFiles.append(url)
+            trackedFiles.sort { $0.path < $1.path }
+        }
+    }
+
+    private func trackRotatedSiblings(of url: URL) {
+        let name = url.lastPathComponent
+        guard name.hasSuffix(".log") else { return }
+        let stem = name.dropLast(4)
+        guard let dash = stem.lastIndex(of: "-"),
+              let part = Int(stem[stem.index(after: dash)...]), part > 0, part < 64 else { return }
+        let prefix = String(stem[..<dash])
+        let dir = url.deletingLastPathComponent()
+        for index in 0..<part {
+            let sibling = dir.appendingPathComponent("\(prefix)-\(index).log")
+            if FileManager.default.fileExists(atPath: sibling.path) {
+                track(sibling)
+            }
+        }
+    }
+
+    private func updateOpenLog(pid: Int32, rootPath: String) {
+        let stride = Int32(MemoryLayout<vnode_fdinfowithpath>.stride)
+        if let fd = activeFD, let inode = activeInode {
+            var info = vnode_fdinfowithpath()
+            if proc_pidfdinfo(pid, fd, PROC_PIDFDVNODEPATHINFO, &info, stride) == stride,
+               UInt64(info.pvip.vip_vi.vi_stat.vst_ino) == inode {
+                return
+            }
+            activeFD = nil; activeInode = nil; activeFile = nil
+        }
+        let needed = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, nil, 0)
+        guard needed > 0 else { return }
+        let count = Int(needed) / MemoryLayout<proc_fdinfo>.stride + 16
+        var fds = [proc_fdinfo](repeating: proc_fdinfo(), count: count)
+        let actual = fds.withUnsafeMutableBytes { buffer in
+            proc_pidinfo(pid, PROC_PIDLISTFDS, 0, buffer.baseAddress, Int32(buffer.count))
+        }
+        guard actual > 0 else { return }
+        let total = Int(actual) / MemoryLayout<proc_fdinfo>.stride
+        let rootPrefix = rootPath.hasSuffix("/") ? rootPath : rootPath + "/"
+        for index in 0..<total where fds[index].proc_fdtype == UInt32(PROX_FDTYPE_VNODE) {
+            let fd = fds[index].proc_fd
+            var info = vnode_fdinfowithpath()
+            guard proc_pidfdinfo(pid, fd, PROC_PIDFDVNODEPATHINFO, &info, stride) == stride,
+                  (info.pfi.fi_openflags & UInt32(FWRITE)) != 0 else { continue }
+            let path = withUnsafePointer(to: &info.pvip.vip_path) { ptr in
+                ptr.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) }
+            }
+            guard path.hasPrefix(rootPrefix), !path.localizedCaseInsensitiveContains("trash") else { continue }
+            let url = URL(fileURLWithPath: path)
+            guard Self.isMainThreadLog(name: url.lastPathComponent, pid: pid) else { continue }
+            activeFD = fd
+            activeInode = UInt64(info.pvip.vip_vi.vi_stat.vst_ino)
+            activeFile = url
+            trackRotatedSiblings(of: url)
+            track(url)
+            return
+        }
+    }
+
+    private func backfillFromDirectories(pid: Int32, launched: Date, now: Date, root: URL) {
+        guard !backfilled else { return }
+        backfilled = true
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "yyyy/MM/dd"
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let startDay = calendar.startOfDay(for: max(launched, now.addingTimeInterval(-86400)))
+        var days: [String] = []
+        for candidate in [startDay, now] {
+            let key = formatter.string(from: candidate)
+            if !days.contains(key) { days.append(key) }
+        }
+        let token = "-\(pid)-t0-"
+        for day in days {
+            let dirURL = root.appendingPathComponent(day)
+            guard let dir = Darwin.opendir(dirURL.path) else { continue }
+            defer { Darwin.closedir(dir) }
+            while let entry = Darwin.readdir(dir) {
+                let name = withUnsafePointer(to: &entry.pointee.d_name) { ptr in
+                    ptr.withMemoryRebound(to: CChar.self, capacity: Int(entry.pointee.d_namlen) + 1) { String(cString: $0) }
+                }
+                if name.hasPrefix("codex-desktop-"), name.contains(token), name.hasSuffix(".log") {
+                    track(dirURL.appendingPathComponent(name))
+                }
+            }
+        }
+    }
+
+    private func read(pid: Int32, launched: Date) -> String? {
+        lock.lock(); defer { lock.unlock() }
+        let identity = "\(pid):\(launched.timeIntervalSince1970)"
+        if process != identity {
+            process = identity
+            activeFD = nil; activeInode = nil; activeFile = nil
+            trackedFiles = []; backfilled = false
+            cursors = [:]; routes = [:]
+        }
         let root = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Logs/com.openai.codex")
         let now = Date()
-        var files: [URL] = []
-        for day in [now.addingTimeInterval(-86400), now] {
-            let directory = root.appendingPathComponent(formatter.string(from: day))
-            guard let entries = try? FileManager.default.contentsOfDirectory(at: directory,
-                includingPropertiesForKeys: [.isSymbolicLinkKey], options: [.skipsHiddenFiles]) else { continue }
-            guard entries.count <= 2048 else { return nil }
-            files += entries.filter { $0.lastPathComponent.hasPrefix("codex-desktop-") &&
-                $0.lastPathComponent.contains("-\(pid)-t0-") && $0.pathExtension == "log" }
+        updateOpenLog(pid: pid, rootPath: root.path)
+        if trackedFiles.isEmpty {
+            backfillFromDirectories(pid: pid, launched: launched, now: now, root: root)
         }
-        guard !files.isEmpty, files.count <= 64 else { return nil }
+        guard !trackedFiles.isEmpty, trackedFiles.count <= 64 else { return nil }
+        if !( completeRead(launched: launched, now: now) ) { return nil }
+        if routes.isEmpty, !backfilled {
+            backfillFromDirectories(pid: pid, launched: launched, now: now, root: root)
+            guard trackedFiles.count <= 64, completeRead(launched: launched, now: now) else { return nil }
+        }
+        guard routes.count == 1, let route = routes.values.first else { return nil }
+        return "app://-" + route.path
+    }
+
+    private func completeRead(launched: Date, now: Date) -> Bool {
         // Every unread byte in the active files must be accounted for. Partial
         // records and an excessive backlog cannot authorize a cached old route.
         var complete = true
-        for file in files.sorted(by: { $0.path < $1.path }) {
+        for file in trackedFiles {
+            if let existing = cursors[file], existing.sealed, file != activeFile { continue }
             guard (try? file.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == false,
                   let attrs = try? FileManager.default.attributesOfItem(atPath: file.path),
                   let size = (attrs[.size] as? NSNumber)?.uint64Value,
-                  let inode = (attrs[.systemFileNumber] as? NSNumber)?.uint64Value,
-                  let handle = try? FileHandle(forReadingFrom: file) else { return nil }
-            defer { try? handle.close() }
+                  let inode = (attrs[.systemFileNumber] as? NSNumber)?.uint64Value else { return false }
             var cursor = cursors[file] ?? Cursor(offset: 0, identity: inode)
-            if cursor.identity != inode || cursor.offset > size { return nil }
+            if cursor.identity != inode || cursor.offset > size { return false }
+            if cursors[file] != nil, cursor.offset == size {
+                if cursor.partial.isEmpty, file != activeFile { cursor.sealed = true; cursors[file] = cursor }
+                complete = complete && cursor.partial.isEmpty
+                continue
+            }
+            guard let handle = try? FileHandle(forReadingFrom: file) else { return false }
+            defer { try? handle.close() }
             if size - cursor.offset > 8 * 1024 * 1024 {
                 // First observation may start at the tail; only complete lines
                 // with timestamps from this process lifetime are accepted.
-                guard cursor.offset == 0 else { return nil }
+                guard cursor.offset == 0 else { return false }
                 cursor.offset = size - 8 * 1024 * 1024
             }
             do {
@@ -134,12 +251,13 @@ final class DesktopRouteObservation {
                     for line in lines { ingest(String(line), launched: launched, now: now) }
                     cursor.partial = Data(cursor.partial.suffix(from: cursor.partial.index(after: end)))
                 }
-                complete = complete && cursor.offset == size && cursor.partial.isEmpty
+                let atEnd = cursor.offset == size && cursor.partial.isEmpty
+                if atEnd, file != activeFile { cursor.sealed = true }
+                complete = complete && atEnd
                 cursors[file] = cursor
-            } catch { return nil }
+            } catch { return false }
         }
-        guard complete, routes.count == 1, let route = routes.values.first else { return nil }
-        return "app://-" + route.path
+        return complete
     }
 
     private func ingest(_ line: String, launched: Date, now: Date) {
