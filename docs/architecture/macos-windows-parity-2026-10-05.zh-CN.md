@@ -633,3 +633,25 @@ Mac 原先只在 `/` 加主窗口容器证据时识别草稿，三个实际入�
 本轮也检查了保留 client 路由而侧栏出现正式 UUID 的过渡条件；当前仍按冲突拒绝，尚未把经过关联验证的等价身份接入原生 lease，不能声称该过渡已修复。首页 client 自动绑定同样仍未完成。两个剩余项继续保留，不从标题、时间或全局磁盘首页标识猜测。
 
 preview.32 最终结果：316 项 Swift、45 项正式包进程 E2E、323 条 JSON 回放全部通过。40 键帽／164 项离屏指标、Universal 双架构、plist、签名、ZIP 完整性、插件内嵌源码／二进制和 15 文件单向同步检查通过。preview.31 清单已独立保留；最新完整记录为 `dist/macos/parity-validation.json`。
+
+## 2026-10-18：同步 Windows 1.0.1–1.0.5 特性与 Windows 可借鉴改进
+
+### 已同步到 macOS 的 Windows 1.0.1–1.0.5 特性
+
+| Windows 版本 | 关键提交 | 特性内容 | macOS 同步落点 |
+| --- | --- | --- | --- |
+| `1.0.1` | `10c7740` | Pro 账号（`planType == "pro"`）隐藏 5 小时（`primary`）额度环与列表项，仅保留 7 天（`secondary`）窗口 | `MicroSession.usageWindows` |
+| `1.0.2` | `4b0f48e` | 任务键中心圆点与选中态解耦，改为表达持久化输入框草稿（默认紫点 `#685FAE`，有草稿薄荷绿点 `#B9EFD2`） | `CodexStorage.composerDrafts`、`ActivityMonitor`、`MicroSurfaces`、`WidgetPublisher` |
+| `1.0.3` | `ca6bc9c` | `MIND+` / `MIND-` 到达最高/最低档继续按压时，滑轨图标显示 900 ms 红色（`#BE4238`）/ 绿色（`#2F7D46`）边界反馈 | `DesktopBackend`、`MacUIController`、`MicroSession`、`ReasoningGlyph`、`MicroSurfaces` |
+| `1.0.4` | `8e83151` | 任一可用额度窗口剩余 `<= 0` 时，额度圆盘顶部显示 `Credits` 及紧凑余额（或 `∞`），余额耗尽时琥珀色高亮 | `CreditBalance`（`PanelModels`）、`SevenSegmentReadout`、`MicroView`、`WidgetPublisher` |
+| `1.0.5` | `89e748f` | 按回合（`turnID` / `resumeState` / canonical `turnHistory`）对齐实时运行态与本地日志；区分 `server_overloaded` 珊瑚橙灯（`#FF8A80`）；处理 `ipc-connection-reset` 与 `following-status-requested`；补丁裁剪 `turns` / `turnHistory` 元数据 | `DesktopServices`、`LocalState`、`CodexClient`、`ActivityMonitor`、`MicroSurfaces` |
+
+### 记录 Windows 可从 macOS 借鉴的改进点
+
+| 领域 | Windows 当前实现 | macOS 已实现方案与 Windows 可改方向 |
+| --- | --- | --- |
+| 空白新会话（`draft=true`）的模型与思考强度修改 | `CodexDraftComposerModelSelector` 通过 UIA 打开原生模型菜单、进入子菜单或操作 Power 推理滑块，存在菜单弹出闪烁与焦点干扰 | 直接通过 App Server `config/batchWrite` 修改 `model` / `model_reasoning_effort`，并向本机 IPC 广播 `query-cache-invalidate`（`queryKey: ["user-saved-config"]`，`version: 0`），Codex 渲染层会立即刷新新会话默认模型与思考强度；随后直接从闭合的模型按钮回读确认，无需点开任何控件 |
+| 空白新会话的 Fast 与 Plan | Fast 读取快捷键并在必要时打开模型菜单读速度；Plan 使用快捷键切换 | **保持现状（不可改为 `user-saved-config` 直写）**：Codex 渲染层在切换过一次 Fast 后会将 `service_tier` 保存在内存 Jotai override atom 中，优先于 `user-saved-config`，且闭合的模型按钮不显示 Fast 状态；因此 Windows 与 macOS 均应继续对新会话 Fast / Plan 使用原生控件或快捷键 |
+| 闭合模型按钮标签识别 | 依赖模型显示名匹配，遇到省略 `GPT-` 前缀或连字符变空格的显示名时可能无法在闭合按钮上直接识别 | 归一化匹配同时支持省略 `GPT-` 前缀与空格分隔模型名（如 `5.6 Terra High`、`5.4-Mini High`），减少为读取状态而展开菜单的次数 |
+| 客户端临时路由（`client-new-thread:<UUID>`）转正式 UUID | 除 UIA DOM 属性外，主要通过 `CodexDesktopRouteReader` 增量扫描主进程日志文件的 `browser sidebar owner sync` 事件 | 可补充读取 `.codex-global-state.json` 的 `client-thread-bindings-v1` 与 `thread-client-id-v1:local%3A<UUID>` 并结合只读 `thread/read` 复核，在日志轮转或未命中时提供无 UIA 侵入的精确关联 |
+

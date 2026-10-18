@@ -1,6 +1,9 @@
-# Windows 任务键灯光状态
+# 任务键灯光状态
 
-更新：2026-10-10。本文描述任务键，不是三个连接／操作指示灯。
+更新：2026-10-18。本文描述任务键（Windows 与 macOS 共用灯态优先级和语义），不是三个连接／操作指示灯。
+
+> [!NOTE]
+> 2026-10-18：macOS（`ActivityMonitor`、`RolloutReader`、`TaskLampSignal`、`MicroSurfaces`）已同步本文件的中心点持久化草稿状态、`resumeState` / `turnHistory` / `turnID` 回合对齐规则、`server_overloaded` 珊瑚橙色（`#FF8A80`）状态灯、`ipc-connection-reset` 与 `thread-stream-following-status-requested` 订阅重建，以及 `turns` / `turnHistory` 元数据裁剪。
 
 ## 大快照与会话隔离（2026-10-10）
 

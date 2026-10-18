@@ -72,7 +72,7 @@ sequenceDiagram
 - 没有实时路由时，在标题栏工具栏内读取可见标题文本，沿 RawView 祖先定位标题容器。该组件既可能是按钮，也可能是普通文本容器；不能要求它一定是按钮或出现在 ControlView 中。
 - 页面标识包含窗口、标题栏／标题容器的运行时标识及标题。它用于发现页面变化，不作为永久会话 ID。
 - 没有实时路由时，从当前侧栏行的 `data-app-action-sidebar-thread-id` 读取 `local:<UUID>` 或 `local:client-new-thread:<UUID>`，同时要求 `aria-current=page`、`active=true`、`kind=local`、`host-id=local`。该字段是前端行键；新会话创建完成后仍可能保留临时 ID，不能把其中 UUID 直接当作正式 threadId。
-- 对仍需侧栏定位的场景，日志还提供同一条记录中的 `conversationId=client-new-thread:…` 与 `ownerRoutePath=/local/<正式 UUID>` 映射。映射矛盾时拒绝解析，映射缺失时保持未确认；文件读取之后重新观察页面，才返回正式 ID。该后备路径不把别的窗口最近出现的会话当作当前页。
+- 对仍需侧栏定位的场景，日志还提供同一条记录中的 `conversationId=client-new-thread:…` 与 `ownerRoutePath=/local/<正式 UUID>` 映射。映射矛盾时拒绝解析，映射缺失时保持未确认；文件读取之后重新观察页面，才返回正式 ID。该后备路径不把别的窗口最近出现的会话当作当前页。此外，macOS 已实现从 `.codex-global-state.json` 读取 `client-thread-bindings-v1` 与 `thread-client-id-v1:local%3A<UUID>` 并通过只读 `thread/read` 复核的映射通道，Windows 可在日志轮转或未命中时借鉴该持久化关联作为补充。
 - 侧栏行先由 UIA 定位，再以该行中心点调用只读 MSAA 接口，沿最多 12 层祖先读取 `ISimpleDOMNode` 的 HTML 属性，每层最多 64 个属性。读取前后检查该点仍属于目标窗口；不移动指针、不点击。Chromium 的原生 UIA provider 不提供 LegacyIAccessible pattern，因此不依赖该 pattern。HTML 属性首次启用后可能在下一次轮询才可用。实现依据：[Chromium 的 HTML 属性与 QueryService](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/ui/accessibility/platform/browser_accessibility_com_win.cc)。
 - 标题只用于检查标题栏与已取得 ID 的侧栏行是否一致。名称索引和实时列表均可能滞后，因此保留同一 ID 在两者中的名称，不让旧列表覆盖刚生成的名称。名称缺失、重名或暂时唯一都不能授权向另一个会话写入。
 - 已观察到侧栏行但其 ID 不可读、来自远程主机或与标题栏冲突时，显式禁止沿用旧 ID。仅侧栏消失且页面标识不变时，保留本次进程已经确认的目标。
