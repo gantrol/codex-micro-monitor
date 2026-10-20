@@ -4,14 +4,14 @@
 
 Requires Windows x64, .NET SDK 10.0.302 and the pinned `CodexControl` packages. Build those packages in the independent [codex-control repository](https://github.com/gantrol/codex-control) first, or download the pinned packages from its [Releases](https://github.com/gantrol/codex-control/releases); AgentController source is not required.
 
-The current `1.0.5` candidate pins `CodexControl.1.0.3.nupkg` and `CodexControl.Windows.1.0.3.nupkg`. Build that exact version in the control repository and pass its package directory to `scripts/import-control-packages.ps1`. The published [0.3.15 release](https://github.com/gantrol/codex-micro-monitor/releases/tag/v0.3.15) supplies the older `0.1.0-local.2` packages for its matching source, not this candidate. Do not rebuild and substitute different contents under an already imported package version.
+The `1.0.6` release pins `CodexControl.1.0.4.nupkg` and `CodexControl.Windows.1.0.4.nupkg`. Download those exact packages from the [control release](https://github.com/gantrol/codex-control/releases/tag/v1.0.4), or build the matching source tag, and pass its package directory to `scripts/import-control-packages.ps1`. Older Micro releases require their own pinned dependency versions. Do not substitute different contents under an already published package version.
 
 For local development with `codex-control` checked out beside this repository, pass `-p:UseLocalCodexControl=true` to `dotnet build`, `dotnet run`, or `dotnet test`. This builds both shared control projects from source and avoids reusing a cached package with the same version. The workspace `debug:micro`, `build:micro:debug`, `test:micro`, and `manage.ps1` Micro Debug builds enable this option. Normal builds and release packaging continue to use pinned packages; the option is explicit and requires the sibling repository.
 
 Run from this repository's root:
 
 ```powershell
-.\scripts\import-control-packages.ps1 -PackageDirectory ..\codex-control\dist\1.0.3\packages
+.\scripts\import-control-packages.ps1 -PackageDirectory ..\codex-control\dist\1.0.4\packages
 dotnet build CodexMicro.slnx -c Release
 dotnet run --project src/CodexMicro.Desktop -c Release
 .\scripts\package.ps1
@@ -20,11 +20,11 @@ dotnet run --project src/CodexMicro.Desktop -c Release
 
 Quit an existing Micro window normally before running another copy. `Version.props` supplies the package version. Packaging writes desktop/plugin ZIPs, control packages and checksums to `dist/<version>/`; it refuses to overwrite an existing version directory. Use `scripts/package.ps1 -OutputDirectory <new-directory>` to prepare another candidate without moving or replacing older artifacts. Release packaging isolates NuGet restore under `.artifacts/nuget-packages/` using the pinned control-package hashes, so a machine-wide cache cannot substitute different contents under the same version. It does not install or publish anything. Both ZIPs require .NET 10 Desktop Runtime x64. The Store MSIX has a separate self-contained packaging path.
 
-`scripts/test.ps1` runs the existing unit, component and isolated control tests. Automated tests and compilation do not replace live installation acceptance. Windows is the current runnable target; macOS is not implemented and `apps/ios` is a historical prototype. Start macOS work with the [development handoff](architecture/macos-development-handoff.zh-CN.md).
+`scripts/test.ps1` runs the existing unit, component and isolated control tests. Automated tests and compilation do not replace live installation acceptance. Windows release assets are built by the scripts above. The separate macOS preview uses UIKit / Mac Catalyst and an AppKit bridge; its build requires macOS and Xcode. `apps/ios` is a historical prototype. See the [macOS development handoff](architecture/macos-development-handoff.zh-CN.md) and the current source and packaging configuration.
 
 ## Release version
 
-The next desktop app and bundled plugin release is `1.0.5`; Windows assembly/file and Store package versions use `1.0.5.0`. Shared control packages are independently pinned to `1.0.3`. See the [candidate release notes](releases/1.0.5.md). The [1.0.4 release](https://github.com/gantrol/codex-micro-monitor/releases/tag/v1.0.4) was published on 2026-10-10. Preparing this candidate does not publish it or change the approved Store package.
+The desktop app and bundled plugin release is `1.0.6`; Windows assembly/file versions use `1.0.6.0`. Shared control packages are independently pinned to `1.0.4`. See the [release notes](releases/1.0.6.md). This GitHub release does not submit a Microsoft Store update or a public plugin-directory listing. The macOS preview keeps its independent version and requires a separate Mac build.
 
 Release notes place the complete English section first, followed by Simplified Chinese.
 

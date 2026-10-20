@@ -189,7 +189,7 @@ final class MacUIController: @unchecked Sendable {
             "observationToken": observation?.token ?? NSNull() as Any,
             "canSubmit": composerUsable && (state.thread != nil || state.draft) && state.send != nil && !(state.editor?.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true),
             "plan": state.plan, "picker": state.picker?.name ?? "", "sketchOpen": state.sketchOpen, "reviewOpen": state.reviewOpen]
-        result["canDictate"] = composerUsable && (state.thread != nil || state.draft) && state.controls.contains { state.nodes[$0].enabled && state.nodes[$0].named(MacUISnapshot.voiceNames + MacUISnapshot.voiceStopNames) }
+        result["canDictate"] = composerUsable && (state.thread != nil || state.draft) && state.dictationControl != nil
         result["canOpenThreadMenu"] = threadMenuUsable && state.topLevelMenus.isEmpty
         result["canToggleTerminal"] = exactWindowUsable && state.topLevelMenus.isEmpty
         result["canOpenBrowser"] = exactWindowUsable && state.topLevelMenus.isEmpty
@@ -548,12 +548,21 @@ final class MacUIController: @unchecked Sendable {
                 return ["applied": true, "verified": true, "textObserved": after.editor?.text?.contains("$" + (a["name"] as? String ?? "")) ?? false,
                         "structuralVerification": "clipboard-roundtrip", "targetChanged": false]
             case "toggle_keypad_dictation":
-                let current = try fresh()
-                let wasRecording = current.controls.contains { current.nodes[$0].named(MacUISnapshot.voiceStopNames) }
-                let labels = wasRecording ? MacUISnapshot.voiceStopNames : MacUISnapshot.voiceNames
-                guard let button = current.unique(current.controls, matching: { $0.enabled && $0.named(labels) }) else { throw CodexClientError.unavailable("Native dictation is unavailable.") }
-                try press(button)
-                after = try wait({ state in state.controls.contains { state.nodes[$0].named(MacUISnapshot.voiceStopNames) } != wasRecording }, preserveTarget: false)
+                let current = try fresh(preserveText: false)
+                guard let dictation = current.dictationControl else { throw CodexClientError.unavailable("Native dictation is unavailable.") }
+                try press(dictation.node, preserveText: false)
+                let deadline = ProcessInfo.processInfo.systemUptime + 2.5
+                while true {
+                    // Streaming transcription may change the draft while stopping.
+                    // Keep the window, route and composer checks throughout readback.
+                    let state = try fresh(preserveText: false)
+                    if let observed = state.dictationControl, observed.recording != dictation.recording {
+                        after = state
+                        break
+                    }
+                    guard ProcessInfo.processInfo.systemUptime < deadline else { throw CodexClientError.outcomeUnknown }
+                    Thread.sleep(forTimeInterval: 0.04)
+                }
             case "set_keypad_draft_model", "set_keypad_draft_reasoning", "set_keypad_draft_fast", "toggle_keypad_draft_plan":
                 let matchingKind = a["native_composer"] as? Bool == true ? before.nativeComposer : before.draft
                 guard matchingKind, before.menuItems.isEmpty else { throw CodexClientError.staleTarget }

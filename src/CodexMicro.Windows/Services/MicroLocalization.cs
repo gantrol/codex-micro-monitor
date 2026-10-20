@@ -74,6 +74,7 @@ public sealed class MicroLocalization
     internal string ActionLabel(CodexActionDefinition action) => action.Id switch
     {
         "composer.sketch" => Text("绘图"),
+        "dictation.pushToTalk" => Text("语音输入"),
         "turn.cancel" => Text("停止"),
         _ => IsEnglish ? action.Label : action.LabelZh ?? action.Label,
     };
@@ -96,6 +97,9 @@ public sealed class MicroLocalization
         "ui.outcome-unknown" => Text("操作结果未确认"),
         "ui.sketch.observed" or "ui.sketch.already-open" => Text("绘图已打开"),
         "ui.sketch.unavailable" => Text("绘图暂不可用"),
+        "ui.dictation.started" => Text("听写已开始"),
+        "ui.dictation.stopped" => Text("听写已停止"),
+        "ui.dictation.unavailable" => Text("听写暂不可用"),
         "ui.fast.enabled" => Text("Fast 已开启"),
         "ui.fast.disabled" => Text("Fast 已关闭"),
         "ui.fast.unavailable" => Text("Fast 暂不可用"),
@@ -543,6 +547,9 @@ internal static class MicroEnglishTranslations
         ("上一个会话", "Previous session"),
         ("下一个会话", "Next session"),
         ("语音输入", "Voice input"),
+        ("听写已开始", "Dictation started"),
+        ("听写已停止", "Dictation stopped"),
+        ("听写暂不可用", "Dictation unavailable"),
         ("批准", "Approve"),
         ("拒绝", "Reject"),
         ("正在激活 {harness.DisplayName}", "Activating {harness.DisplayName}"),

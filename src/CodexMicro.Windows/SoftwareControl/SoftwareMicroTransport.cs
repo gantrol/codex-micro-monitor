@@ -187,6 +187,7 @@ internal sealed class SoftwareMicroTransport : IMicroTransport
             "composer.decreaseReasoningEffort" => RunReasoningAsync(context, -1),
             "composer.submit" => RunUiAsync(new(CodexUiOperation.Submit), context),
             "composer.sketch" => RunUiAsync(new(CodexUiOperation.OpenSketch), context),
+            "dictation.pushToTalk" => RunUiAsync(new(CodexUiOperation.ToggleDictation), context),
             "toggleSidebar" => RunUiAsync(new(CodexUiOperation.ToggleSidebar), context),
             "navigateBack" => RunUiAsync(new(CodexUiOperation.Back), context),
             "navigateForward" => RunUiAsync(new(CodexUiOperation.Forward), context),

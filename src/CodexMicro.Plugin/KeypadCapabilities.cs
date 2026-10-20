@@ -21,6 +21,7 @@ internal static class KeypadCapabilities
             "foreground blank-draft model and reasoning selection",
             "MCP: explicit message submission and exact-turn interruption",
             "foreground composer submission with UI observation",
+            "native dictation start/stop through the keypad voice key",
             "composer control focus and selection", "conversation scrolling",
             "Plan/sidebar/back/forward joystick navigation",
             "configured skill mention insertion with name/path verification",
@@ -28,7 +29,7 @@ internal static class KeypadCapabilities
         },
         unavailable = new[]
         {
-            "native push-to-talk and realtime voice",
+            "hold-to-talk and realtime voice",
             "arbitrary Codex UI commands",
             "hardware lighting and device settings"
         },

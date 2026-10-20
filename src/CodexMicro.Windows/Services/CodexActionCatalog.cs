@@ -12,6 +12,7 @@ internal static partial class CodexActionCatalog
             new("turn.cancel", "Stop", "REJ"),
             // The composer menu exposes Sketch separately from the keyboard command registry.
             new("composer.sketch", "Sketch", "SKETCH"),
+            new("dictation.pushToTalk", "Voice input", "MIC"),
         ]);
 
     // Matches SoftwareMicroTransport's dispatch routes. Availability still depends
@@ -23,7 +24,8 @@ internal static partial class CodexActionCatalog
         "turn.cancel" or
         "composer.toggleFastMode" or "composer.togglePlanMode" or
         "composer.increaseReasoningEffort" or "composer.decreaseReasoningEffort" => "ipc",
-        "composer.submit" or "composer.sketch" or "toggleSidebar" or "navigateBack" or "navigateForward" => "native-ui",
+        "composer.submit" or "composer.sketch" or "dictation.pushToTalk" or
+        "toggleSidebar" or "navigateBack" or "navigateForward" => "native-ui",
         _ => null,
     };
 

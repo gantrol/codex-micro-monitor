@@ -200,6 +200,11 @@ struct MacUISnapshot {
     static let voiceNames = ["Dictate", "Start dictation", "语音输入", "听写", "聽寫"]
     static let voiceStopNames = ["Stop dictation", "停止听写", "停止聽寫"]
 
+    var dictationControl: (node: AXNode, recording: Bool)? {
+        guard let node = unique(controls, matching: { $0.enabled && $0.named(Self.voiceNames + Self.voiceStopNames) }) else { return nil }
+        return (node, node.named(Self.voiceStopNames))
+    }
+
     static func isModelMenuRoot(_ node: AXNode) -> Bool {
         if node.role == "AXMenu" { return true }
         return node.role == "AXGroup" && !node.identifier.hasPrefix("app-shell-tab-panel-") &&

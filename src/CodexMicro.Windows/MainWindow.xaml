@@ -680,12 +680,7 @@
                                     Margin="5"
                                     Tag="ACT10_ACT11"
                                     Style="{StaticResource CommandKey}"
-                                    PreviewMouseLeftButtonDown="Voice_PreviewMouseLeftButtonDown"
-                                    PreviewMouseLeftButtonUp="Voice_PreviewMouseLeftButtonUp"
-                                    LostMouseCapture="Voice_LostMouseCapture"
-                                    PreviewKeyDown="Voice_PreviewKeyDown"
-                                    PreviewKeyUp="Voice_PreviewKeyUp"
-                                    ToolTip="Push to talk · 按住说话 · ACT10">
+                                    Click="Key_Click">
                                 <controls:KeycapIcon x:Name="ActionIcon10"
                                                      Width="28"
                                                      Height="28"
