@@ -1,6 +1,6 @@
 # Codex Micro iOS：UIKit 架构与 UML
 
-> 状态：历史 iOS 原型；当前目标已改为 macOS 桌面版，见[平台方向](platform-direction.zh-CN.md)。下文保留旧实现与提案，不再作为当前交付计划。
+> 状态：历史 iOS 原型架构。2026-10-21 已重启 iOS 规划，当前范围见 [iOS 产品规划](ios-product-plan.zh-CN.md)。下文保留旧实现与提案，其中首版范围、Host 状态和网络路线不代表新计划。
 > 日期：2026-10-03
 > 范围：独立 Codex Micro；iPhone / iPad；UIKit 为主
 > 源码参考：Windows 工作树及 `virtual-micro/ios`；不依赖 AgentController 产品工程

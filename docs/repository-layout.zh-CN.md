@@ -86,4 +86,4 @@ Windows 与 macOS 在本仓库作为同一个 Micro 产品维护，平台代码�
 
 macOS 使用 Swift 原生适配器读取 App Server 与本机 Unix socket，并通过 AppKit bundle 提供桌面能力；NuGet 并非 Swift 运行时依赖。尚未实现跨平台共享 Host，也不恢复 Avalonia Foundation Preview。设置方案见[交互提案](architecture/settings-interaction.zh-CN.md)。
 
-暂不设计 iOS 产品；`apps/ios` 仅保存历史原型。手机远程与蓝牙仅是未来连接方式的候选，不纳入本次桌面发布承诺。
+2026-10-21 已完成 [iOS 产品规划](architecture/ios-product-plan.zh-CN.md) 与首版代码实现：支持 Mac Host（`apps/macos/Sources/MicroDesktop/RemoteHost.swift`）、Windows Host（`src/CodexMicro.Remote/`）、共享协议与账本包（`packages/MicroRemote/`、`protocols/micro-remote/`）、方案 B 中继服务（`services/relay/`）以及 iOS 客户端（`apps/ios/`）。
