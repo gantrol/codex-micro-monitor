@@ -1,116 +1,56 @@
-# Micro Remote Protocol · iOS v0.1 子集
+# Micro Remote Protocol · v2（兼容 v1）
 
-这是原型客户端的合同，尚无配套网络 Host。架构文档中的完整协议仍是后续设计；本文的字段大小写与 Swift `Codable` 一致，优先用于本原型联调。
+完整版本化规范与 JSON Schema 见：
 
-WSS 连接携带 `Authorization: Bearer <device-token>`。服务端必须验证设备权限；证书校验发生在发送令牌之前。文本帧为 UTF-8 JSON，单条上限 1 MiB。
+- [Micro Remote Protocol v2 规范](../../protocols/micro-remote/README.zh-CN.md)
+- [Micro Remote Protocol v2 JSON Schema](../../protocols/micro-remote/schema.v2.json)
+- [Swift 共享协议与账本包 (`packages/MicroRemote`)](../../packages/MicroRemote/Sources/MicroRemote/MicroRemoteProtocol.swift)
+- [Windows Host 协议与服务 (`src/CodexMicro.Remote`)](../../src/CodexMicro.Remote/MicroRemoteProtocol.cs)
 
-## 连接顺序
+## 1. 传输与两套外网连接方案
+
+- **方案 A（Tailscale 组网直连）**：iOS 与桌面端 Host 建立 WSS 连接（默认端口 `48720`，路径 `/ws/micro`）。首次扫码配对通过 `codexmicro://pair` URI 中的 `pin`（叶证书 DER SHA-256 指纹）完成证书固定校验，随后发送 `pair.exchange` 兑换长期 `deviceToken`。
+- **方案 B（Micro 自建公网中继 + 端到端加密）**：iOS 与桌面端 Host 分别向公网 Relay（`services/relay/`，路径 `/ws/relay`）发起出站 WSS 连接。所有业务 JSON 帧封装在 `relay.envelope` 中，使用双方配对绑定的 Curve25519 公钥经 `HKDF-SHA256` 派生会话密钥，采用 `ChaCha20-Poly1305` 进行应用层端到端认证加密；Relay 仅路由外层元数据（`hostID`、`deviceID`、`sessionID`、`seq`），不解密业务载荷。
+
+## 2. 握手、配对与控制权租约
 
 ```mermaid
 sequenceDiagram
-    participant Phone as iOS
-    participant Host as Host（待实现）
-    Phone->>Host: hello(version=1, clientID)
-    Host-->>Phone: welcome(hostID, hostEpoch, version=1)
-    Phone->>Host: session.acquire(hostEpoch)
-    Host-->>Phone: session.acquired(lease, ttl)
-    Phone->>Host: state.subscribe(hostEpoch)
-    Host-->>Phone: state.snapshot(snapshot)
-    Note over Phone: 同步后启用命令
-    Phone->>Host: command.execute(command)
-    Host-->>Phone: command.receipt(accepted)
-    Host-->>Phone: state.snapshot(updated)
-    Host-->>Phone: command.receipt(applied)
+    participant Phone as iOS Client
+    participant Host as Mac / Windows Host
+    opt 首次一次性配对码兑换
+        Phone->>Host: pair.exchange(pairingToken, deviceID, devicePublicKey)
+        Host-->>Phone: pair.accepted(hostID, deviceToken, hostPublicKey, certPinSHA256)
+    end
+    Phone->>Host: hello(protocolVersion=2, deviceID, deviceToken, devicePublicKey)
+    Host-->>Phone: hello.ok(hostID, role=readWrite|readOnly, activeWriterName)
+    Host-->>Phone: state.snapshot(revision, threads, modelCatalog, quota)
 ```
 
-```json
-{"type":"hello","protocolVersion":1,"clientID":"phone-generated-UUID"}
-{"type":"welcome","protocolVersion":1,"hostID":"stable-host-id","hostEpoch":"host-startup-UUID"}
-{"type":"session.acquire","hostEpoch":"host-startup-UUID"}
-{"type":"session.acquired","hostEpoch":"host-startup-UUID","controlLeaseID":"lease-id","ttlSeconds":30}
-{"type":"state.subscribe","hostEpoch":"host-startup-UUID"}
-```
+- 每个 Host 同时仅授予一台已认证设备 `readWrite` 写租约，其余连接处于 `readOnly` 观察模式。
+- 只读设备可显式发送 `session.takeover` 接管写权限，Host 通过 `session.lease` 广播最新租约归属。
+- 电脑端撤销设备时，Host 立即下发 `auth.revoked` 并断开连接；iOS 停止自动重连并提示权限已吊销。
 
-客户端在租约 TTL 一半处发送 `session.renew`，携带 `hostEpoch`、`controlLeaseID`。Host 以 `session.renewed` 返回租约和 `ttlSeconds`，字段与 acquired 相同。TTL 必须在 5–300 秒之间；过期即断开。Host 必须独立校验租约，不能信任手机计时。
+## 3. 状态快照、完整任务列表与按需详情
 
-首次同步超时为 12 秒。新租约要求新快照；后台挂起后重新握手。没有自动重连循环。
+- `state.snapshot`：返回 `revision`、`hostID`、`hostName`、`hostPlatform`、`snapshotUpdatedAtMs`、`keypadSlotCount`、`selectedThreadID`、`modelCatalog`、`quota`（含 5h / 7d 剩余比例与重置进度）、`threads`（6 / 14 键位任务，支持 `idle`、`running`、`completed`、`waiting`、`question`、`error`、`overloaded`、`unknown` 与 `hasDraft` 标记）以及 `totalThreadCount`。未知的 `fastMode` / `planMode` 保持 `null`，不伪装为 `false`。
+- `threads.list` / `threads.list.result`：支持 `query` 关键字过滤与 `cursor` / `limit` 分页浏览全部任务。
+- `thread.detail.read` / `thread.detail.result`：按需读取指定任务的 `latestReply`（最近一条完整助手回复正文）、`approvals`（全部待审批项，含 `kind`、`summary`、`commandText`、`cwd`、`filePaths`、`approvalContentHash`）、`pendingQuestions` 与 `canSubmitText`。
 
-## 状态快照
+## 4. 命令账本与断线结果确认
 
-```json
-{
-  "type": "state.snapshot",
-  "snapshot": {
-    "hostID": "stable-host-id",
-    "hostEpoch": "host-startup-UUID",
-    "revision": 42,
-    "threads": [{
-      "id": "thread-id",
-      "title": "任务名称",
-      "status": "waiting",
-      "modelID": "model-from-host",
-      "effort": "high",
-      "fast": false,
-      "plan": false,
-      "approvalID": "approval-id",
-      "approvalSummary": "git status",
-      "capabilities": ["desktop.openThread", "thread.setModel", "thread.setEffort", "thread.setFast", "thread.setPlan", "approval.accept", "approval.decline", "thread.fork"]
-    }],
-    "models": [{"id":"model-from-host","name":"Model","efforts":["low","medium","high"]}],
-    "quota": {"fiveHour":77,"weekly":58}
-  }
-}
-```
+所有写命令携带客户端生成的 `requestID` 与规范化 `payloadHash`：
 
-- `revision` 在同一 Host epoch 内单调递增；重复或旧版本不更新 Store。`hostID` 必须稳定，Host 每次重启更换 `hostEpoch`。
-- `threads` / `models` 均最多 256 条，ID 非空且各自唯一。列表顺序决定键位；每个按键绑定稳定任务 ID。
-- `status`：`idle`、`running`、`completed`、`waiting`、`error`。运行中的任务提供可选 `turnID`，用于停止操作。
-- 审批需要 `approvalID` 和非空 `approvalSummary`，缺少任一字段时禁用审批。v0.1 每个任务只表示一个当前审批；多审批选择仍待实现。
-- `quota` 为剩余百分比 0–100；未知字段可省略或设为 `null`，显示为 `--`。
-- `capabilities` 为下表命令集合，使用闭合枚举。新增枚举值前需要升级客户端 / 协议；未知消息类型会断开连接。
-- v0.1 收到 `state.delta`（必须含当前 `hostEpoch`）时暂停控制并重新 `state.subscribe`，由 Host 补发完整快照，不应用 patch。
-
-## 命令与回执
-
-```json
-{
-  "type": "command.execute",
-  "command": {
-    "requestID": "00000000-0000-4000-8000-000000000001",
-    "hostID": "stable-host-id",
-    "hostEpoch": "host-startup-UUID",
-    "controlLeaseID": "lease-id",
-    "threadID": "thread-id",
-    "kind": "thread.setEffort",
-    "expectedRevision": 42,
-    "value": "high"
-  }
-}
-```
-
-| `kind` | 参数 |
+| 命令 `type` | 关键参数与安全校验 |
 | --- | --- |
-| `desktop.openThread` | 无 |
-| `thread.setModel` | `value`：Host 目录中的模型 ID |
-| `thread.setEffort` | `value`：当前模型支持的强度 |
-| `thread.setFast` / `thread.setPlan` | `value`：字符串 `"true"` / `"false"` |
-| `approval.accept` / `approval.decline` | `approvalID`，必须仍是同一有效请求 |
-| `thread.fork` | 无 |
-| `turn.stop` | `turnID`，必须仍是同一运行回合 |
+| `thread.select` | `threadID`, `openInDesktop` |
+| `settings.setModel` | `threadID`, `model`, `effort`（可选） |
+| `settings.setEffort` / `settings.stepEffort` | `threadID`, `effort` 或 `delta` |
+| `settings.setFastMode` / `settings.setPlanMode` | `threadID`, `enabled` |
+| `approval.accept` / `approval.decline` | `threadID`, `approvalRequestID`, `approvalContentHash`（内容哈希不一致则拒绝） |
+| `turn.stop` | `threadID`, `turnID`（仅停止匹配的活跃回合） |
+| `turn.sendText` | `threadID`, `text`（仅向空闲会话显式发送文字，绝不提交桌面输入框草稿） |
 
-Host 必须核验设备权限、目标归属、epoch、租约、能力、预期状态与参数，并按 `requestID` 去重。收到请求只返回 accepted；执行并回读确认后，**先发布最新快照，再返回 applied**。不能把写入队列成功当作操作已完成。
-
-```json
-{"type":"command.receipt","hostEpoch":"host-startup-UUID","receipt":{"requestID":"00000000-0000-4000-8000-000000000001","status":"accepted"}}
-{"type":"command.receipt","hostEpoch":"host-startup-UUID","receipt":{"requestID":"00000000-0000-4000-8000-000000000001","status":"applied"}}
-```
-
-其他状态：`rejected`（拒绝）、`notSent`（确认未提交）、`unknown`（无法证明结果）。可选 `reason` 用于结果展示。未决请求在 15 秒后显示待确认，禁止继续提交；accepted 不解锁操作。
-
-```json
-{"type":"command.status","hostEpoch":"current-host-epoch","requestIDs":["00000000-0000-4000-8000-000000000001"]}
-```
-
-查询结果逐条返回 `command.receipt`。Host 应保留跨重连、跨重启的请求记录；查不到时返回 unknown，不能假定未执行。客户端在 UserDefaults 保存真实 Host 的未决命令，只用于查询，不重放。这个原型未提供放弃 unknown 记录的入口，需 Host 给出终态后恢复控制。
-
-服务端连接错误使用 `{"type":"error","reason":"原因"}`；客户端断开并禁用控制。远程使用的权限验证、持久化账本、Codex 适配和配对服务均属于尚待实现的 Host 工作。
+- Host 在调用底层控制层前，先将 `(deviceID, requestID, payloadHash)` 以 `in_progress` 写入持久化命令账本（macOS SQLite `MicroRemoteStoreDB` / Windows `RemotePersistentStore`）。
+- 若执行期间 Host 崩溃重启，启动恢复逻辑将遗留的 `in_progress` 记录标记为 `unknown`。
+- 客户端断线重连后发送 `command.queryResult` 查询未决请求，绝不自动重放写命令。无法证明结果的请求保持 `unknown`，仅锁定对应 `(hostID, threadID)` 的冲突写操作，并提供显式解锁恢复入口。

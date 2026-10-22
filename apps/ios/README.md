@@ -1,14 +1,10 @@
-# Codex Micro iOS · 0.1.0
+# Codex Micro iOS · 0.2.0
 
-> 历史原型（2026-10-03）：用户已将当前目标改为 macOS 桌面版。此目录保留先前 UIKit 实现供参考，不再作为当前交付路线。见[平台方向](../../docs/architecture/platform-direction.zh-CN.md)。以下内容仅描述此 iOS 快照。
+按 [iOS 远程控制产品规划](../../docs/architecture/ios-product-plan.zh-CN.md) 完成实现的 iOS / iPadOS 17+ 客户端（UIKit + Core Animation），同时支持连接 **macOS Host**（`apps/macos/Sources/MicroDesktop/RemoteHost.swift`）与 **Windows Host**（`src/CodexMicro.Remote/`），并支持外网连接方案 A（Tailscale 组网直连）与方案 B（Micro 自建 E2EE 中继）。
 
-UIKit 原型，iOS / iPadOS 17+。首屏采用当前 Windows 版的 590×610 设计坐标、外壳比例、4×4 键位和双页布局。没有 AgentController 工程依赖，也没有 Swift Package 依赖。
+## 构建工程
 
-## 打开工程
-
-在 Mac 上用 Xcode 15 或更新版本打开 [CodexMicro.xcodeproj](CodexMicro.xcodeproj)，选择 `CodexMicro` scheme 和 iPhone / iPad 模拟器运行。真机需要在 Signing & Capabilities 选择自己的 Team，并按需更改 Bundle Identifier。
-
-也可从仓库根目录执行构建：
+在仓库根目录执行编译验证：
 
 ```sh
 xcodebuild -project apps/ios/CodexMicro.xcodeproj \
@@ -17,59 +13,27 @@ xcodebuild -project apps/ios/CodexMicro.xcodeproj \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-2026-10-04 已在 macOS 15.5 / Xcode 16.3 使用上述 iOS Simulator Debug 目标完成构建（arm64、x86_64，关闭代码签名）。本次修复了 `KeycapControl` 重复声明 UIKit 已继承的菜单委托及缺少 `override` 的编译问题。未启动模拟器，未做 UI / 实机验收；未配置 App Store 图标与提交材料。
+## 已实现的首版能力（R01–R13）
 
-按当前 Windows 产品重新审查的结论见 [Windows 基线与 Apple 实现审查](../../docs/architecture/windows-baseline-macos-review.zh-CN.md)。下文的“保持一致”仅指部分几何与外观来源，不能视为交互、状态或控制能力完整一致。
+- **多电脑保存与切换**：Keychain 持久化多台电脑（`SavedHost`），区分 macOS / Windows 平台与方案 A / B 连接模式；顶部连接胶囊支持长按菜单一键切换电脑，切换电脑时自动清空旧任务选择、租约与状态缓存。
+- **二维码配对与设备权限管理**：支持相机扫描 `codexmicro://pair` 配对二维码或从剪贴板导入配对链接，自动兑换长期 `deviceToken` 并绑定叶证书 SHA-256 指纹（方案 A）或 Curve25519 公钥（方案 B）。电脑端撤销设备后即时收到 `auth.revoked` 并停止重连。
+- **两套外网连接方案**：
+  - **方案 A（Tailscale 组网直连）**：WSS 直连电脑 Host，支持自签名叶证书 SHA-256 指纹固定校验。
+  - **方案 B（Micro 自建中继）**：手机与电脑分别出站连接 `services/relay/`，所有业务帧经 `relay.envelope`（Curve25519 + HKDF-SHA256 + ChaCha20-Poly1305）端到端加密。
+- **任务监控与防抖键位**：支持 `idle`、`running`、`completed`（完成未读）、`waiting`（待审批）、`question`（待回答）、`error`、`overloaded`（`server_overloaded`）、`unknown` 八种状态与 `hasDraft` 中心草稿点；手指按住键帽期间冻结 6 / 14 键位排序防止跳位；断线立即熄灭实时状态灯。
+- **完整任务列表（搜索与分页）**：顶部任务列表按钮打开 `TaskListViewController`，通过 `threads.list` 搜索和分页浏览电脑上的全部任务。
+- **模型、强度、Fast / Plan 控制**：以 Host 实时模型目录为准；未知的 `fast` / `plan` 状态保持 `nil`（显示“未知”而非伪装成关闭）；`ThreadDetailViewController` 提供非旋转分段控件调整推理强度。
+- **单项与多项审批核验**：单条审批在主界面弹窗展示命令、工作目录与文件列表；多条待审批自动进入 `ThreadDetailViewController` 逐条选择，提交时校验 `approvalRequestID` 与 `approvalContentHash`。
+- **停止当前回合**：绑定具体 `threadID` 与 `turnID` 停止运行中的回合。
+- **按需查看最近助手回复与显式发送文字**：`ThreadDetailViewController` 按需调用 `thread.detail.read` 展示最新完整助手回复与待回答问题，并支持向空闲会话发送文字消息（`turn.sendText`，绝不误发电脑桌面输入框草稿）。
+- **断线重连、按任务冲突锁定与 `unknown` 恢复**：前台指数退避抖动重连；未确认请求保存在受文件保护的本地日志中，重连后通过 `command.queryResult` 查询账本而不重放写操作；仅锁定对应 `(hostID, threadID)`，并提供显式解锁恢复入口。
 
-## 与 Windows 保持一致的界面
+## 代码结构
 
-[查看本版矢量图标](Design/command-icons.svg) · [调整前后对照：上旧下新](Design/command-icons-comparison.svg)
-
-控制页：
-
-|  |  |  |  |
-| --- | --- | --- | --- |
-| 白色旋钮 | 任务 1 | 任务 2 | 黑色摇杆 |
-| 任务 3 | 任务 4 | 任务 5 | 任务 6 |
-| Fast | 批准 | 拒绝 | 分叉 |
-| 额度旋钮 | 双宽语音键 | ← | Codex |
-
-监控页有 14 个任务键，左下额度旋钮与右下 Codex 键保持原位。窄屏按比例缩放，横屏高度不足时可纵向滚动，键位不重排。
-
-- 白色键帽、圆形凹槽、透明外壳、薄荷色选中边缘，均使用 UIKit / Core Animation 绘制。
-- 命令图标沿用 Windows 的含义与轮廓，采用 24×24 画布、约 1.8 的主线宽和圆角端点；分叉节点较密，使用 1.7 线宽作视觉补偿。闪电中段加宽，麦克风内外轮廓拉开间距；Codex 标识保留 Windows 矢量原形并调整视觉大小。
-- 状态灯沿用 Windows 的蓝 / 绿 / 橙 / 红；底部额度旋钮包含双额度环、七段数字与三灯。
-- 顶部只有连接状态和设置入口，底部只有当前任务、模型与强度；没有说明性文案区。
-
-## 已接入的交互
-
-| 输入 | 行为 |
-| --- | --- |
-| 任务键轻点 / 长按 | 选择目标 / 桌面打开与停止菜单 |
-| 页面圆点、左右滑动 | 控制页与监控页切换 |
-| 白色旋钮旋转 | 调整所选任务的推理强度；VoiceOver 支持增减 |
-| 白色旋钮、额度旋钮轻点 / 长按 | 切换模型 / 打开模型菜单 |
-| 摇杆向上 | 切换 Plan |
-| Fast / 批准 / 拒绝 / 分叉 | 按当前目标与能力执行；审批显示具体请求摘要 |
-| Codex 键 | 请求在电脑打开所选任务 |
-
-语音键保持双宽外形但禁用；摇杆其余方向没有绑定动作。监控页目前最多展示 14 个任务，没有完整任务列表与分页。
-
-## DEMO 与连接
-
-首次及每次重新启动进入明确标记的 `DEMO` 模式。演示数据保存在内存，可体验选择、状态变化、模型、强度、Fast、Plan、审批和分叉。桌面打开在演示中只模拟回执，不调用 Codex。
-
-连接页支持手动输入 WSS 地址、设备令牌及可选的证书 SHA-256 指纹，凭据保存在 Keychain。没有指纹时使用系统 TLS 信任；填写指纹时信任该主机匹配的叶证书，可用于私有局域网证书。应用不跟随 HTTP 重定向。
-
-**本目录未提供配套 Host 服务，尚不能直接连接 Windows 小键盘或 Codex Desktop。** WSS 客户端实现的是 [v0.1 协议子集](PROTOCOL.md)，需要 Host 实现同一合同后联调。Bonjour、扫码配对、配对令牌交换、增量 patch、自动退避重连、语音均未实现；失败后可从连接页再次连接。
-
-进入后台或失去活动状态会断开连接，返回时重新握手、获取租约与快照。未知结果的请求保留在本地，重连只查询原请求；不会自动重放写操作。当前采用全局单在途请求，结果未确认时禁止继续提交。
-
-## 代码入口
-
-- [MicroDeviceView](CodexMicro/UI/MicroDeviceView.swift)：Windows 坐标、双页布局与控件绑定。
-- [MicroStore](CodexMicro/Core/MicroStore.swift)：目标、能力、生命周期、操作回执与待确认记录。
-- [WebSocketTransport](CodexMicro/Connection/WebSocketTransport.swift)：WSS、协议握手、租约与快照。
-- [DemoTransport](CodexMicro/Connection/DemoTransport.swift)：本地演示行为。
-- [UIKit 架构与 UML](../../docs/architecture/ios-uikit.zh-CN.md)：已实现类图与后续 Host 设计。
-- [设置、键帽编辑与尺寸规则](../../docs/architecture/settings-interaction.zh-CN.md)：后续交互改版提案，尚未实现。
+- [MicroRemoteProtocol.swift](../../packages/MicroRemote/Sources/MicroRemote/MicroRemoteProtocol.swift)：iOS 与 macOS 共用的 Protocol v2 模型、配对 URI 解析与 E2EE 加解密。
+- [MicroModels.swift](CodexMicro/Core/MicroModels.swift) / [MicroStore.swift](CodexMicro/Core/MicroStore.swift)：多 Host 状态管理、按任务冲突锁定、触控防抖与未决命令恢复。
+- [HostCredentials.swift](CodexMicro/Connection/HostCredentials.swift) / [WebSocketTransport.swift](CodexMicro/Connection/WebSocketTransport.swift)：Keychain 多电脑存储、证书固定、Protocol v2 握手、退避重连与中继 E2EE。
+- [MicroDeviceView.swift](CodexMicro/UI/MicroDeviceView.swift) / [MicroViewController.swift](CodexMicro/UI/MicroViewController.swift)：590×610 双页键盘、快捷电脑切换菜单与主控交互。
+- [TaskListViewController.swift](CodexMicro/UI/TaskListViewController.swift)：完整任务搜索与分页列表。
+- [ThreadDetailViewController.swift](CodexMicro/UI/ThreadDetailViewController.swift)：最近回复查看、多审批选择、非旋转参数控制、文字发送与未知状态恢复。
+- [ConnectionViewController.swift](CodexMicro/UI/ConnectionViewController.swift)：多电脑管理、二维码扫描配对与手动连接配置。

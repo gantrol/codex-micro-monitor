@@ -15,7 +15,10 @@ enum MicroTheme {
         case .running: return UIColor(hex: 0x304FFE)
         case .completed: return UIColor(hex: 0x00FF4C)
         case .waiting: return UIColor(hex: 0xFF6D00)
+        case .question: return UIColor(hex: 0x00B8D4)
         case .error: return UIColor(hex: 0xFF0033)
+        case .overloaded: return UIColor(hex: 0xE040FB)
+        case .unknown: return UIColor(hex: 0x8B949A)
         }
     }
 
@@ -24,17 +27,23 @@ enum MicroTheme {
         case .idle: return "空闲"
         case .running: return "运行中"
         case .completed: return "完成未读"
-        case .waiting: return "等待输入"
+        case .waiting: return "待审批"
+        case .question: return "等待提问回答"
         case .error: return "错误"
+        case .overloaded: return "服务过载"
+        case .unknown: return "状态未知"
         }
     }
 }
 
 extension UIColor {
     convenience init(hex: UInt32, alpha: CGFloat = 1) {
-        self.init(red: CGFloat((hex >> 16) & 255) / 255,
-                  green: CGFloat((hex >> 8) & 255) / 255,
-                  blue: CGFloat(hex & 255) / 255, alpha: alpha)
+        self.init(
+            red: CGFloat((hex >> 16) & 255) / 255,
+            green: CGFloat((hex >> 8) & 255) / 255,
+            blue: CGFloat(hex & 255) / 255,
+            alpha: alpha
+        )
     }
 }
 

@@ -83,19 +83,21 @@ final class MicroDeviceView: UIView {
         let labels = ["Fast", "批准", "拒绝", "分叉"]
         for index in 0..<4 {
             let kind = kinds[index]
-            let approvalReady = kind != .approve && kind != .decline || store.selected?.approvalID != nil
+            let approvalReady = kind != .approve && kind != .decline ||
+                ((store.selected?.pendingApprovalCount ?? 0) > 0 || store.selected?.approval != nil)
+            let activeState: Bool? = (kind == .fast) ? store.selected?.fast : false
             actions[index].configure(symbol: icons[index], label: labels[index],
                                      enabled: store.supports(kind) && approvalReady,
-                                     active: kind == .fast && store.selected?.fast == true)
+                                     active: activeState)
             actions[index].onTap = { [weak self] in self?.onCommand?(kind) }
         }
-        let rotaryAvailable = store.connection.allowsCommands &&
+        let rotaryAvailable = store.canControl &&
             (store.selected?.capabilities.contains(.effort) == true || store.selected?.capabilities.contains(.model) == true)
         encoder.isEnabled = rotaryAvailable
         encoder.isUserInteractionEnabled = rotaryAvailable
-        encoder.accessibilityValue = store.selected?.effort
+        encoder.accessibilityValue = store.selected?.effort ?? "未知"
         joystick.isEnabled = store.supports(.plan)
-        joystick.planEnabled = store.selected?.plan == true
+        joystick.planEnabled = !stale && (store.selected?.plan == true)
         codexKey.configure(symbol: "terminal", label: "在桌面打开", enabled: store.supports(.open))
         codexKey.onTap = { [weak self] in self?.onCommand?(.open) }
         codexKey.contextMenu = { [weak self, weak store] in
@@ -126,6 +128,7 @@ final class MicroDeviceView: UIView {
             key.configure(thread: thread, selected: thread?.id == store.selectedID && thread != nil, stale: stale)
             let id = thread?.id
             key.onTap = { [weak self] in if let id { self?.onThread?(id) } }
+            key.onTouchStateChanged = { [weak store] pressed in store?.setTouchFrozen(pressed) }
             key.contextMenu = { [weak self] in id.flatMap { self?.menuForThread?($0) } }
             CATransaction.begin(); CATransaction.setDisableActions(true)
             blooms[index].backgroundColor = key.glowColor.withAlphaComponent(0.12).cgColor

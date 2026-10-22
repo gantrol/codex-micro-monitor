@@ -24,6 +24,7 @@
     <key>UISupportedInterfaceOrientations~ipad</key>
     <array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationPortraitUpsideDown</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
     <key>NSLocalNetworkUsageDescription</key><string>连接你选择的 Codex Micro Host，同步会话状态并执行操作。</string>
+    <key>NSCameraUsageDescription</key><string>扫描电脑端 Codex Micro 配对二维码以完成安全连接。</string>
     <key>NSAppTransportSecurity</key>
     <dict><key>NSAllowsLocalNetworking</key><true/></dict>
 </dict>
