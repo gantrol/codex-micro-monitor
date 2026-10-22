@@ -312,6 +312,34 @@ private final class ControlWorker: @unchecked Sendable {
             try context.check(); try catalog.assertStorageCurrent()
             return ["threadId":thread,"cwd":cwd]
         }
+        if name == "get_keypad_thread_detail" {
+            let stored = try? catalog.call("thread/read", params: ["threadId": thread, "includeTurns": true], context: context)
+            let catalogThread = (stored?["thread"] as? [String: Any]).flatMap { $0["id"] as? String == thread ? $0 : nil }
+            var peerState: [String: Any]?
+            if let peer = try? DesktopPeer(context: context) {
+                defer { peer.close() }
+                if let owner = try? peer.owner(of: thread) {
+                    peerState = try? peer.snapshot(thread, owner: owner)
+                }
+            }
+            guard peerState != nil || catalogThread != nil else {
+                throw CodexClientError.staleTarget
+            }
+            let activeTurnID = peerState.flatMap { Self.activeTurn($0) }
+            let canSubmit = peerState.map { Self.canSubmit($0) } ?? (activeTurnID == nil)
+            let runtimeStatus = (peerState?["threadRuntimeStatus"] as? [String: Any]) ??
+                (catalogThread?["status"] as? [String: Any]) ??
+                ["type": activeTurnID != nil ? "active" : "idle"]
+            try context.check()
+            return RemoteThreadDetailReader.projectDetail(
+                threadID: thread,
+                peerState: peerState,
+                catalogThread: catalogThread,
+                activeTurnID: activeTurnID,
+                canSubmit: canSubmit,
+                runtimeStatus: runtimeStatus
+            )
+        }
         if name == "mark_keypad_unread" {
             let stored = try catalog.call("thread/read", params:["threadId":thread,"includeTurns":false],context:context)
             guard (stored["thread"] as? [String:Any])?["id"] as? String == thread else { throw CodexClientError.staleTarget }

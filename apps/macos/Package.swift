@@ -6,12 +6,28 @@ let package = Package(
     defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [.library(name: "MicroDesktop", type: .dynamic, targets: ["MicroDesktop"])],
-    dependencies: [.package(url: "https://github.com/jaywcjlove/PermissionFlow.git", exact: "2.11.3")],
+    dependencies: [
+        .package(url: "https://github.com/jaywcjlove/PermissionFlow.git", exact: "2.11.3"),
+        .package(path: "../../packages/MicroRemote"),
+    ],
     targets: [
         .target(name: "MicroCore", dependencies:["MicroShared"]),
         .target(name: "MicroShared"),
-        .target(name: "MicroDesktop", dependencies: ["MicroCore", "MicroShared", .product(name: "SystemSettingsKit", package: "PermissionFlow")],
-                linkerSettings: [.linkedFramework("AppKit")]),
+        .target(
+            name: "MicroDesktop",
+            dependencies: [
+                "MicroCore",
+                "MicroShared",
+                .product(name: "MicroRemote", package: "MicroRemote"),
+                .product(name: "SystemSettingsKit", package: "PermissionFlow"),
+            ],
+            linkerSettings: [
+                .linkedFramework("AppKit"),
+                .linkedFramework("Network"),
+                .linkedFramework("Security"),
+                .linkedLibrary("sqlite3"),
+            ]
+        ),
         .target(name: "MicroPanelModel", dependencies: ["MicroShared"], path: "Sources/CodexMicroMac",
                 exclude: ["Resources", "KeycapGlyph.swift", "Entry.swift", "MicroArtwork.generated.swift", "MicroView.swift", "SettingsView.swift", "MicroSurfaces.swift", "ReasoningGlyph.swift", "DesignExport.swift", "SevenSegmentReadout.swift", "DialInput.swift", "WidgetPublisher.swift"],
                 sources: ["Settings.swift", "ControlModels.swift", "DesktopClient.swift", "MicroModel.swift", "MicroSession.swift", "MicroViewModel.swift", "PanelModels.swift", "ConversationContextStore.swift", "ActivityStore.swift", "ObservationCoordinator.swift", "ServiceConnectionState.swift", "CommandExecutor.swift", "Localization.swift", "DialMapping.swift"]),

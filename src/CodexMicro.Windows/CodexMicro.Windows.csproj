@@ -10,6 +10,7 @@
     <Using Include="System"/><Using Include="System.Collections.Generic"/><Using Include="System.Linq"/>
     <Using Include="System.Threading"/><Using Include="System.Threading.Tasks"/>
     <ProjectReference Include="../CodexMicro.Core/CodexMicro.Core.csproj" />
+    <ProjectReference Include="../CodexMicro.Remote/CodexMicro.Remote.csproj" />
     <PackageReference Include="Tomlyn" />
     <InternalsVisibleTo Include="CodexMicro" />
     <InternalsVisibleTo Include="CodexMicro.Plugin" />

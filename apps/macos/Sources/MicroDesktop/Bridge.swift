@@ -5,6 +5,7 @@ import OSLog
 
 @MainActor @objc(MicroDesktopBridge) public final class MicroDesktopBridge: NSObject, DesktopServices, NSMenuDelegate {
     private let client = DesktopBackend()
+    private lazy var remoteHost = MacRemoteHost(backend: client)
     private var tasks: [String: Task<Void, Never>] = [:]
     private var status: NSStatusItem?
     private weak var window: NSWindow?
@@ -74,6 +75,25 @@ import OSLog
                 guard let args = try JSONSerialization.jsonObject(with: arguments) as? [String: Any] else {
                     throw NSError(domain: "MicroBridge", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid arguments"])
                 }
+                if operation == "get_remote_host_status" {
+                    let result = await remoteHost.statusSummary()
+                    reply(try JSONSerialization.data(withJSONObject: result), nil)
+                    return
+                }
+                if operation == "create_remote_pairing" {
+                    let relayURL = args["relay_url"] as? String
+                    let result = await remoteHost.createPairingInfo(
+                        mode: (relayURL?.isEmpty == false) ? .relayE2EE : .directTailscale,
+                        relayURL: relayURL
+                    )
+                    reply(try JSONSerialization.data(withJSONObject: result), nil)
+                    return
+                }
+                if operation == "revoke_remote_device", let deviceID = args["device_id"] as? String {
+                    let result = await remoteHost.revokeDevice(deviceID: deviceID)
+                    reply(try JSONSerialization.data(withJSONObject: result), nil)
+                    return
+                }
                 let result = try await client.execute(operation, arguments: args)
                 if operation == "get_keypad_ui_state", result["accessibility"] as? Bool == false {
                     // Recheck the current process's trust; a late native result
@@ -92,7 +112,11 @@ import OSLog
     public func cancel(_ id: String) { tasks[id]?.cancel() }
     public func close(_ reply: @escaping () -> Void) {
         tasks.values.forEach { $0.cancel() }
-        Task { @MainActor in await client.close(); reply() }
+        Task { @MainActor in
+            await remoteHost.stop()
+            await client.close()
+            reply()
+        }
     }
     public func runMCP() {
         let done = DispatchSemaphore(value: 0)
@@ -104,6 +128,8 @@ import OSLog
     public func install(_ event: @escaping (String) -> Void) {
         self.event = event
         guard status == nil else { return }
+        let relayEnv = ProcessInfo.processInfo.environment["CODEX_MICRO_RELAY_URL"]
+        Task { await remoteHost.start(relayURL: relayEnv) }
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = Self.statusImage()
         item.button?.toolTip = "Codex Micro Monitor"
@@ -221,6 +247,7 @@ import OSLog
         }
         sizeItem.submenu = sizes
         _ = add(tr("center"), "center")
+        _ = add("Copy iOS Pairing URI", "copy_remote_pairing")
         menu.addItem(.separator()); _ = add(tr("quit"), "quit")
     }
     @objc private func menuAction(_ sender: NSMenuItem) {
@@ -230,6 +257,14 @@ import OSLog
         case "settings": showWindow(); event?("settings")
         case "center": centerWindow()
         case "accessibility": showWindow(); permissionSetup?.show()
+        case "copy_remote_pairing":
+            Task { @MainActor in
+                let info = await remoteHost.createPairingInfo()
+                if let uri = info["uri"] as? String {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(uri, forType: .string)
+                }
+            }
         case "quit":
             event?("hide")
             close { NSApp.terminate(nil) }

@@ -4,6 +4,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Deterministic>true</Deterministic>
-    <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);$(MSBuildThisFileDirectory).artifacts/control-packages</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources Condition="Exists('$(MSBuildThisFileDirectory).artifacts/control-packages')">$(RestoreAdditionalProjectSources);$(MSBuildThisFileDirectory).artifacts/control-packages</RestoreAdditionalProjectSources>
   </PropertyGroup>
 </Project>

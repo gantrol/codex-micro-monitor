@@ -3,7 +3,7 @@ import Foundation
 public enum MacPreviewCapabilities {
     public static let operations: Set<String> = [
         "get_keypad_capabilities", "list_keypad_threads", "get_keypad_models", "get_keypad_activity", "get_keypad_client_thread",
-        "get_keypad_usage", "get_keypad_state", "open_keypad_thread", "get_keypad_layout",
+        "get_keypad_usage", "get_keypad_state", "get_keypad_thread_detail", "open_keypad_thread", "get_keypad_layout",
         "set_keypad_model", "set_keypad_reasoning", "set_keypad_fast",
         "send_keypad_message", "stop_keypad_turn", "reply_keypad_approval", "toggle_keypad_plan",
         "fork_keypad_thread", "new_keypad_thread", "open_keypad_review", "mark_keypad_unread",
