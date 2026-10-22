@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/gantrol/codex-micro-monitor/protocols/micro-remote/schema.v2.json",
+  "title": "Codex Micro Remote Protocol v2",
+  "type": "object",
+  "$defs": {
+    "Platform": {
+      "type": "string",
+      "enum": ["macos", "windows", "unknown"]
+    },
+    "TransportMode": {
+      "type": "string",
+      "enum": ["direct", "relay"]
+    },
+    "LeaseMode": {
+      "type": "string",
+      "enum": ["readWrite", "readOnly"]
+    },
+    "CodexRuntimeStatus": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "codexNotRunning",
+        "codexLoggedOut",
+        "hostSleeping",
+        "permissionDenied",
+        "incompatibleVersion"
+      ]
+    },
+    "ThreadStatus": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "running",
+        "completed",
+        "waiting",
+        "question",
+        "error",
+        "overloaded",
+        "unknown"
+      ]
+    },
+    "CommandKind": {
+      "type": "string",
+      "enum": [
+        "desktop.openThread",
+        "thread.setModel",
+        "thread.setEffort",
+        "thread.setFast",
+        "thread.setPlan",
+        "approval.accept",
+        "approval.decline",
+        "thread.fork",
+        "turn.stop",
+        "turn.sendText"
+      ]
+    },
+    "ReceiptStatus": {
+      "type": "string",
+      "enum": ["accepted", "applied", "rejected", "notSent", "unknown"]
+    },
+    "ErrorCode": {
+      "type": "string",
+      "enum": [
+        "unauthorized",
+        "device_revoked",
+        "pairing_expired",
+        "pairing_invalid",
+        "protocol_incompatible",
+        "lease_required",
+        "lease_expired",
+        "stale_target",
+        "stale_revision",
+        "capability_unavailable",
+        "codex_unavailable",
+        "payload_conflict",
+        "rate_limited",
+        "internal_error"
+      ]
+    },
+    "PairingPayload": {
+      "type": "object",
+      "required": ["version", "transport", "endpoint", "hostID", "hostName", "platform", "pairingToken", "expiresAt"],
+      "properties": {
+        "version": { "type": "integer", "const": 2 },
+        "transport": { "$ref": "#/$defs/TransportMode" },
+        "endpoint": { "type": "string", "format": "uri" },
+        "hostID": { "type": "string", "minLength": 1 },
+        "hostName": { "type": "string", "minLength": 1 },
+        "platform": { "$ref": "#/$defs/Platform" },
+        "certificateSHA256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "pairingToken": { "type": "string", "minLength": 16 },
+        "expiresAt": { "type": "integer" },
+        "hostPublicKey": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "ApprovalItem": {
+      "type": "object",
+      "required": ["id", "kind", "method", "title", "contentHash", "approvable"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["command", "fileChange", "other"] },
+        "method": { "type": "string" },
+        "title": { "type": "string" },
+        "command": { "type": ["string", "null"] },
+        "cwd": { "type": ["string", "null"] },
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "detailText": { "type": ["string", "null"] },
+        "contentHash": { "type": "string", "minLength": 16 },
+        "approvable": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "PendingQuestion": {
+      "type": "object",
+      "required": ["itemID", "index", "title"],
+      "properties": {
+        "itemID": { "type": "string", "minLength": 1 },
+        "index": { "type": "integer", "minimum": 0 },
+        "title": { "type": "string" },
+        "prompt": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "ReplySummary": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "turnID": { "type": ["string", "null"] },
+        "itemID": { "type": ["string", "null"] },
+        "text": { "type": "string" },
+        "status": { "type": ["string", "null"] },
+        "timestamp": { "type": ["integer", "null"] },
+        "truncated": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "Thread": {
+      "type": "object",
+      "required": ["id", "title", "status", "capabilities"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "cwd": { "type": ["string", "null"] },
+        "status": { "$ref": "#/$defs/ThreadStatus" },
+        "modelID": { "type": ["string", "null"] },
+        "effort": { "type": ["string", "null"] },
+        "fast": { "type": ["boolean", "null"] },
+        "plan": { "type": ["boolean", "null"] },
+        "turnID": { "type": ["string", "null"] },
+        "approvalID": { "type": ["string", "null"] },
+        "approvalSummary": { "type": ["string", "null"] },
+        "approvals": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ApprovalItem" }
+        },
+        "pendingQuestions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PendingQuestion" }
+        },
+        "hasDraft": { "type": "boolean" },
+        "hasUnreadTurn": { "type": ["boolean", "null"] },
+        "errorCode": { "type": ["string", "null"] },
+        "recencyAt": { "type": ["integer", "null"] },
+        "freshnessMs": { "type": ["integer", "null"] },
+        "capabilities": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CommandKind" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Model": {
+      "type": "object",
+      "required": ["id", "name", "efforts"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "efforts": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "defaultEffort": { "type": ["string", "null"] },
+        "supportsFast": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "CreditBalance": {
+      "type": "object",
+      "required": ["hasCredits", "unlimited"],
+      "properties": {
+        "hasCredits": { "type": "boolean" },
+        "unlimited": { "type": "boolean" },
+        "balance": { "type": ["string", "null"] },
+        "displayText": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "Quota": {
+      "type": "object",
+      "properties": {
+        "fiveHour": { "type": ["number", "null"] },
+        "weekly": { "type": ["number", "null"] },
+        "planType": { "type": ["string", "null"] },
+        "credits": {
+          "anyOf": [
+            { "$ref": "#/$defs/CreditBalance" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Snapshot": {
+      "type": "object",
+      "required": ["hostID", "hostEpoch", "revision", "threads", "models", "quota"],
+      "properties": {
+        "hostID": { "type": "string", "minLength": 1 },
+        "hostName": { "type": ["string", "null"] },
+        "platform": { "$ref": "#/$defs/Platform" },
+        "hostEpoch": { "type": "string", "minLength": 1 },
+        "accountScope": { "type": ["string", "null"] },
+        "codexStatus": { "$ref": "#/$defs/CodexRuntimeStatus" },
+        "diagnosticMessage": { "type": ["string", "null"] },
+        "revision": { "type": "integer", "minimum": 0 },
+        "collectedAt": { "type": ["integer", "null"] },
+        "freshnessMs": { "type": ["integer", "null"] },
+        "totalThreads": { "type": ["integer", "null"] },
+        "threads": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/Thread" }
+        },
+        "models": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/Model" }
+        },
+        "quota": { "$ref": "#/$defs/Quota" }
+      },
+      "additionalProperties": false
+    },
+    "ThreadDetail": {
+      "type": "object",
+      "required": ["hostID", "hostEpoch", "threadID", "revision", "canSubmitText"],
+      "properties": {
+        "hostID": { "type": "string" },
+        "hostEpoch": { "type": "string" },
+        "threadID": { "type": "string" },
+        "revision": { "type": "integer" },
+        "latestReply": {
+          "anyOf": [
+            { "$ref": "#/$defs/ReplySummary" },
+            { "type": "null" }
+          ]
+        },
+        "approvals": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ApprovalItem" }
+        },
+        "pendingQuestions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PendingQuestion" }
+        },
+        "canSubmitText": { "type": "boolean" },
+        "cannotSubmitReason": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "ExpectedThreadState": {
+      "type": "object",
+      "properties": {
+        "modelID": { "type": ["string", "null"] },
+        "effort": { "type": ["string", "null"] },
+        "fast": { "type": ["boolean", "null"] },
+        "plan": { "type": ["boolean", "null"] },
+        "turnID": { "type": ["string", "null"] },
+        "approvalID": { "type": ["string", "null"] },
+        "approvalContentHash": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "Command": {
+      "type": "object",
+      "required": [
+        "requestID",
+        "hostID",
+        "hostEpoch",
+        "controlLeaseID",
+        "threadID",
+        "kind",
+        "expectedRevision"
+      ],
+      "properties": {
+        "requestID": { "type": "string", "format": "uuid" },
+        "hostID": { "type": "string", "minLength": 1 },
+        "hostEpoch": { "type": "string", "minLength": 1 },
+        "controlLeaseID": { "type": "string", "minLength": 1 },
+        "threadID": { "type": "string", "minLength": 1 },
+        "kind": { "$ref": "#/$defs/CommandKind" },
+        "expectedRevision": { "type": "integer", "minimum": 0 },
+        "expectedState": { "$ref": "#/$defs/ExpectedThreadState" },
+        "value": { "type": ["string", "null"] },
+        "text": { "type": ["string", "null"], "maxLength": 100000 },
+        "turnID": { "type": ["string", "null"] },
+        "approvalID": { "type": ["string", "null"] },
+        "approvalContentHash": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "Receipt": {
+      "type": "object",
+      "required": ["requestID", "status"],
+      "properties": {
+        "requestID": { "type": "string", "format": "uuid" },
+        "threadID": { "type": ["string", "null"] },
+        "kind": { "$ref": "#/$defs/CommandKind" },
+        "status": { "$ref": "#/$defs/ReceiptStatus" },
+        "errorCode": { "$ref": "#/$defs/ErrorCode" },
+        "reason": { "type": ["string", "null"] },
+        "appliedRevision": { "type": ["integer", "null"] },
+        "createdThreadID": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "RelayEnvelope": {
+      "type": "object",
+      "required": ["type", "version", "hostID", "deviceID", "senderPublicKey", "nonce", "ciphertext", "tag"],
+      "properties": {
+        "type": { "type": "string", "const": "relay.envelope" },
+        "version": { "type": "integer", "const": 2 },
+        "hostID": { "type": "string", "minLength": 1 },
+        "deviceID": { "type": "string", "minLength": 1 },
+        "senderPublicKey": { "type": "string" },
+        "nonce": { "type": "string" },
+        "ciphertext": { "type": "string" },
+        "tag": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
